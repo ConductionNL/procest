@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>procest</id>
+    <name>Procest</name>
+    <summary>Case management for Nextcloud powered by OpenRegister</summary>
+    <description><![CDATA[A Nextcloud app for case management.
+
+Procest provides a lightweight case management interface on top of OpenRegister, supporting cases, tasks, statuses, roles, results, and decisions.
+
+- Manage cases with full CRUD support
+- Track tasks within cases
+- Configurable statuses and roles
+- Multilingual (English and Dutch)
+- Thin client architecture — all data stored in OpenRegister
+
+Requires the OpenRegister app to be installed and enabled.
+    ]]></description>
+    <version>0.1.0</version>
+    <licence>agpl</licence>
+    <category>organization</category>
+    <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
+    <namespace>Procest</namespace>
+    <website>https://github.com/ConductionNL/procest</website>
+    <bugs>https://github.com/ConductionNL/procest/issues</bugs>
+    <repository>https://github.com/ConductionNL/procest</repository>
+
+    <dependencies>
+        <nextcloud min-version="28" max-version="33"/>
+        <php min-version="8.1"/>
+    </dependencies>
+
+    <repair-steps>
+        <post-migration>
+            <step>OCA\Procest\Repair\InitializeSettings</step>
+        </post-migration>
+    </repair-steps>
+
+    <navigations>
+        <navigation>
+            <id>procest</id>
+            <name>Procest</name>
+            <route>procest.dashboard.page</route>
+            <icon>app.svg</icon>
+        </navigation>
+    </navigations>
+
+    <settings>
+        <admin>OCA\Procest\Settings\AdminSettings</admin>
+        <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
+    </settings>
+</info>

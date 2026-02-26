@@ -65,6 +65,42 @@ export const useObjectStore = defineStore('object', {
 			return url
 		},
 
+		async _parseError(response, type) {
+			const status = response.status
+			let details = null
+			let message = ''
+
+			try {
+				const body = await response.json()
+				details = body.errors || body.error || body.message || null
+			} catch {
+				// Response body is not JSON
+			}
+
+			switch (true) {
+			case status === 400 || status === 422:
+				message = details ? 'Validation failed' : `Invalid ${type} data`
+				return { status, message, details, isValidation: true, toString() { return this.message } }
+			case status === 401:
+				message = 'Session expired, please log in again'
+				break
+			case status === 403:
+				message = 'You do not have permission to perform this action'
+				break
+			case status === 404:
+				message = `The requested ${type} could not be found`
+				break
+			case status === 409:
+				message = `This ${type} was modified by another user. Please reload.`
+				break
+			default:
+				message = 'An unexpected error occurred. Please try again later.'
+			}
+
+			console.error(`API error [${status}] for ${type}:`, details || response.statusText)
+			return { status, message, details, isValidation: false, toString() { return this.message } }
+		},
+
 		async fetchCollection(type, params = {}) {
 			this.loading[type] = true
 			this.errors[type] = null
@@ -73,10 +109,15 @@ export const useObjectStore = defineStore('object', {
 				const config = this._getTypeConfig(type)
 				const queryParams = new URLSearchParams()
 
-				if (params._limit) queryParams.set('_limit', params._limit)
-				if (params._offset !== undefined) queryParams.set('_offset', params._offset)
-				if (params._search) queryParams.set('_search', params._search)
-				if (params._order) queryParams.set('_order', JSON.stringify(params._order))
+				for (const [key, value] of Object.entries(params)) {
+					if (value !== undefined && value !== null && value !== '') {
+						if (key === '_order' && typeof value === 'object') {
+							queryParams.set(key, JSON.stringify(value))
+						} else {
+							queryParams.set(key, String(value))
+						}
+					}
+				}
 
 				const url = this._buildUrl(type) + (queryParams.toString() ? '?' + queryParams.toString() : '')
 
@@ -86,7 +127,8 @@ export const useObjectStore = defineStore('object', {
 				})
 
 				if (!response.ok) {
-					throw new Error(`Failed to fetch ${type}: ${response.statusText}`)
+					this.errors[type] = await this._parseError(response, type)
+					return []
 				}
 
 				const data = await response.json()
@@ -101,7 +143,7 @@ export const useObjectStore = defineStore('object', {
 
 				return this.collections[type]
 			} catch (error) {
-				this.errors[type] = error.message
+				this.errors[type] = { status: 0, message: error.message, details: null, isValidation: false, toString() { return this.message } }
 				console.error(`Error fetching ${type} collection:`, error)
 				return []
 			} finally {
@@ -122,7 +164,8 @@ export const useObjectStore = defineStore('object', {
 				})
 
 				if (!response.ok) {
-					throw new Error(`Failed to fetch ${type}/${id}: ${response.statusText}`)
+					this.errors[type] = await this._parseError(response, type)
+					return null
 				}
 
 				const data = await response.json()
@@ -134,7 +177,7 @@ export const useObjectStore = defineStore('object', {
 
 				return data
 			} catch (error) {
-				this.errors[type] = error.message
+				this.errors[type] = { status: 0, message: error.message, details: null, isValidation: false, toString() { return this.message } }
 				console.error(`Error fetching ${type}/${id}:`, error)
 				return null
 			} finally {
@@ -158,7 +201,8 @@ export const useObjectStore = defineStore('object', {
 				})
 
 				if (!response.ok) {
-					throw new Error(`Failed to ${isUpdate ? 'update' : 'create'} ${type}: ${response.statusText}`)
+					this.errors[type] = await this._parseError(response, type)
+					return null
 				}
 
 				const data = await response.json()
@@ -171,7 +215,7 @@ export const useObjectStore = defineStore('object', {
 
 				return data
 			} catch (error) {
-				this.errors[type] = error.message
+				this.errors[type] = { status: 0, message: error.message, details: null, isValidation: false, toString() { return this.message } }
 				console.error(`Error saving ${type}:`, error)
 				return null
 			} finally {
@@ -192,7 +236,8 @@ export const useObjectStore = defineStore('object', {
 				})
 
 				if (!response.ok) {
-					throw new Error(`Failed to delete ${type}/${id}: ${response.statusText}`)
+					this.errors[type] = await this._parseError(response, type)
+					return false
 				}
 
 				if (this.objects[type]) {
@@ -204,7 +249,7 @@ export const useObjectStore = defineStore('object', {
 
 				return true
 			} catch (error) {
-				this.errors[type] = error.message
+				this.errors[type] = { status: 0, message: error.message, details: null, isValidation: false, toString() { return this.message } }
 				console.error(`Error deleting ${type}/${id}:`, error)
 				return false
 			} finally {

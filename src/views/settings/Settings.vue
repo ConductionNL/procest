@@ -55,6 +55,20 @@
 					:label="t('procest', 'Decision schema')"
 					@update:value="v => form.decision_schema = v" />
 			</div>
+			<div class="form-group">
+				<label>{{ t('procest', 'Case type schema') }}</label>
+				<NcTextField
+					:value="form.case_type_schema"
+					:label="t('procest', 'Case type schema')"
+					@update:value="v => form.case_type_schema = v" />
+			</div>
+			<div class="form-group">
+				<label>{{ t('procest', 'Status type schema') }}</label>
+				<NcTextField
+					:value="form.status_type_schema"
+					:label="t('procest', 'Status type schema')"
+					@update:value="v => form.status_type_schema = v" />
+			</div>
 
 			<NcButton type="primary" @click="save">
 				{{ t('procest', 'Save') }}
@@ -88,6 +102,8 @@ export default {
 				role_schema: '',
 				result_schema: '',
 				decision_schema: '',
+				case_type_schema: '',
+				status_type_schema: '',
 			},
 			saved: false,
 		}

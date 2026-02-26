@@ -13,6 +13,9 @@ import MainMenu from './navigation/MainMenu.vue'
 import Dashboard from './views/Dashboard.vue'
 import CaseList from './views/cases/CaseList.vue'
 import CaseDetail from './views/cases/CaseDetail.vue'
+import TaskList from './views/tasks/TaskList.vue'
+import TaskDetail from './views/tasks/TaskDetail.vue'
+import MyWork from './views/MyWork.vue'
 import { initializeStores } from './store/store.js'
 
 export default {
@@ -24,6 +27,9 @@ export default {
 		Dashboard,
 		CaseList,
 		CaseDetail,
+		TaskList,
+		TaskDetail,
+		MyWork,
 	},
 	data() {
 		return {
@@ -35,10 +41,18 @@ export default {
 	computed: {
 		currentView() {
 			switch (this.currentRoute) {
+			case 'my-work':
+				return 'MyWork'
 			case 'cases':
 				return this.currentId ? 'CaseDetail' : 'CaseList'
 			case 'case-detail':
 				return 'CaseDetail'
+			case 'tasks':
+				return 'TaskList'
+			case 'task-detail':
+				return 'TaskDetail'
+			case 'task-new':
+				return 'TaskDetail'
 			default:
 				return 'Dashboard'
 			}
@@ -46,6 +60,12 @@ export default {
 		currentProps() {
 			if (this.currentRoute === 'case-detail' && this.currentId) {
 				return { caseId: this.currentId }
+			}
+			if (this.currentRoute === 'task-detail' && this.currentId) {
+				return { taskId: this.currentId }
+			}
+			if (this.currentRoute === 'task-new') {
+				return { taskId: 'new', caseIdProp: this.currentId || null }
 			}
 			return {}
 		},
@@ -77,6 +97,14 @@ export default {
 				this.currentId = parts[1] || null
 				if (parts[0] === 'cases' && parts[1]) {
 					this.currentRoute = 'case-detail'
+				}
+				if (parts[0] === 'tasks' && parts[1]) {
+					if (parts[1] === 'new') {
+						this.currentRoute = 'task-new'
+						this.currentId = parts[2] || null
+					} else {
+						this.currentRoute = 'task-detail'
+					}
 				}
 			}
 		},

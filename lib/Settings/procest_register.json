@@ -1,0 +1,571 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Procest Case Management Register",
+    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, and their instance counterparts.",
+    "version": "0.1.0"
+  },
+  "x-openregister": {
+    "type": "application",
+    "app": "procest",
+    "openregister": "^v0.2.10",
+    "description": "Case management (zaakgericht werken) for Nextcloud"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "caseType": {
+        "x-schema-org-type": "schema:Project",
+        "x-zgw-equivalent": "ZaakType",
+        "title": "Case Type",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "type": "object",
+        "required": ["title", "purpose", "trigger", "subject", "processingDeadline", "confidentiality", "origin"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this case type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of this case type"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Auto-generated identifier"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "The purpose or goal of this case type"
+          },
+          "trigger": {
+            "type": "string",
+            "description": "What triggers the creation of a case of this type"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject matter of this case type"
+          },
+          "processingDeadline": {
+            "type": "string",
+            "description": "ISO 8601 duration for the processing deadline (e.g. P30D)"
+          },
+          "confidentiality": {
+            "type": "string",
+            "enum": ["openbaar", "beperkt_openbaar", "intern", "zaakvertrouwelijk", "vertrouwelijk", "confidentieel", "geheim", "zeer_geheim"],
+            "description": "Confidentiality level"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this case type is a draft (not yet published)"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Date from which this case type is valid"
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date",
+            "description": "Date until which this case type is valid (null = indefinite)"
+          },
+          "origin": {
+            "type": "string",
+            "enum": ["internal", "external"],
+            "description": "Whether cases of this type originate internally or externally"
+          },
+          "suspensionAllowed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether cases of this type can be suspended"
+          },
+          "extensionAllowed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the processing deadline can be extended"
+          },
+          "extensionPeriod": {
+            "type": "string",
+            "description": "ISO 8601 duration for extension period (e.g. P14D)"
+          },
+          "publicationRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether publication of the decision is required"
+          }
+        }
+      },
+      "statusType": {
+        "x-schema-org-type": "schema:ActionStatusType",
+        "x-zgw-equivalent": "StatusType",
+        "title": "Status Type",
+        "description": "Status lifecycle phase definition for a case type",
+        "type": "object",
+        "required": ["name", "caseType", "order"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this status (e.g. Ontvangen, In behandeling)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this status phase"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "order": {
+            "type": "integer",
+            "default": 0,
+            "description": "Position in the status lifecycle (lower = earlier)"
+          },
+          "isFinal": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is a terminal/final status"
+          }
+        }
+      },
+      "resultType": {
+        "x-schema-org-type": "schema:Thing",
+        "x-zgw-equivalent": "ResultaatType",
+        "title": "Result Type",
+        "description": "Case outcome type with archival rules",
+        "type": "object",
+        "required": ["name", "caseType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this result type (e.g. Vergunning verleend)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this result type"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "archivalPeriod": {
+            "type": "string",
+            "description": "ISO 8601 duration for archival retention"
+          },
+          "archivalAction": {
+            "type": "string",
+            "enum": ["bewaren", "vernietigen"],
+            "description": "What to do after archival period: keep or destroy"
+          }
+        }
+      },
+      "roleType": {
+        "x-schema-org-type": "schema:Role",
+        "x-zgw-equivalent": "RolType",
+        "title": "Role Type",
+        "description": "Participant role type definition for a case type",
+        "type": "object",
+        "required": ["name", "caseType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this role type (e.g. Behandelaar, Adviseur)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this role type"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          }
+        }
+      },
+      "propertyDefinition": {
+        "x-schema-org-type": "schema:PropertyValueSpecification",
+        "x-zgw-equivalent": "Eigenschap",
+        "title": "Property Definition",
+        "description": "Custom field definition for a case type",
+        "type": "object",
+        "required": ["name", "caseType", "propertyType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this custom property"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this property"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "propertyType": {
+            "type": "string",
+            "enum": ["string", "number", "boolean", "date", "url", "email"],
+            "description": "Data type of this property"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this property is required on cases"
+          },
+          "defaultValue": {
+            "type": "string",
+            "description": "Default value for this property"
+          }
+        }
+      },
+      "documentType": {
+        "x-schema-org-type": "schema:DigitalDocument",
+        "x-zgw-equivalent": "InformatieObjectType",
+        "title": "Document Type",
+        "description": "Document type requirement for a case type",
+        "type": "object",
+        "required": ["name", "caseType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this document type (e.g. Situatietekening)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this document type"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this document is required for the case"
+          },
+          "allowedMimeTypes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Allowed MIME types (e.g. application/pdf, image/png)"
+          }
+        }
+      },
+      "decisionType": {
+        "x-schema-org-type": "schema:ChooseAction",
+        "x-zgw-equivalent": "BesluitType",
+        "title": "Decision Type",
+        "description": "Decision type definition for a case type",
+        "type": "object",
+        "required": ["name", "caseType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this decision type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this decision type"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "publicationRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this decision type requires publication"
+          }
+        }
+      },
+      "case": {
+        "x-schema-org-type": "schema:Project",
+        "x-zgw-equivalent": "Zaak",
+        "title": "Case",
+        "description": "A case instance in the case management system",
+        "type": "object",
+        "required": ["title", "caseType", "status", "startDate"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Title of this case"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of this case"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Auto-generated case identifier (e.g. 2026-0042)"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type"
+          },
+          "status": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the current status type"
+          },
+          "result": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the result record (set on completion)"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the case was started"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the case was completed"
+          },
+          "plannedEndDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Planned end date"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Processing deadline"
+          },
+          "confidentiality": {
+            "type": "string",
+            "enum": ["openbaar", "beperkt_openbaar", "intern", "zaakvertrouwelijk", "vertrouwelijk", "confidentieel", "geheim", "zeer_geheim"],
+            "description": "Confidentiality level"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Nextcloud user ID of the primary handler"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high", "urgent"],
+            "default": "normal",
+            "description": "Case priority"
+          },
+          "parentCase": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to parent case (for sub-cases)"
+          },
+          "relatedCases": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "description": "References to related cases"
+          },
+          "geometry": {
+            "type": "object",
+            "description": "GeoJSON geometry for location-based cases"
+          },
+          "statusHistory": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": { "type": "string" },
+                "date": { "type": "string", "format": "date-time" },
+                "changedBy": { "type": "string" }
+              }
+            },
+            "description": "History of status changes"
+          },
+          "activity": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date-time" },
+                "type": { "type": "string" },
+                "description": { "type": "string" },
+                "user": { "type": "string" }
+              }
+            },
+            "description": "Activity log entries"
+          },
+          "extensionCount": {
+            "type": "integer",
+            "default": 0,
+            "description": "Number of deadline extensions applied"
+          }
+        }
+      },
+      "task": {
+        "x-schema-org-type": "schema:Action",
+        "x-zgw-equivalent": "Taak",
+        "title": "Task",
+        "description": "A task within a case",
+        "type": "object",
+        "required": ["title", "case"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Title of this task"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of this task"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "active", "completed", "terminated", "disabled"],
+            "default": "available",
+            "description": "Task status (CMMN HumanTask lifecycle)"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Nextcloud user ID of the assigned user"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due date for this task"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high", "urgent"],
+            "default": "normal",
+            "description": "Task priority"
+          },
+          "completedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date the task was completed"
+          }
+        }
+      },
+      "role": {
+        "x-schema-org-type": "schema:Role",
+        "x-zgw-equivalent": "Rol",
+        "title": "Role",
+        "description": "A role assignment on a case",
+        "type": "object",
+        "required": ["name", "roleType", "case", "participant"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name for this role assignment"
+          },
+          "roleType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the role type"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case"
+          },
+          "participant": {
+            "type": "string",
+            "description": "Nextcloud user ID or contact reference"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this role assignment"
+          }
+        }
+      },
+      "result": {
+        "x-schema-org-type": "schema:Thing",
+        "x-zgw-equivalent": "Resultaat",
+        "title": "Result",
+        "description": "A case outcome record",
+        "type": "object",
+        "required": ["name", "case", "resultType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this result"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case"
+          },
+          "resultType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the result type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this result"
+          }
+        }
+      },
+      "decision": {
+        "x-schema-org-type": "schema:ChooseAction",
+        "x-zgw-equivalent": "Besluit",
+        "title": "Decision",
+        "description": "A formal decision on a case",
+        "type": "object",
+        "required": ["title", "case"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Title of this decision"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this decision"
+          },
+          "decisionType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the decision type"
+          },
+          "decidedBy": {
+            "type": "string",
+            "description": "Nextcloud user ID of the decision maker"
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the decision was made"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision takes effect"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision expires"
+          }
+        }
+      }
+    }
+  }
+}

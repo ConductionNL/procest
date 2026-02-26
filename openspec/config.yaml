@@ -1,0 +1,55 @@
+schema: conduction
+
+context: |
+  Project: Procest
+  Repo: ConductionNL/procest
+  Type: Nextcloud App (PHP backend + Vue 2 frontend)
+  Description: Case management (zaakgericht werken) for Nextcloud — manages cases, tasks, statuses, roles, results, decisions
+  Key components: Cases, Tasks, Statuses, Roles, Results, Decisions, Dashboard
+  Database: PostgreSQL (via OpenRegister's ObjectService)
+  Mount path: /var/www/html/custom_apps/procest
+
+  Standards:
+    Primary: CMMN 1.1 (OMG) + Schema.org for data model
+    Semantic: Schema.org JSON-LD type annotations
+    API mapping: ZGW APIs (Zaken, Besluiten, Catalogi) for Dutch government
+    Supplementary: BPMN 2.0 (task patterns), DMN (decision logic)
+
+  Architecture:
+    Pattern: Thin client — Procest owns no database tables
+    Data layer: OpenRegister (JSON object storage with schema validation)
+    Frontend: Vue 2.7 + Pinia stores querying OpenRegister API directly
+    Backend: Minimal — SettingsController + ConfigurationService for register setup
+    Nextcloud reuse: Calendar (IManager), Contacts (IManager), Files (IRootFolder),
+                     Activity (IManager), Talk (IBroker), Comments (ICommentsManager)
+    Not reusing Deck: No PHP API, board/stack model doesn't fit case lifecycle
+
+  Sister app: Pipelinq (CRM) — sends cases via request-to-case conversion
+  Shared specs: See ../openspec/specs/ for cross-project conventions
+  Project guidelines: See ../project.md for workspace-wide standards
+  Architecture: See docs/ARCHITECTURE.md for standards research and data model decisions
+  Features: See docs/FEATURES.md for competitive analysis and feature roadmap
+
+rules:
+  proposal:
+    - Reference shared nextcloud-app spec for app structure requirements
+    - Reference docs/ARCHITECTURE.md for data model and standards decisions
+    - Consider impact on Pipelinq (request-to-case bridge)
+    - Reference docs/FEATURES.md for feature tier (MVP/V1/Enterprise)
+  specs:
+    - Use CMMN concepts for case lifecycle (CasePlanModel, HumanTask, Milestone)
+    - Use Schema.org type annotations for all entities (schema:Project, schema:Action, etc.)
+    - Include ZGW mapping column where applicable (Zaak, Rol, Besluit, etc.)
+    - Specify which Nextcloud OCP interfaces are used for integration features
+    - Reference FEATURES.md tier for each requirement (MVP/V1/Enterprise)
+  design:
+    - Uses OpenRegister API directly from frontend (no own backend CRUD)
+    - Register config in lib/Settings/procest_register.json (OpenAPI 3.0.0 format)
+    - Imported via ConfigurationService::importFromApp() in repair step
+    - Reference Nextcloud OCP interfaces for all platform integrations
+    - Case tasks are OpenRegister objects, NOT Deck cards
+  tasks:
+    - Tag tasks with feature tier (MVP/V1/Enterprise)
+    - Test with OpenRegister to verify schema validation works
+    - Verify Nextcloud integration features with actual OCP interfaces
+    - Test request-to-case bridge with Pipelinq

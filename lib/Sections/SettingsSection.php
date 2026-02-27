@@ -81,6 +81,6 @@ class SettingsSection implements IIconSection
      */
     public function getIcon(): string
     {
-        return $this->urlGenerator->imagePath(app: 'procest', image: 'app.svg');
+        return $this->urlGenerator->imagePath(appName: 'procest', file: 'app-dark.svg');
     }//end getIcon()
 }//end class

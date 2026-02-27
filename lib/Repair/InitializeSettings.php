@@ -90,7 +90,7 @@ class InitializeSettings implements IRepairStep
                     'Procest configuration import issue: '.$message
                 );
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $output->warning('Could not auto-configure Procest: '.$e->getMessage());
             $this->logger->error(
                 'Procest initialization failed',

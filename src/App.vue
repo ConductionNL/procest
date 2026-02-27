@@ -1,14 +1,21 @@
 <template>
 	<NcContent app-name="procest">
-		<MainMenu :current-route="currentRoute" @navigate="navigateTo" />
-		<NcAppContent>
-			<component :is="currentView" v-bind="currentProps" @navigate="navigateTo" />
+		<template v-if="storesReady">
+			<MainMenu :current-route="currentRoute" @navigate="navigateTo" />
+			<NcAppContent>
+				<component :is="currentView" v-bind="currentProps" @navigate="navigateTo" />
+			</NcAppContent>
+		</template>
+		<NcAppContent v-else>
+			<div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+				<NcLoadingIcon :size="64" />
+			</div>
 		</NcAppContent>
 	</NcContent>
 </template>
 
 <script>
-import { NcContent, NcAppContent } from '@nextcloud/vue'
+import { NcContent, NcAppContent, NcLoadingIcon } from '@nextcloud/vue'
 import MainMenu from './navigation/MainMenu.vue'
 import Dashboard from './views/Dashboard.vue'
 import CaseList from './views/cases/CaseList.vue'
@@ -23,6 +30,7 @@ export default {
 	components: {
 		NcContent,
 		NcAppContent,
+		NcLoadingIcon,
 		MainMenu,
 		Dashboard,
 		CaseList,

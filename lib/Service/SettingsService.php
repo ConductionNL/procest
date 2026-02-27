@@ -50,6 +50,25 @@ class SettingsService
         'default_case_type',
     ];
 
+    /**
+     * Mapping of schema slugs (from procest_register.json) to app config keys.
+     */
+    private const SLUG_TO_CONFIG_KEY = [
+        'case'               => 'case_schema',
+        'task'               => 'task_schema',
+        'status'             => 'status_schema',
+        'role'               => 'role_schema',
+        'result'             => 'result_schema',
+        'decision'           => 'decision_schema',
+        'caseType'           => 'case_type_schema',
+        'statusType'         => 'status_type_schema',
+        'resultType'         => 'result_type_schema',
+        'roleType'           => 'role_type_schema',
+        'propertyDefinition' => 'property_definition_schema',
+        'documentType'       => 'document_type_schema',
+        'decisionType'       => 'decision_type_schema',
+    ];
+
     private const OPENREGISTER_APP_ID = 'openregister';
 
     /**
@@ -144,17 +163,19 @@ class SettingsService
             );
 
             $this->logger->info(
-                    'Procest: Configuration imported successfully',
-                    [
-                        'version' => $configVersion,
-                    ]
-                    );
+                'Procest: Configuration imported successfully',
+                ['version' => $configVersion]
+            );
+
+            // Auto-configure schema IDs from import result.
+            $configuredCount = $this->autoConfigureAfterImport(importResult: $importResult);
 
             return [
-                'success' => true,
-                'message' => 'Configuration imported successfully',
-                'version' => $configVersion,
-                'result'  => $importResult,
+                'success'    => true,
+                'message'    => 'Configuration imported and auto-configured ('.$configuredCount.' schemas mapped)',
+                'version'    => $configVersion,
+                'configured' => $configuredCount,
+                'result'     => $importResult,
             ];
         } catch (\Exception $e) {
             $this->logger->error(
@@ -228,4 +249,79 @@ class SettingsService
     {
         $this->appConfig->setValueString(Application::APP_ID, $key, $value);
     }//end setConfigValue()
+
+    /**
+     * Auto-configure schema and register IDs from the import result.
+     *
+     * Extracts schema entities from the ConfigurationService import result,
+     * maps their slugs to app config keys, and persists the IDs.
+     *
+     * @param array $importResult The result from ConfigurationService::importFromApp()
+     *
+     * @return int The number of schemas successfully configured
+     */
+    private function autoConfigureAfterImport(array $importResult): int
+    {
+        $configuredCount = 0;
+
+        // Configure register ID from imported registers.
+        $registers = ($importResult['registers'] ?? []);
+        foreach ($registers as $register) {
+            if (is_object($register) === false) {
+                continue;
+            }
+
+            $registerId = (string) $register->getId();
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'register',
+                $registerId
+            );
+            $this->logger->info(
+                'Procest: Auto-configured register ID',
+                ['registerId' => $registerId]
+            );
+            break;
+        }
+
+        // Configure schema IDs from imported schemas.
+        $schemas = ($importResult['schemas'] ?? []);
+        foreach ($schemas as $schema) {
+            if (is_object($schema) === false) {
+                continue;
+            }
+
+            $slug = $schema->getSlug();
+            if (isset(self::SLUG_TO_CONFIG_KEY[$slug]) === false) {
+                continue;
+            }
+
+            $configKey = self::SLUG_TO_CONFIG_KEY[$slug];
+            $schemaId  = (string) $schema->getId();
+
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                $configKey,
+                $schemaId
+            );
+
+            $this->logger->debug(
+                'Procest: Auto-configured schema',
+                [
+                    'slug'      => $slug,
+                    'configKey' => $configKey,
+                    'schemaId'  => $schemaId,
+                ]
+            );
+
+            $configuredCount++;
+        }//end foreach
+
+        $this->logger->info(
+            'Procest: Auto-configuration complete',
+            ['configuredSchemas' => $configuredCount]
+        );
+
+        return $configuredCount;
+    }//end autoConfigureAfterImport()
 }//end class

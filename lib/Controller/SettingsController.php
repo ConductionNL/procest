@@ -81,4 +81,19 @@ class SettingsController extends Controller
                 ]
                 );
     }//end create()
+
+    /**
+     * Re-import the configuration from procest_register.json.
+     *
+     * Forces a fresh import regardless of version, auto-configuring
+     * all schema and register IDs from the import result.
+     *
+     * @return JSONResponse
+     */
+    public function load(): JSONResponse
+    {
+        $result = $this->settingsService->loadConfiguration(force: true);
+
+        return new JSONResponse($result);
+    }//end load()
 }//end class

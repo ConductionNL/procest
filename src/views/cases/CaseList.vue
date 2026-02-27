@@ -63,7 +63,8 @@
 		</NcEmptyContent>
 
 		<!-- Case table -->
-		<table v-else class="case-list__table">
+		<div v-else class="viewTableContainer">
+			<table class="viewTable">
 			<thead>
 				<tr>
 					<th
@@ -82,8 +83,8 @@
 				<tr
 					v-for="caseItem in cases"
 					:key="caseItem.id"
-					class="case-list__row"
-					:class="{ 'case-list__row--overdue': isCaseRowOverdue(caseItem) }"
+					class="viewTableRow"
+					:class="{ 'viewTableRow--overdue': isCaseRowOverdue(caseItem) }"
 					@click="openCase(caseItem.id)">
 					<td class="case-list__id">
 						{{ caseItem.identifier || '—' }}
@@ -113,6 +114,7 @@
 				</tr>
 			</tbody>
 		</table>
+	</div>
 
 		<!-- Pagination -->
 		<div v-if="pagination.pages > 1" class="case-list__pagination">
@@ -433,25 +435,41 @@ export default {
 	white-space: nowrap;
 }
 
-.case-list__table {
-	width: 100%;
-	border-collapse: collapse;
+.viewTableContainer {
+	background: var(--color-main-background);
+	border-radius: var(--border-radius);
+	overflow: hidden;
+	box-shadow: 0 2px 4px var(--color-box-shadow);
+	border: 1px solid var(--color-border);
 }
 
-.case-list__table th {
-	padding: 8px 12px;
+.viewTable {
+	width: 100%;
+	border-collapse: collapse;
+	background-color: var(--color-main-background);
+}
+
+.viewTable th,
+.viewTable td {
+	padding: 12px;
 	text-align: left;
-	border-bottom: 2px solid var(--color-border);
-	font-weight: bold;
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
+}
+
+.viewTable th {
+	background-color: var(--color-background-dark);
+	font-weight: 500;
+	color: var(--color-text-maxcontrast);
 	white-space: nowrap;
 	user-select: none;
 }
 
-.case-list__table th.sortable {
+.viewTable th.sortable {
 	cursor: pointer;
 }
 
-.case-list__table th.sortable:hover {
+.viewTable th.sortable:hover {
 	color: var(--color-main-text);
 	background: var(--color-background-hover);
 }
@@ -461,20 +479,16 @@ export default {
 	margin-left: 4px;
 }
 
-.case-list__table td {
-	padding: 8px 12px;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.case-list__row {
+.viewTableRow {
 	cursor: pointer;
+	transition: background-color 0.2s ease;
 }
 
-.case-list__row:hover {
+.viewTableRow:hover {
 	background: var(--color-background-hover);
 }
 
-.case-list__row--overdue {
+.viewTableRow--overdue {
 	border-left: 3px solid var(--color-error);
 }
 

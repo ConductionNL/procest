@@ -194,7 +194,8 @@
 				<div v-if="tasks.length === 0" class="section-empty">
 					{{ t('procest', 'No tasks yet') }}
 				</div>
-				<table v-else class="tasks-table">
+				<div v-else class="viewTableContainer">
+					<table class="viewTable">
 					<thead>
 						<tr>
 							<th>{{ t('procest', 'Title') }}</th>
@@ -208,8 +209,8 @@
 						<tr
 							v-for="task in sortedTasks"
 							:key="task.id"
-							class="tasks-table__row"
-							:class="{ 'tasks-table__row--overdue': isOverdue(task) }"
+							class="viewTableRow"
+							:class="{ 'viewTableRow--overdue': isOverdue(task) }"
 							@click="$emit('navigate', 'task-detail', task.id)">
 							<td>{{ task.title || '—' }}</td>
 							<td>
@@ -235,6 +236,7 @@
 						</tr>
 					</tbody>
 				</table>
+			</div>
 			</div>
 
 			<!-- Activity timeline -->
@@ -837,27 +839,44 @@ export default {
 }
 
 /* Tasks table */
-.tasks-table {
+.viewTableContainer {
+	background: var(--color-main-background);
+	border-radius: var(--border-radius);
+	overflow: hidden;
+	box-shadow: 0 2px 4px var(--color-box-shadow);
+	border: 1px solid var(--color-border);
+}
+
+.viewTable {
 	width: 100%;
 	border-collapse: collapse;
+	background-color: var(--color-main-background);
 }
 
-.tasks-table th,
-.tasks-table td {
-	padding: 8px 12px;
+.viewTable th,
+.viewTable td {
+	padding: 12px;
 	text-align: left;
 	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
 }
 
-.tasks-table__row {
+.viewTable th {
+	background-color: var(--color-background-dark);
+	font-weight: 500;
+	color: var(--color-text-maxcontrast);
+}
+
+.viewTableRow {
 	cursor: pointer;
+	transition: background-color 0.2s ease;
 }
 
-.tasks-table__row:hover {
+.viewTableRow:hover {
 	background: var(--color-background-hover);
 }
 
-.tasks-table__row--overdue {
+.viewTableRow--overdue {
 	border-left: 3px solid var(--color-error);
 }
 

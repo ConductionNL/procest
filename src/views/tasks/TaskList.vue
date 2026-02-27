@@ -47,7 +47,8 @@
 		</NcEmptyContent>
 
 		<!-- Task table -->
-		<table v-else class="task-list__table">
+		<div v-else class="viewTableContainer">
+			<table class="viewTable">
 			<thead>
 				<tr>
 					<th
@@ -66,8 +67,8 @@
 				<tr
 					v-for="task in tasks"
 					:key="task.id"
-					class="task-list__row"
-					:class="{ 'task-list__row--overdue': isOverdue(task) }"
+					class="viewTableRow"
+					:class="{ 'viewTableRow--overdue': isOverdue(task) }"
 					@click="openTask(task.id)">
 					<td class="task-list__title">
 						{{ task.title || '—' }}
@@ -110,6 +111,7 @@
 				</tr>
 			</tbody>
 		</table>
+	</div>
 
 		<!-- Pagination -->
 		<div v-if="pagination.pages > 1" class="task-list__pagination">
@@ -346,25 +348,41 @@ export default {
 	min-width: 150px;
 }
 
-.task-list__table {
-	width: 100%;
-	border-collapse: collapse;
+.viewTableContainer {
+	background: var(--color-main-background);
+	border-radius: var(--border-radius);
+	overflow: hidden;
+	box-shadow: 0 2px 4px var(--color-box-shadow);
+	border: 1px solid var(--color-border);
 }
 
-.task-list__table th {
-	padding: 8px 12px;
+.viewTable {
+	width: 100%;
+	border-collapse: collapse;
+	background-color: var(--color-main-background);
+}
+
+.viewTable th,
+.viewTable td {
+	padding: 12px;
 	text-align: left;
-	border-bottom: 2px solid var(--color-border);
-	font-weight: bold;
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
+}
+
+.viewTable th {
+	background-color: var(--color-background-dark);
+	font-weight: 500;
+	color: var(--color-text-maxcontrast);
 	white-space: nowrap;
 	user-select: none;
 }
 
-.task-list__table th.sortable {
+.viewTable th.sortable {
 	cursor: pointer;
 }
 
-.task-list__table th.sortable:hover {
+.viewTable th.sortable:hover {
 	color: var(--color-main-text);
 	background: var(--color-background-hover);
 }
@@ -374,20 +392,16 @@ export default {
 	margin-left: 4px;
 }
 
-.task-list__table td {
-	padding: 8px 12px;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.task-list__row {
+.viewTableRow {
 	cursor: pointer;
+	transition: background-color 0.2s ease;
 }
 
-.task-list__row:hover {
+.viewTableRow:hover {
 	background: var(--color-background-hover);
 }
 
-.task-list__row--overdue {
+.viewTableRow--overdue {
 	border-left: 3px solid var(--color-error);
 }
 

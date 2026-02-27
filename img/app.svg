@@ -1,9 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect x="4" y="6" width="24" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
-  <line x1="4" y1="12" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
-  <line x1="12" y1="12" x2="12" y2="26" stroke="currentColor" stroke-width="2"/>
-  <circle cx="8" cy="17" r="1.5" fill="currentColor"/>
-  <circle cx="8" cy="22" r="1.5" fill="currentColor"/>
-  <line x1="16" y1="17" x2="24" y2="17" stroke="currentColor" stroke-width="1.5"/>
-  <line x1="16" y1="22" x2="22" y2="22" stroke="currentColor" stroke-width="1.5"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g>
+    <path class="cls-1" d="M5,3H19A2,2,0,0,1,21,5V19A2,2,0,0,1,19,21H5A2,2,0,0,1,3,19V5A2,2,0,0,1,5,3M5,5V9H19V5H5M5,11V19H9V11H5M11,11V19H19V11H11"/>
+    <circle class="cls-1" cx="7" cy="14" r="1.5"/>
+    <circle class="cls-1" cx="7" cy="18" r="1.5"/>
+    <rect class="cls-1" x="13" y="13" width="4.5" height="1.5" rx="0.5"/>
+    <rect class="cls-1" x="13" y="17" width="3" height="1.5" rx="0.5"/>
+  </g>
 </svg>

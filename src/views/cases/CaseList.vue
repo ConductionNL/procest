@@ -1,192 +1,89 @@
 <template>
-	<div class="case-list">
-		<div class="case-list__header">
-			<h2>{{ t('procest', 'Cases') }}</h2>
-			<NcButton type="primary" @click="showCreateDialog = true">
-				{{ t('procest', 'New case') }}
-			</NcButton>
-		</div>
-
-		<!-- Search and filters -->
-		<div class="case-list__controls">
-			<NcTextField
-				:value="searchTerm"
-				:label="t('procest', 'Search cases...')"
-				class="case-list__search"
-				@update:value="onSearchInput" />
-
-			<div class="case-list__filters">
-				<NcSelect
-					v-model="filters.caseType"
-					:options="caseTypeFilterOptions"
-					:placeholder="t('procest', 'Case type')"
-					class="case-list__filter"
-					@input="onFilterChange" />
-				<NcSelect
-					v-model="filters.status"
-					:options="statusFilterOptions"
-					:placeholder="t('procest', 'Status')"
-					class="case-list__filter"
-					@input="onFilterChange" />
-				<NcSelect
-					v-model="filters.priority"
-					:options="priorityFilterOptions"
-					:placeholder="t('procest', 'Priority')"
-					class="case-list__filter"
-					@input="onFilterChange" />
-				<NcTextField
-					:value="filters.handler"
-					:label="t('procest', 'Handler')"
-					:placeholder="t('procest', 'Filter by handler')"
-					class="case-list__filter"
-					@update:value="onHandlerFilter" />
-				<label class="case-list__overdue-filter">
-					<input
-						v-model="filters.overdue"
-						type="checkbox"
-						@change="onFilterChange">
-					{{ t('procest', 'Overdue only') }}
-				</label>
-			</div>
-		</div>
-
-		<!-- Loading state -->
-		<NcLoadingIcon v-if="loading" />
-
-		<!-- Empty state -->
-		<NcEmptyContent v-else-if="cases.length === 0"
-			:name="t('procest', 'No cases found')"
-			:description="hasActiveFilters ? t('procest', 'Try adjusting your filters') : t('procest', 'Create a new case to get started')">
-			<template #icon>
-				<FolderOpen :size="64" />
-			</template>
-		</NcEmptyContent>
-
-		<!-- Case table -->
-		<div v-else class="viewTableContainer">
-			<table class="viewTable">
-			<thead>
-				<tr>
-					<th
-						v-for="col in columns"
-						:key="col.key"
-						:class="{ 'sortable': col.sortable, 'sorted': sortKey === col.key }"
-						@click="col.sortable && toggleSort(col.key)">
-						{{ col.label }}
-						<span v-if="sortKey === col.key" class="sort-indicator">
-							{{ sortOrder === 'asc' ? '▲' : '▼' }}
-						</span>
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr
-					v-for="caseItem in cases"
-					:key="caseItem.id"
-					class="viewTableRow"
-					:class="{ 'viewTableRow--overdue': isCaseRowOverdue(caseItem) }"
-					@click="openCase(caseItem.id)">
-					<td class="case-list__id">
-						{{ caseItem.identifier || '—' }}
-					</td>
-					<td class="case-list__title">
-						{{ caseItem.title || '—' }}
-					</td>
-					<td class="case-list__type">
-						{{ getCaseTypeName(caseItem.caseType) }}
-					</td>
-					<td class="case-list__status" @click.stop>
-						<QuickStatusDropdown
-							v-if="getStatusTypesForCaseType(caseItem.caseType).length > 0"
-							:case-obj="caseItem"
-							:status-types="getStatusTypesForCaseType(caseItem.caseType)"
-							@changed="onQuickStatusChanged" />
-						<span v-else class="status-badge">
-							{{ getStatusName(caseItem) }}
-						</span>
-					</td>
-					<td class="case-list__deadline" :class="getDeadlineClass(caseItem)">
-						{{ getDeadlineText(caseItem) }}
-					</td>
-					<td class="case-list__handler">
-						{{ caseItem.assignee || '—' }}
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-
-		<!-- Pagination -->
-		<div v-if="pagination.pages > 1" class="case-list__pagination">
-			<NcButton
-				:disabled="pagination.page <= 1"
-				@click="goToPage(pagination.page - 1)">
-				{{ t('procest', 'Previous') }}
-			</NcButton>
-			<span class="case-list__page-info">
-				{{ t('procest', 'Page {current} of {total}', { current: pagination.page, total: pagination.pages }) }}
-			</span>
-			<NcButton
-				:disabled="pagination.page >= pagination.pages"
-				@click="goToPage(pagination.page + 1)">
-				{{ t('procest', 'Next') }}
-			</NcButton>
-		</div>
-
-		<!-- Create dialog -->
+	<div>
 		<CaseCreateDialog
 			v-if="showCreateDialog"
 			@created="onCaseCreated"
 			@close="showCreateDialog = false" />
+
+		<CnIndexPage
+			:title="t('procest', 'Cases')"
+			:description="t('procest', 'Manage cases and workflows')"
+			:schema="schema"
+			:objects="cases"
+			:pagination="pagination"
+			:loading="loading"
+			:sort-key="sortKey"
+			:sort-order="sortOrder"
+			:row-class="getRowClass"
+			:selectable="true"
+			:include-columns="visibleColumns"
+			@add="showCreateDialog = true"
+			@refresh="fetchCases"
+			@sort="onSort"
+			@row-click="openCase"
+			@page-changed="goToPage">
+
+			<template #column-identifier="{ value }">
+				<span class="case-id">{{ value || '\u2014' }}</span>
+			</template>
+
+			<template #column-caseType="{ value }">
+				{{ getCaseTypeName(value) }}
+			</template>
+
+			<template #column-status="{ row }">
+				<div @click.stop>
+					<QuickStatusDropdown
+						v-if="getStatusTypesForCaseType(row.caseType).length > 0"
+						:case-obj="row"
+						:status-types="getStatusTypesForCaseType(row.caseType)"
+						@changed="onQuickStatusChanged" />
+					<span v-else class="status-badge">
+						{{ getStatusName(row) }}
+					</span>
+				</div>
+			</template>
+
+			<template #column-deadline="{ row }">
+				<span :class="getDeadlineClass(row)">
+					{{ getDeadlineText(row) }}
+				</span>
+			</template>
+		</CnIndexPage>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect, NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
-import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
+import { CnIndexPage } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { formatDeadlineCountdown, isCaseOverdue } from '../../utils/caseHelpers.js'
 import CaseCreateDialog from './CaseCreateDialog.vue'
 import QuickStatusDropdown from './components/QuickStatusDropdown.vue'
 
 let searchTimeout = null
-let handlerTimeout = null
 
 export default {
 	name: 'CaseList',
 	components: {
-		NcButton,
-		NcTextField,
-		NcSelect,
-		NcLoadingIcon,
-		NcEmptyContent,
-		FolderOpen,
+		CnIndexPage,
 		CaseCreateDialog,
 		QuickStatusDropdown,
 	},
+
+	inject: {
+		sidebarState: { default: null },
+	},
+
 	data() {
 		return {
 			searchTerm: '',
-			filters: {
-				caseType: null,
-				status: null,
-				priority: null,
-				handler: '',
-				overdue: false,
-			},
 			sortKey: 'deadline',
 			sortOrder: 'asc',
-			columns: [
-				{ key: 'identifier', label: t('procest', 'ID'), sortable: true },
-				{ key: 'title', label: t('procest', 'Title'), sortable: true },
-				{ key: 'caseType', label: t('procest', 'Type'), sortable: false },
-				{ key: 'status', label: t('procest', 'Status'), sortable: false },
-				{ key: 'deadline', label: t('procest', 'Deadline'), sortable: true },
-				{ key: 'assignee', label: t('procest', 'Handler'), sortable: true },
-			],
 			showCreateDialog: false,
 			caseTypeCache: {},
 			statusTypeCache: {},
+			schema: null,
+			visibleColumns: null,
 		}
 	},
 	computed: {
@@ -194,58 +91,54 @@ export default {
 			return useObjectStore()
 		},
 		loading() {
-			return this.objectStore.isLoading('case')
+			return this.objectStore.loading.case || false
 		},
 		cases() {
-			return this.objectStore.getCollection('case')
+			return this.objectStore.collections.case || []
 		},
 		pagination() {
-			return this.objectStore.getPagination('case')
-		},
-		hasActiveFilters() {
-			return !!this.searchTerm
-				|| !!this.filters.caseType
-				|| !!this.filters.status
-				|| !!this.filters.priority
-				|| !!this.filters.handler
-				|| this.filters.overdue
-		},
-		caseTypeFilterOptions() {
-			const types = Object.values(this.caseTypeCache)
-			return [
-				{ id: '', label: t('procest', 'All types') },
-				...types.map(ct => ({ id: ct.id, label: ct.title || ct.id })),
-			]
-		},
-		statusFilterOptions() {
-			const statuses = Object.values(this.statusTypeCache)
-			const uniqueNames = [...new Set(statuses.map(st => st.name))].sort()
-			return [
-				{ id: '', label: t('procest', 'All statuses') },
-				...uniqueNames.map(name => {
-					const st = statuses.find(s => s.name === name)
-					return { id: st?.id || name, label: name }
-				}),
-			]
-		},
-		priorityFilterOptions() {
-			return [
-				{ id: '', label: t('procest', 'All priorities') },
-				{ id: 'urgent', label: t('procest', 'Urgent') },
-				{ id: 'high', label: t('procest', 'High') },
-				{ id: 'normal', label: t('procest', 'Normal') },
-				{ id: 'low', label: t('procest', 'Low') },
-			]
+			return this.objectStore.pagination.case || { total: 0, page: 1, pages: 1, limit: 20 }
 		},
 	},
 	async mounted() {
+		this.schema = await this.objectStore.fetchSchema('case')
+		this.setupSidebar()
 		await Promise.all([
 			this.loadCaseTypes(),
 			this.loadStatusTypes(),
 		])
 		await this.fetchCases()
 	},
+	beforeDestroy() {
+		this.teardownSidebar()
+	},
 	methods: {
+		setupSidebar() {
+			if (!this.sidebarState) return
+			this.sidebarState.active = true
+			this.sidebarState.schema = this.schema
+			this.sidebarState.searchValue = this.searchTerm
+			this.sidebarState.activeFilters = {}
+			this.sidebarState.onSearch = (value) => {
+				this.onSearchInput(value)
+			}
+			this.sidebarState.onColumnsChange = (columns) => {
+				this.visibleColumns = columns
+			}
+			this.sidebarState.onFilterChange = ({ key, values }) => {
+				this.onFacetFilterChange(key, values)
+			}
+		},
+		teardownSidebar() {
+			if (!this.sidebarState) return
+			this.sidebarState.active = false
+			this.sidebarState.schema = null
+			this.sidebarState.activeFilters = {}
+			this.sidebarState.facetData = {}
+			this.sidebarState.onSearch = null
+			this.sidebarState.onColumnsChange = null
+			this.sidebarState.onFilterChange = null
+		},
 		async loadCaseTypes() {
 			const results = await this.objectStore.fetchCollection('caseType', { _limit: 100 })
 			if (results) {
@@ -265,13 +158,13 @@ export default {
 		},
 
 		getCaseTypeName(caseTypeId) {
-			if (!caseTypeId) return '—'
-			return this.caseTypeCache[caseTypeId]?.title || '—'
+			if (!caseTypeId) return '\u2014'
+			return this.caseTypeCache[caseTypeId]?.title || '\u2014'
 		},
 
 		getStatusName(caseItem) {
-			if (!caseItem.status) return '—'
-			return this.statusTypeCache[caseItem.status]?.name || '—'
+			if (!caseItem.status) return '\u2014'
+			return this.statusTypeCache[caseItem.status]?.name || '\u2014'
 		},
 
 		getStatusTypesForCaseType(caseTypeId) {
@@ -281,9 +174,9 @@ export default {
 				.sort((a, b) => (a.order || 0) - (b.order || 0))
 		},
 
-		isCaseRowOverdue(caseItem) {
-			const isFinal = this.isAtFinalStatus(caseItem)
-			return isCaseOverdue(caseItem, isFinal)
+		getRowClass(row) {
+			const isFinal = this.isAtFinalStatus(row)
+			return isCaseOverdue(row, isFinal) ? 'row--overdue' : ''
 		},
 
 		isAtFinalStatus(caseItem) {
@@ -294,43 +187,37 @@ export default {
 
 		getDeadlineText(caseItem) {
 			const isFinal = this.isAtFinalStatus(caseItem)
-			const result = formatDeadlineCountdown(caseItem, isFinal)
-			return result.text
+			return formatDeadlineCountdown(caseItem, isFinal).text
 		},
 
 		getDeadlineClass(caseItem) {
 			const isFinal = this.isAtFinalStatus(caseItem)
-			const result = formatDeadlineCountdown(caseItem, isFinal)
-			return result.style
+			return formatDeadlineCountdown(caseItem, isFinal).style
 		},
 
 		onSearchInput(value) {
 			this.searchTerm = value
+			if (this.sidebarState) {
+				this.sidebarState.searchValue = value
+			}
 			clearTimeout(searchTimeout)
 			searchTimeout = setTimeout(() => {
 				this.fetchCases()
 			}, 300)
 		},
 
-		onHandlerFilter(value) {
-			this.filters.handler = value
-			clearTimeout(handlerTimeout)
-			handlerTimeout = setTimeout(() => {
-				this.fetchCases()
-			}, 300)
-		},
-
-		onFilterChange() {
+		onFacetFilterChange(key, values) {
+			if (!this.sidebarState) return
+			this.sidebarState.activeFilters = {
+				...this.sidebarState.activeFilters,
+				[key]: values && values.length > 0 ? values : undefined,
+			}
 			this.fetchCases()
 		},
 
-		toggleSort(key) {
-			if (this.sortKey === key) {
-				this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
-			} else {
-				this.sortKey = key
-				this.sortOrder = 'asc'
-			}
+		onSort({ key, order }) {
+			this.sortKey = key
+			this.sortOrder = order
 			this.fetchCases()
 		},
 
@@ -341,7 +228,7 @@ export default {
 		async fetchCases(page = 1) {
 			const params = {
 				_limit: 20,
-				_offset: (page - 1) * 20,
+				_page: page,
 			}
 
 			if (this.searchTerm) {
@@ -352,26 +239,18 @@ export default {
 				params._order = JSON.stringify({ [this.sortKey]: this.sortOrder })
 			}
 
-			const caseTypeId = this.filters.caseType?.id || this.filters.caseType
-			if (caseTypeId) {
-				params['_filters[caseType]'] = caseTypeId
-			}
-
-			const statusId = this.filters.status?.id || this.filters.status
-			if (statusId) {
-				params['_filters[status]'] = statusId
-			}
-
-			const priorityId = this.filters.priority?.id || this.filters.priority
-			if (priorityId) {
-				params['_filters[priority]'] = priorityId
-			}
-
-			if (this.filters.handler) {
-				params['_filters[assignee]'] = this.filters.handler
+			if (this.sidebarState?.activeFilters) {
+				for (const [key, values] of Object.entries(this.sidebarState.activeFilters)) {
+					if (values && values.length > 0) {
+						params[key] = values.length === 1 ? values[0] : values
+					}
+				}
 			}
 
 			await this.objectStore.fetchCollection('case', params)
+			if (this.sidebarState) {
+				this.sidebarState.facetData = this.objectStore.facets.case || {}
+			}
 		},
 
 		onQuickStatusChanged() {
@@ -380,119 +259,18 @@ export default {
 
 		onCaseCreated(caseId) {
 			this.showCreateDialog = false
-			this.$emit('navigate', 'case-detail', caseId)
+			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
 		},
 
-		openCase(id) {
-			this.$emit('navigate', 'case-detail', id)
+		openCase(row) {
+			this.$router.push({ name: 'CaseDetail', params: { id: row.id } })
 		},
 	},
 }
 </script>
 
 <style scoped>
-.case-list {
-	padding: 20px;
-}
-
-.case-list__header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 16px;
-}
-
-.case-list__controls {
-	display: flex;
-	gap: 12px;
-	flex-wrap: wrap;
-	margin-bottom: 16px;
-	align-items: flex-end;
-}
-
-.case-list__search {
-	flex: 1;
-	min-width: 200px;
-}
-
-.case-list__filters {
-	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
-	align-items: center;
-}
-
-.case-list__filter {
-	min-width: 140px;
-}
-
-.case-list__overdue-filter {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	font-size: 14px;
-	cursor: pointer;
-	white-space: nowrap;
-}
-
-.viewTableContainer {
-	background: var(--color-main-background);
-	border-radius: var(--border-radius);
-	overflow: hidden;
-	box-shadow: 0 2px 4px var(--color-box-shadow);
-	border: 1px solid var(--color-border);
-}
-
-.viewTable {
-	width: 100%;
-	border-collapse: collapse;
-	background-color: var(--color-main-background);
-}
-
-.viewTable th,
-.viewTable td {
-	padding: 12px;
-	text-align: left;
-	border-bottom: 1px solid var(--color-border);
-	vertical-align: middle;
-}
-
-.viewTable th {
-	background-color: var(--color-background-dark);
-	font-weight: 500;
-	color: var(--color-text-maxcontrast);
-	white-space: nowrap;
-	user-select: none;
-}
-
-.viewTable th.sortable {
-	cursor: pointer;
-}
-
-.viewTable th.sortable:hover {
-	color: var(--color-main-text);
-	background: var(--color-background-hover);
-}
-
-.sort-indicator {
-	font-size: 10px;
-	margin-left: 4px;
-}
-
-.viewTableRow {
-	cursor: pointer;
-	transition: background-color 0.2s ease;
-}
-
-.viewTableRow:hover {
-	background: var(--color-background-hover);
-}
-
-.viewTableRow--overdue {
-	border-left: 3px solid var(--color-error);
-}
-
-.case-list__id {
+.case-id {
 	font-family: monospace;
 	font-size: 13px;
 	color: var(--color-text-maxcontrast);
@@ -526,18 +304,11 @@ export default {
 .deadline--final {
 	color: var(--color-text-maxcontrast);
 }
+</style>
 
-.case-list__pagination {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	margin-top: 20px;
-	padding-top: 16px;
-	border-top: 1px solid var(--color-border);
-}
-
-.case-list__page-info {
-	color: var(--color-text-maxcontrast);
+<style>
+/* Unscoped: rowClass applies to CnDataTable's <tr> elements */
+.row--overdue {
+	border-left: 3px solid var(--color-error);
 }
 </style>

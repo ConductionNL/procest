@@ -368,10 +368,10 @@ export default {
 		},
 		onItemClick(item) {
 			if (item.type === 'case') {
-				this.$emit('navigate', 'case-detail', item.id)
+				this.$router.push({ name: 'CaseDetail', params: { id: item.id } })
 			} else if (item.type === 'task' && item.objectUuid) {
 				// Navigate to the linked case.
-				this.$emit('navigate', 'case-detail', item.objectUuid)
+				this.$router.push({ name: 'CaseDetail', params: { id: item.objectUuid } })
 			}
 		},
 	},

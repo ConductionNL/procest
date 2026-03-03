@@ -1,176 +1,88 @@
 <template>
-	<div class="task-list">
-		<div class="task-list__header">
-			<h2>{{ t('procest', 'Tasks') }}</h2>
-		</div>
+	<CnIndexPage
+		:title="t('procest', 'Tasks')"
+		:description="t('procest', 'Track and manage tasks')"
+		:schema="schema"
+		:objects="tasks"
+		:pagination="pagination"
+		:loading="loading"
+		:sort-key="sortKey"
+		:sort-order="sortOrder"
+		:row-class="getRowClass"
+		:selectable="true"
+		:include-columns="visibleColumns"
+		@refresh="fetchTasks"
+		@sort="onSort"
+		@row-click="openTask"
+		@page-changed="goToPage">
+		<template #column-case="{ row }">
+			<a
+				v-if="row.case"
+				class="case-link"
+				@click.stop="openCase(row.case)">
+				{{ getCaseTitle(row.case) }}
+			</a>
+			<span v-else>&mdash;</span>
+		</template>
 
-		<!-- Search and filters -->
-		<div class="task-list__controls">
-			<NcTextField
-				:value="searchTerm"
-				:label="t('procest', 'Search tasks...')"
-				class="task-list__search"
-				@update:value="onSearchInput" />
-
-			<div class="task-list__filters">
-				<NcSelect
-					v-model="filters.status"
-					:options="statusFilterOptions"
-					:placeholder="t('procest', 'Status')"
-					class="task-list__filter"
-					@input="fetchTasks" />
-				<NcSelect
-					v-model="filters.priority"
-					:options="priorityFilterOptions"
-					:placeholder="t('procest', 'Priority')"
-					class="task-list__filter"
-					@input="fetchTasks" />
-				<NcTextField
-					:value="filters.assignee"
-					:label="t('procest', 'Assignee')"
-					:placeholder="t('procest', 'Filter by assignee')"
-					class="task-list__filter"
-					@update:value="onAssigneeFilter" />
-			</div>
-		</div>
-
-		<!-- Loading state -->
-		<NcLoadingIcon v-if="loading" />
-
-		<!-- Empty state -->
-		<NcEmptyContent v-else-if="tasks.length === 0"
-			:name="t('procest', 'No tasks found')"
-			:description="hasActiveFilters ? t('procest', 'Try adjusting your filters') : t('procest', 'Tasks will appear here when created from a case')">
-			<template #icon>
-				<ClipboardCheckOutline :size="64" />
-			</template>
-		</NcEmptyContent>
-
-		<!-- Task table -->
-		<div v-else class="viewTableContainer">
-			<table class="viewTable">
-			<thead>
-				<tr>
-					<th
-						v-for="col in columns"
-						:key="col.key"
-						:class="{ 'sortable': col.sortable, 'sorted': sortKey === col.key }"
-						@click="col.sortable && toggleSort(col.key)">
-						{{ col.label }}
-						<span v-if="sortKey === col.key" class="sort-indicator">
-							{{ sortOrder === 'asc' ? '▲' : '▼' }}
-						</span>
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr
-					v-for="task in tasks"
-					:key="task.id"
-					class="viewTableRow"
-					:class="{ 'viewTableRow--overdue': isOverdue(task) }"
-					@click="openTask(task.id)">
-					<td class="task-list__title">
-						{{ task.title || '—' }}
-					</td>
-					<td class="task-list__case">
-						<a
-							v-if="task.case"
-							class="case-link"
-							@click.stop="openCase(task.case)">
-							{{ getCaseTitle(task.case) }}
-						</a>
-						<span v-else>—</span>
-					</td>
-					<td>
-						<span class="status-badge" :class="'status-badge--' + task.status">
-							{{ getStatusLabel(task.status) }}
-						</span>
-					</td>
-					<td>{{ task.assignee || '—' }}</td>
-					<td :class="dueDateClass(task)">
-						<template v-if="isOverdue(task)">
-							{{ getOverdueText(task) }}
-						</template>
-						<template v-else-if="isDueToday(task)">
-							{{ t('procest', 'Due today') }}
-						</template>
-						<template v-else>
-							{{ formatDueDate(task.dueDate) }}
-						</template>
-					</td>
-					<td>
-						<span
-							v-if="task.priority && task.priority !== 'normal'"
-							class="priority-badge"
-							:class="'priority-badge--' + task.priority">
-							{{ getPriorityLabel(task.priority) }}
-						</span>
-						<span v-else>—</span>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-
-		<!-- Pagination -->
-		<div v-if="pagination.pages > 1" class="task-list__pagination">
-			<NcButton
-				:disabled="pagination.page <= 1"
-				@click="goToPage(pagination.page - 1)">
-				{{ t('procest', 'Previous') }}
-			</NcButton>
-			<span class="task-list__page-info">
-				{{ t('procest', 'Page {current} of {total}', { current: pagination.page, total: pagination.pages }) }}
+		<template #column-status="{ row }">
+			<span class="status-badge" :class="'status-badge--' + row.status">
+				{{ getStatusLabel(row.status) }}
 			</span>
-			<NcButton
-				:disabled="pagination.page >= pagination.pages"
-				@click="goToPage(pagination.page + 1)">
-				{{ t('procest', 'Next') }}
-			</NcButton>
-		</div>
-	</div>
+		</template>
+
+		<template #column-dueDate="{ row }">
+			<span :class="dueDateClass(row)">
+				<template v-if="isOverdue(row)">
+					{{ getOverdueText(row) }}
+				</template>
+				<template v-else-if="isDueToday(row)">
+					{{ t('procest', 'Due today') }}
+				</template>
+				<template v-else>
+					{{ formatDueDate(row.dueDate) }}
+				</template>
+			</span>
+		</template>
+
+		<template #column-priority="{ row }">
+			<span
+				v-if="row.priority && row.priority !== 'normal'"
+				class="priority-badge"
+				:class="'priority-badge--' + row.priority">
+				{{ getPriorityLabel(row.priority) }}
+			</span>
+			<span v-else>&mdash;</span>
+		</template>
+	</CnIndexPage>
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect, NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
-import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
+import { CnIndexPage } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel } from '../../utils/taskLifecycle.js'
 import { isOverdue, isDueToday, getOverdueText, formatDueDate, getPriorityLevels } from '../../utils/taskHelpers.js'
 
 let searchTimeout = null
-let assigneeTimeout = null
 
 export default {
 	name: 'TaskList',
 	components: {
-		NcButton,
-		NcTextField,
-		NcSelect,
-		NcLoadingIcon,
-		NcEmptyContent,
-		ClipboardCheckOutline,
+		CnIndexPage,
 	},
+
+	inject: {
+		sidebarState: { default: null },
+	},
+
 	data() {
 		return {
 			searchTerm: '',
-			filters: {
-				status: null,
-				priority: null,
-				assignee: '',
-			},
 			sortKey: 'dueDate',
 			sortOrder: 'asc',
-			columns: [
-				{ key: 'title', label: t('procest', 'Title'), sortable: true },
-				{ key: 'case', label: t('procest', 'Case'), sortable: false },
-				{ key: 'status', label: t('procest', 'Status'), sortable: true },
-				{ key: 'assignee', label: t('procest', 'Assignee'), sortable: true },
-				{ key: 'dueDate', label: t('procest', 'Due date'), sortable: true },
-				{ key: 'priority', label: t('procest', 'Priority'), sortable: true },
-			],
 			caseCache: {},
+			schema: null,
+			visibleColumns: null,
 		}
 	},
 	computed: {
@@ -178,39 +90,22 @@ export default {
 			return useObjectStore()
 		},
 		loading() {
-			return this.objectStore.isLoading('task')
+			return this.objectStore.loading.task || false
 		},
 		tasks() {
-			return this.objectStore.getCollection('task')
+			return this.objectStore.collections.task || []
 		},
 		pagination() {
-			return this.objectStore.getPagination('task')
-		},
-		hasActiveFilters() {
-			return !!this.searchTerm || !!this.filters.status || !!this.filters.priority || !!this.filters.assignee
-		},
-		statusFilterOptions() {
-			return [
-				{ id: '', label: t('procest', 'All statuses') },
-				{ id: 'available', label: t('procest', 'Available') },
-				{ id: 'active', label: t('procest', 'Active') },
-				{ id: 'completed', label: t('procest', 'Completed') },
-				{ id: 'terminated', label: t('procest', 'Terminated') },
-				{ id: 'disabled', label: t('procest', 'Disabled') },
-			]
-		},
-		priorityFilterOptions() {
-			return [
-				{ id: '', label: t('procest', 'All priorities') },
-				{ id: 'urgent', label: t('procest', 'Urgent') },
-				{ id: 'high', label: t('procest', 'High') },
-				{ id: 'normal', label: t('procest', 'Normal') },
-				{ id: 'low', label: t('procest', 'Low') },
-			]
+			return this.objectStore.pagination.task || { total: 0, page: 1, pages: 1, limit: 20 }
 		},
 	},
 	async mounted() {
+		this.schema = await this.objectStore.fetchSchema('task')
+		this.setupSidebar()
 		await this.fetchTasks()
+	},
+	beforeDestroy() {
+		this.teardownSidebar()
 	},
 	methods: {
 		isOverdue,
@@ -218,6 +113,33 @@ export default {
 		getOverdueText,
 		formatDueDate,
 		getStatusLabel,
+
+		setupSidebar() {
+			if (!this.sidebarState) return
+			this.sidebarState.active = true
+			this.sidebarState.schema = this.schema
+			this.sidebarState.searchValue = this.searchTerm
+			this.sidebarState.activeFilters = {}
+			this.sidebarState.onSearch = (value) => {
+				this.onSearchInput(value)
+			}
+			this.sidebarState.onColumnsChange = (columns) => {
+				this.visibleColumns = columns
+			}
+			this.sidebarState.onFilterChange = ({ key, values }) => {
+				this.onFacetFilterChange(key, values)
+			}
+		},
+		teardownSidebar() {
+			if (!this.sidebarState) return
+			this.sidebarState.active = false
+			this.sidebarState.schema = null
+			this.sidebarState.activeFilters = {}
+			this.sidebarState.facetData = {}
+			this.sidebarState.onSearch = null
+			this.sidebarState.onColumnsChange = null
+			this.sidebarState.onFilterChange = null
+		},
 
 		getPriorityLabel(priority) {
 			return getPriorityLevels()[priority]?.label || priority
@@ -227,6 +149,10 @@ export default {
 			if (isOverdue(task)) return 'due-date--overdue'
 			if (isDueToday(task)) return 'due-date--today'
 			return ''
+		},
+
+		getRowClass(row) {
+			return isOverdue(row) ? 'row--overdue' : ''
 		},
 
 		getCaseTitle(caseId) {
@@ -247,26 +173,26 @@ export default {
 
 		onSearchInput(value) {
 			this.searchTerm = value
+			if (this.sidebarState) {
+				this.sidebarState.searchValue = value
+			}
 			clearTimeout(searchTimeout)
 			searchTimeout = setTimeout(() => {
 				this.fetchTasks()
 			}, 300)
 		},
 
-		onAssigneeFilter(value) {
-			this.filters.assignee = value
-			clearTimeout(assigneeTimeout)
-			assigneeTimeout = setTimeout(() => {
-				this.fetchTasks()
-			}, 300)
+		onSort({ key, order }) {
+			this.sortKey = key
+			this.sortOrder = order
+			this.fetchTasks()
 		},
 
-		toggleSort(key) {
-			if (this.sortKey === key) {
-				this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
-			} else {
-				this.sortKey = key
-				this.sortOrder = 'asc'
+		onFacetFilterChange(key, values) {
+			if (!this.sidebarState) return
+			this.sidebarState.activeFilters = {
+				...this.sidebarState.activeFilters,
+				[key]: values && values.length > 0 ? values : undefined,
 			}
 			this.fetchTasks()
 		},
@@ -278,7 +204,7 @@ export default {
 		async fetchTasks(page = 1) {
 			const params = {
 				_limit: 20,
-				_offset: (page - 1) * 20,
+				_page: page,
 			}
 
 			if (this.searchTerm) {
@@ -289,122 +215,32 @@ export default {
 				params._order = JSON.stringify({ [this.sortKey]: this.sortOrder })
 			}
 
-			const statusId = this.filters.status?.id || this.filters.status
-			if (statusId) {
-				params['_filters[status]'] = statusId
-			}
-
-			const priorityId = this.filters.priority?.id || this.filters.priority
-			if (priorityId) {
-				params['_filters[priority]'] = priorityId
-			}
-
-			if (this.filters.assignee) {
-				params['_filters[assignee]'] = this.filters.assignee
+			if (this.sidebarState?.activeFilters) {
+				for (const [key, values] of Object.entries(this.sidebarState.activeFilters)) {
+					if (values && values.length > 0) {
+						params[key] = values.length === 1 ? values[0] : values
+					}
+				}
 			}
 
 			await this.objectStore.fetchCollection('task', params)
+			if (this.sidebarState) {
+				this.sidebarState.facetData = this.objectStore.facets.task || {}
+			}
 		},
 
-		openTask(id) {
-			this.$emit('navigate', 'task-detail', id)
+		openTask(row) {
+			this.$router.push({ name: 'TaskDetail', params: { id: row.id } })
 		},
 
 		openCase(caseId) {
-			this.$emit('navigate', 'case-detail', caseId)
+			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
 		},
 	},
 }
 </script>
 
 <style scoped>
-.task-list {
-	padding: 20px;
-}
-
-.task-list__header {
-	margin-bottom: 16px;
-}
-
-.task-list__controls {
-	display: flex;
-	gap: 12px;
-	flex-wrap: wrap;
-	margin-bottom: 16px;
-	align-items: flex-end;
-}
-
-.task-list__search {
-	flex: 1;
-	min-width: 200px;
-}
-
-.task-list__filters {
-	display: flex;
-	gap: 8px;
-}
-
-.task-list__filter {
-	min-width: 150px;
-}
-
-.viewTableContainer {
-	background: var(--color-main-background);
-	border-radius: var(--border-radius);
-	overflow: hidden;
-	box-shadow: 0 2px 4px var(--color-box-shadow);
-	border: 1px solid var(--color-border);
-}
-
-.viewTable {
-	width: 100%;
-	border-collapse: collapse;
-	background-color: var(--color-main-background);
-}
-
-.viewTable th,
-.viewTable td {
-	padding: 12px;
-	text-align: left;
-	border-bottom: 1px solid var(--color-border);
-	vertical-align: middle;
-}
-
-.viewTable th {
-	background-color: var(--color-background-dark);
-	font-weight: 500;
-	color: var(--color-text-maxcontrast);
-	white-space: nowrap;
-	user-select: none;
-}
-
-.viewTable th.sortable {
-	cursor: pointer;
-}
-
-.viewTable th.sortable:hover {
-	color: var(--color-main-text);
-	background: var(--color-background-hover);
-}
-
-.sort-indicator {
-	font-size: 10px;
-	margin-left: 4px;
-}
-
-.viewTableRow {
-	cursor: pointer;
-	transition: background-color 0.2s ease;
-}
-
-.viewTableRow:hover {
-	background: var(--color-background-hover);
-}
-
-.viewTableRow--overdue {
-	border-left: 3px solid var(--color-error);
-}
-
 .case-link {
 	color: var(--color-primary);
 	text-decoration: underline;
@@ -480,18 +316,11 @@ export default {
 	color: var(--color-warning);
 	font-weight: 500;
 }
+</style>
 
-.task-list__pagination {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	margin-top: 20px;
-	padding-top: 16px;
-	border-top: 1px solid var(--color-border);
-}
-
-.task-list__page-info {
-	color: var(--color-text-maxcontrast);
+<style>
+/* Unscoped: rowClass applies to CnDataTable's <tr> elements */
+.row--overdue {
+	border-left: 3px solid var(--color-error);
 }
 </style>

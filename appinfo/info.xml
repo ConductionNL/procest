@@ -2,28 +2,66 @@
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
     <id>procest</id>
-    <name>Procest</name>
-    <summary>Case management for Nextcloud powered by OpenRegister</summary>
-    <description><![CDATA[A Nextcloud app for case management.
+    <name lang="en">Procest</name>
+    <name lang="nl">Procest</name>
+    <summary lang="en">Case management with configurable workflows, deadlines, and decisions</summary>
+    <summary lang="nl">Zaakafhandeling met configureerbare workflows, deadlines en besluiten</summary>
+    <description lang="en"><![CDATA[Procest brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
 
-Procest provides a lightweight case management interface on top of OpenRegister, supporting cases, tasks, statuses, roles, results, and decisions.
+**Key Features**
 
-- Manage cases with full CRUD support
-- Track tasks within cases
-- Configurable statuses and roles
-- Multilingual (English and Dutch)
-- Thin client architecture — all data stored in OpenRegister
+- **Configurable case types** — Define workflows with allowed statuses, deadlines, required documents, and custom properties
+- **Status lifecycle** — Visual status timeline with quick transitions and validation rules
+- **Automatic deadlines** — Deadlines calculated from case type durations with countdown tracking and overdue alerts
+- **Tasks and decisions** — Assign tasks to team members and record formal decisions with outcomes
+- **Participant roles** — Handler, advisor, decision-maker — assign the right people to the right roles
+- **Document checklists** — Track required documents at each stage with upload verification
+- **Sub-cases** — Break complex cases into parent-child hierarchies
+- **Confidentiality levels** — Eight levels from public to top secret, with defaults from case type
+- **My Work dashboard** — Personal overview of assigned cases and pending tasks
+- **Standards-aligned** — Built with CMMN 1.1 and ZGW API compatibility in mind
 
-Requires the OpenRegister app to be installed and enabled.
+**Requires:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (install from the [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
+
+Free and open source under the AGPL license.
+    ]]></description>
+    <description lang="nl"><![CDATA[Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
+
+**Belangrijkste functies**
+
+- **Configureerbare zaaktypen** — Definieer workflows met toegestane statussen, deadlines, verplichte documenten en aangepaste eigenschappen
+- **Statuslifecycle** — Visuele statustijdlijn met snelle overgangen en validatieregels
+- **Automatische deadlines** — Deadlines berekend vanuit zaaktypeduren met afteltelling en meldingen bij overschrijding
+- **Taken en besluiten** — Wijs taken toe aan teamleden en leg formele besluiten vast met uitkomsten
+- **Deelnemersrollen** — Behandelaar, adviseur, beslisser — wijs de juiste mensen toe aan de juiste rollen
+- **Documentchecklists** — Volg verplichte documenten per fase met uploadverificatie
+- **Subzaken** — Splits complexe zaken op in ouder-kind hiërarchieën
+- **Vertrouwelijkheidsniveaus** — Acht niveaus van openbaar tot staatsgeheim, met standaardwaarden vanuit het zaaktype
+- **Mijn Werk dashboard** — Persoonlijk overzicht van toegewezen zaken en openstaande taken
+- **Aansluitend op standaarden** — Gebouwd met CMMN 1.1 en ZGW API-compatibiliteit in gedachten
+
+**Vereist:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (installeer via de [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
+
+Vrij en open source onder de AGPL-licentie.
     ]]></description>
     <version>0.1.9</version>
     <licence>agpl</licence>
-    <category>organization</category>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Procest</namespace>
+    <documentation>
+        <user>https://github.com/ConductionNL/procest</user>
+        <admin>https://github.com/ConductionNL/procest</admin>
+        <developer>https://github.com/ConductionNL/procest</developer>
+    </documentation>
+    <category>organization</category>
+    <category>tools</category>
+    <category>workflow</category>
     <website>https://github.com/ConductionNL/procest</website>
+    <discussion>https://github.com/ConductionNL/procest/discussions</discussion>
     <bugs>https://github.com/ConductionNL/procest/issues</bugs>
     <repository>https://github.com/ConductionNL/procest</repository>
+
+    <screenshot>https://raw.githubusercontent.com/ConductionNL/procest/main/img/app-store.svg</screenshot>
 
     <dependencies>
         <nextcloud min-version="28" max-version="33"/>

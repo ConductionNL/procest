@@ -1,7 +1,7 @@
 <template>
 	<div class="case-detail">
 		<div class="case-detail__header">
-			<NcButton @click="$emit('navigate', 'cases')">
+			<NcButton @click="$router.push({ name: 'Cases' })">
 				{{ t('procest', 'Back to list') }}
 			</NcButton>
 			<h2>{{ caseData.title || t('procest', 'Case') }}</h2>
@@ -186,7 +186,7 @@
 			<div class="case-detail__section">
 				<div class="section-header">
 					<h3>{{ t('procest', 'Tasks') }} ({{ completedTaskCount }}/{{ tasks.length }})</h3>
-					<NcButton v-if="!isReadOnly" @click="$emit('navigate', 'task-new', caseId)">
+					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
 						{{ t('procest', 'New task') }}
 					</NcButton>
 				</div>
@@ -211,7 +211,7 @@
 							:key="task.id"
 							class="viewTableRow"
 							:class="{ 'viewTableRow--overdue': isOverdue(task) }"
-							@click="$emit('navigate', 'task-detail', task.id)">
+							@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
 							<td>{{ task.title || '—' }}</td>
 							<td>
 								<span class="status-badge" :class="'status-badge--' + task.status">
@@ -336,7 +336,7 @@ export default {
 			return useObjectStore()
 		},
 		loading() {
-			return this.objectStore.isLoading('case')
+			return this.objectStore.loading.case || false
 		},
 		caseData() {
 			return this.objectStore.getObject('case', this.caseId) || {}
@@ -615,7 +615,7 @@ export default {
 			if (confirm(message)) {
 				const success = await this.objectStore.deleteObject('case', this.caseId)
 				if (success) {
-					this.$emit('navigate', 'cases')
+					this.$router.push({ name: 'Cases' })
 				}
 			}
 		},

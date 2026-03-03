@@ -122,7 +122,7 @@
 							v-if="myWorkItems.length >= 5"
 							type="tertiary"
 							class="view-all-link"
-							@click="$emit('navigate', 'my-work')">
+							@click="$router.push({ name: 'MyWork' })">
 							{{ t('procest', 'View all my work') }}
 						</NcButton>
 					</div>
@@ -320,25 +320,24 @@ export default {
 
 		onWorkItemClick(type, id) {
 			if (type === 'case') {
-				this.$emit('navigate', 'case-detail', id)
+				this.$router.push({ name: 'CaseDetail', params: { id } })
 			} else {
-				this.$emit('navigate', 'task-detail', id)
+				this.$router.push({ name: 'TaskDetail', params: { id } })
 			}
 		},
 
 		onViewAllOverdue() {
-			window.location.hash = '#/cases?overdue=true'
-			this.$emit('navigate', 'cases')
+			this.$router.push({ name: 'Cases', query: { overdue: 'true' } })
 		},
 
 		onCaseCreated(caseId) {
 			this.showCreateDialog = false
-			this.$emit('navigate', 'case-detail', caseId)
+			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
 		},
 
 		onTaskCreated(taskId) {
 			this.showTaskDialog = false
-			this.$emit('navigate', 'task-detail', taskId)
+			this.$router.push({ name: 'TaskDetail', params: { id: taskId } })
 		},
 	},
 }

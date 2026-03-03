@@ -3,32 +3,28 @@
 		<template #list>
 			<NcAppNavigationItem
 				:name="t('procest', 'Dashboard')"
-				:class="{ active: currentRoute === 'dashboard' }"
-				@click="$emit('navigate', 'dashboard')">
+				:to="{ name: 'Dashboard' }">
 				<template #icon>
 					<ViewDashboard :size="20" />
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
 				:name="t('procest', 'My Work')"
-				:class="{ active: currentRoute === 'my-work' }"
-				@click="$emit('navigate', 'my-work')">
+				:to="{ name: 'MyWork' }">
 				<template #icon>
 					<AccountCheck :size="20" />
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
 				:name="t('procest', 'Cases')"
-				:class="{ active: currentRoute === 'cases' || currentRoute === 'case-detail' }"
-				@click="$emit('navigate', 'cases')">
+				:to="{ name: 'Cases' }">
 				<template #icon>
 					<FolderOpen :size="20" />
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
 				:name="t('procest', 'Tasks')"
-				:class="{ active: currentRoute === 'tasks' || currentRoute === 'task-detail' || currentRoute === 'task-new' }"
-				@click="$emit('navigate', 'tasks')">
+				:to="{ name: 'Tasks' }">
 				<template #icon>
 					<ClipboardCheckOutline :size="20" />
 				</template>
@@ -45,16 +41,14 @@
 			<NcAppNavigationSettings>
 				<NcAppNavigationItem
 					:name="t('procest', 'Case Types')"
-					:class="{ active: currentRoute === 'case-types' }"
-					@click="$emit('navigate', 'case-types')">
+					:to="{ name: 'CaseTypes' }">
 					<template #icon>
 						<ShapeOutline :size="20" />
 					</template>
 				</NcAppNavigationItem>
 				<NcAppNavigationItem
 					:name="t('procest', 'Configuration')"
-					:class="{ active: currentRoute === 'settings' }"
-					@click="$emit('navigate', 'settings')">
+					:to="{ name: 'Settings' }">
 					<template #icon>
 						<Cog :size="20" />
 					</template>
@@ -87,12 +81,6 @@ export default {
 		BookOpenVariantOutline,
 		Cog,
 		ShapeOutline,
-	},
-	props: {
-		currentRoute: {
-			type: String,
-			default: 'dashboard',
-		},
 	},
 	methods: {
 		openLink(url, target) {

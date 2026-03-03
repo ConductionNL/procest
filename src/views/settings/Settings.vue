@@ -1,11 +1,16 @@
 <template>
-	<div class="procest-settings">
-		<h2>{{ t('procest', 'Procest') }}</h2>
-		<p>{{ t('procest', 'Settings') }}</p>
+	<CnSettingsSection
+		:name="t('procest', 'Configuration')"
+		:description="t('procest', 'Register and schema settings')"
+		doc-url="https://procest.app"
+		:loading="loading">
+		<template #actions>
+			<NcButton type="primary" @click="save">
+				{{ t('procest', 'Save') }}
+			</NcButton>
+		</template>
 
-		<NcLoadingIcon v-if="loading" />
-
-		<div v-else class="settings-form">
+		<div class="settings-form">
 			<div class="form-group">
 				<label>{{ t('procest', 'Register') }}</label>
 				<NcTextField
@@ -55,27 +60,38 @@
 					:label="t('procest', 'Decision schema')"
 					@update:value="v => form.decision_schema = v" />
 			</div>
-
-			<NcButton type="primary" @click="save">
-				{{ t('procest', 'Save') }}
-			</NcButton>
-
-			<p v-if="saved" class="success-message">
-				{{ t('procest', 'Configuration saved') }}
-			</p>
+			<div class="form-group">
+				<label>{{ t('procest', 'Case type schema') }}</label>
+				<NcTextField
+					:value="form.case_type_schema"
+					:label="t('procest', 'Case type schema')"
+					@update:value="v => form.case_type_schema = v" />
+			</div>
+			<div class="form-group">
+				<label>{{ t('procest', 'Status type schema') }}</label>
+				<NcTextField
+					:value="form.status_type_schema"
+					:label="t('procest', 'Status type schema')"
+					@update:value="v => form.status_type_schema = v" />
+			</div>
 		</div>
-	</div>
+
+		<p v-if="saved" class="success-message">
+			{{ t('procest', 'Configuration saved') }}
+		</p>
+	</CnSettingsSection>
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
+import { CnSettingsSection } from '@conduction/nextcloud-vue'
+import { NcButton, NcTextField } from '@nextcloud/vue'
 import { useSettingsStore } from '../../store/modules/settings.js'
 
 export default {
 	name: 'Settings',
 	components: {
+		CnSettingsSection,
 		NcButton,
-		NcLoadingIcon,
 		NcTextField,
 	},
 	data() {
@@ -88,6 +104,8 @@ export default {
 				role_schema: '',
 				result_schema: '',
 				decision_schema: '',
+				case_type_schema: '',
+				status_type_schema: '',
 			},
 			saved: false,
 		}
@@ -120,11 +138,6 @@ export default {
 </script>
 
 <style scoped>
-.procest-settings {
-	padding: 20px;
-	max-width: 600px;
-}
-
 .form-group {
 	margin-bottom: 16px;
 }

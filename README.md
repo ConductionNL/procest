@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="img/app.svg" alt="Procest logo" width="80" height="80">
+  <img src="img/app-store.svg" alt="Procest logo" width="80" height="80">
 </p>
 
 <h1 align="center">Procest</h1>

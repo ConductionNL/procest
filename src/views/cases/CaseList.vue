@@ -22,7 +22,6 @@
 			@sort="onSort"
 			@row-click="openCase"
 			@page-changed="goToPage">
-
 			<template #column-identifier="{ value }">
 				<span class="case-id">{{ value || '\u2014' }}</span>
 			</template>

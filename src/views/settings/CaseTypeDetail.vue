@@ -41,13 +41,19 @@
 		<div v-if="publishErrors.length > 0" class="case-type-detail__publish-errors">
 			<p><strong>{{ t('procest', 'Cannot publish:') }}</strong></p>
 			<ul>
-				<li v-for="(err, i) in publishErrors" :key="i">{{ err }}</li>
+				<li v-for="(err, i) in publishErrors" :key="i">
+					{{ err }}
+				</li>
 			</ul>
 		</div>
 
 		<!-- Save feedback -->
-		<p v-if="saveError" class="case-type-detail__error">{{ saveError }}</p>
-		<p v-if="saveSuccess" class="case-type-detail__success">{{ t('procest', 'Saved successfully') }}</p>
+		<p v-if="saveError" class="case-type-detail__error">
+			{{ saveError }}
+		</p>
+		<p v-if="saveSuccess" class="case-type-detail__success">
+			{{ t('procest', 'Saved successfully') }}
+		</p>
 
 		<NcLoadingIcon v-if="loadingDetail" />
 

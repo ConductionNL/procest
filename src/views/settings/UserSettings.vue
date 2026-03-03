@@ -1,8 +1,9 @@
 <template>
 	<NcAppSettingsDialog
-		:open.sync="open"
+		:open="open"
 		:show-navigation="false"
-		:name="t('procest', 'Procest settings')">
+		:name="t('procest', 'Procest settings')"
+		@update:open="$emit('update:open', $event)">
 		<NcAppSettingsSection
 			id="general"
 			:name="t('procest', 'General')">

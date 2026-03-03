@@ -3,7 +3,9 @@
 		<h4>{{ t('procest', 'Result') }}</h4>
 		<template v-if="result">
 			<div class="result-section__card">
-				<div class="result-section__name">{{ result.name || '—' }}</div>
+				<div class="result-section__name">
+					{{ result.name || '—' }}
+				</div>
 				<div v-if="result.description" class="result-section__description">
 					{{ result.description }}
 				</div>
@@ -13,7 +15,9 @@
 			</div>
 		</template>
 		<template v-else>
-			<p class="result-section__empty">{{ t('procest', 'No result recorded yet') }}</p>
+			<p class="result-section__empty">
+				{{ t('procest', 'No result recorded yet') }}
+			</p>
 		</template>
 	</div>
 </template>

@@ -1,6 +1,8 @@
 <template>
 	<div class="my-work-preview">
-		<h3 class="my-work-preview__title">{{ t('procest', 'My Work') }}</h3>
+		<h3 class="my-work-preview__title">
+			{{ t('procest', 'My Work') }}
+		</h3>
 
 		<template v-if="loading">
 			<div v-for="i in 5" :key="i" class="my-work-preview__skeleton">
@@ -18,7 +20,9 @@
 		</template>
 
 		<template v-else-if="items.length === 0">
-			<p class="my-work-preview__empty">{{ t('procest', 'No items assigned to you') }}</p>
+			<p class="my-work-preview__empty">
+				{{ t('procest', 'No items assigned to you') }}
+			</p>
 		</template>
 
 		<template v-else>

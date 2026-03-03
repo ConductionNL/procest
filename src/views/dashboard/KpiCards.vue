@@ -10,7 +10,9 @@
 				<NcLoadingIcon :size="32" />
 			</template>
 			<template v-else>
-				<h3 class="kpi-card__title">{{ card.title }}</h3>
+				<h3 class="kpi-card__title">
+					{{ card.title }}
+				</h3>
 				<span class="kpi-card__count">{{ card.count }}</span>
 				<span class="kpi-card__sub" :class="card.subClass">{{ card.sub }}</span>
 			</template>

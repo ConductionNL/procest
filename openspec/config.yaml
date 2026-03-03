@@ -53,3 +53,6 @@ rules:
     - Test with OpenRegister to verify schema validation works
     - Verify Nextcloud integration features with actual OCP interfaces
     - Test request-to-case bridge with Pipelinq
+  review:
+    - Cross-reference shared specs (nextcloud-app, api-patterns, nl-design, docker)
+    - Flag spec deviations with WARNING and justification

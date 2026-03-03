@@ -1,0 +1,170 @@
+name: conduction
+version: 2
+description: Conduction workflow for Nextcloud apps — proposal → specs → design → tasks → review (CMMN, Schema.org, OpenRegister, ZGW)
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal document outlining the change
+    template: proposal.md
+    instruction: |
+      Create the proposal document that establishes WHY this change is needed.
+
+      Standard sections:
+      - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why now?
+      - **What Changes**: Bullet list of changes. Be specific about new capabilities, modifications, or removals. Mark breaking changes with **BREAKING**.
+      - **Capabilities**: Identify which specs will be created or modified:
+        - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<name>/spec.md`. Use kebab-case names (e.g., user-auth, data-export).
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Check `openspec/specs/` for existing spec names. Leave empty if no requirement changes.
+      - **Impact**: Affected code, APIs, dependencies, or systems.
+
+      For MVP-scoped changes, prefer this richer format (from archived changes):
+      - **Summary**: One paragraph overview
+      - **Problem**: Current state and gap
+      - **Scope**: In scope (MVP) / Out of scope (V1) — list requirements or features explicitly
+      - **Approach**: High-level implementation approach (numbered steps)
+      - **Dependencies**: Other changes, specs, or systems required
+
+      Conduction defaults:
+      - Reference shared nextcloud-app spec for app structure requirements
+      - Reference docs/ARCHITECTURE.md for data model and standards decisions
+      - Consider impact on Pipelinq (request-to-case bridge) if applicable
+      - Reference docs/FEATURES.md for feature tier (MVP/V1/Enterprise)
+
+      Keep it concise (1-2 pages). Focus on the "why" not the "how".
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Detailed specifications for the change
+    template: spec.md
+    instruction: |
+      Create specification files that define WHAT the system should do.
+
+      Create one spec file per capability listed in the proposal's Capabilities section.
+      - New capabilities: use the exact kebab-case name from the proposal (specs/<capability>/spec.md).
+      - Modified capabilities: use the existing spec folder name from openspec/specs/<capability>/ when creating the delta spec at specs/<capability>/spec.md.
+
+      Conduction defaults:
+      - Use CMMN concepts for case lifecycle (CasePlanModel, HumanTask, Milestone)
+      - Use Schema.org type annotations for all entities (schema:Project, schema:Action, etc.)
+      - Include ZGW mapping column where applicable (Zaak, Rol, Besluit, etc.)
+      - Specify which Nextcloud OCP interfaces are used for integration features
+      - Reference FEATURES.md tier for each requirement (MVP/V1/Enterprise)
+
+      Delta operations (use ## headers) — for changes to existing specs:
+      - **MODIFIED**: Changed behavior - MUST include full updated requirement content
+      - **INCLUDED**: Requirements from source spec being implemented (reference REQ-XX IDs)
+      - **EXCLUDED**: Requirements deferred to V1 — add table at end with Req | Description | Reason
+      - **ADDED Requirements**: New capabilities
+      - **REMOVED Requirements**: Deprecated features - MUST include **Reason** and **Migration**
+      - **RENAMED Requirements**: Name changes only - use FROM:/TO: format
+
+      Use REQ-XX format for requirement IDs (e.g., REQ-CM-01, REQ-DASH-001). Add **MVP simplification** notes when deviating from full spec for MVP scope.
+
+      Format requirements:
+      - Each requirement: `### Requirement: <name>` followed by description
+      - Use SHALL/MUST for normative requirements (avoid should/may)
+      - Each scenario: `#### Scenario: <name>` with WHEN/THEN format
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`). Using 3 hashtags or bullets will fail silently.
+      - Every requirement MUST have at least one scenario.
+
+      Specs should be testable - each scenario is a potential test case.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design document with implementation details
+    template: design.md
+    instruction: |
+      Create the design document that explains HOW to implement the change.
+
+      When to include design.md (create only if any apply):
+      - Cross-cutting change (multiple services/modules) or new architectural pattern
+      - New external dependency or significant data model changes
+      - Security, performance, or migration complexity
+      - Ambiguity that benefits from technical decisions before coding
+
+      Conduction defaults:
+      - Uses OpenRegister API directly from frontend (no own backend CRUD)
+      - Register config in lib/Settings/procest_register.json (OpenAPI 3.0.0 format)
+      - Imported via ConfigurationService::importFromApp() in repair step
+      - Reference Nextcloud OCP interfaces for all platform integrations
+      - Case tasks are OpenRegister objects, NOT Deck cards
+
+      Sections (from archived Conduction designs):
+      - **Architecture Overview** or **Context**: Background, current state, constraints
+      - **Goals / Non-Goals**: What this design achieves and explicitly excludes
+      - **File Map**: Tables for New Files | Modified Files | Unchanged Files (with Purpose/Changes/Reason columns)
+      - **Design Decisions**: Number as DD-01, DD-02. Each: **Decision**, **Rationale**, **Implementation** or **Trade-off**
+      - **Component Hierarchy** or **Data Flow**: ASCII diagram or numbered steps when relevant
+      - **API Design**: When new/modified endpoints — query params, request/response format
+      - **Security Considerations**: When relevant (CSRF, RBAC, XSS)
+      - **Risks / Trade-offs**: Format [Risk] → Mitigation
+      - **Migration Plan**: Steps to deploy, rollback strategy (if applicable)
+      - **Open Questions**: Outstanding decisions or unknowns
+
+      Focus on architecture and approach, not line-by-line implementation.
+    requires:
+      - proposal
+
+  - id: tasks
+    generates: tasks.md
+    description: Implementation checklist with trackable tasks
+    template: tasks.md
+    instruction: |
+      Create the task list that breaks down the implementation work.
+
+      **IMPORTANT: Follow the template below exactly.** The apply phase parses
+      checkbox format to track progress. Tasks not using `- [ ]` won't be tracked.
+
+      Conduction defaults:
+      - Tag tasks with feature tier (MVP/V1/Enterprise)
+      - Test with OpenRegister to verify schema validation works
+      - Verify Nextcloud integration features with actual OCP interfaces
+      - Test request-to-case bridge with Pipelinq when relevant
+
+      Guidelines:
+      - Group under ## Implementation Tasks (and optionally ## Verification Tasks at end)
+      - Use either: (a) `- [ ] 1.1 Task description` or (b) `- [ ] **T01**: Task description` for implementation, `- [ ] **V01**:` for verification
+      - Each task MUST be a checkbox: `- [ ]` — the apply phase parses this format
+      - Optional: add `spec_ref`, `files`, `acceptance_criteria` under each task for traceability
+      - Tasks should be small enough to complete in one session
+      - Order tasks by dependency (what must be done first?)
+      - End with Verification Tasks (V01, V02...) for manual testing checkpoints
+
+      Reference specs for what needs to be built, design for how to build it.
+    requires:
+      - specs
+      - design
+
+  - id: review
+    generates: review.md
+    description: Pre-archive verification checklist (optional)
+    template: review.md
+    instruction: |
+      Create a review document to verify implementation before archive.
+
+      Use when: Change is complete and ready for archive; you want a spec-compliance checklist.
+
+      Sections:
+      - **Summary**: Tasks completed (X/Y), spec compliance (PASS/FAIL)
+      - **Completeness** or **Verification**: List files created/modified; confirm all exist
+      - **Findings**: CRITICAL | WARNING | SUGGESTION — list issues found (or "None" for each)
+      - **Requirement-by-Requirement Verification**: Table with Requirement | Status | Notes
+      - **Cross-Reference with Shared Specs** (optional): nextcloud-app, api-patterns, nl-design, docker
+      - **Recommendation**: APPROVE or REJECT — with brief justification
+
+      Conduction defaults:
+      - Reference shared specs for cross-project compliance
+      - Flag any deviations from spec with WARNING and justification
+    requires:
+      - tasks
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read context files, work through pending tasks, mark complete as you go.
+    Pause if you hit blockers or need clarification.

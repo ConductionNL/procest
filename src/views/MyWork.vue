@@ -1,7 +1,8 @@
 <template>
 	<div class="my-work">
 		<div class="my-work__header">
-			<h2>{{ t('procest', 'My Work') }}
+			<h2>
+				{{ t('procest', 'My Work') }}
 				<span v-if="!loading" class="my-work__count">({{ totalCount }})</span>
 			</h2>
 		</div>

@@ -10,7 +10,6 @@
 			@add="$emit('create')"
 			@refresh="fetchCaseTypes"
 			@row-click="selectCaseType">
-
 			<template #column-title="{ row }">
 				<span class="ct-title">
 					<StarIcon v-if="isDefault(row.id)" :size="16" class="default-star" />
@@ -59,7 +58,9 @@
 			</template>
 		</CnIndexPage>
 
-		<p v-if="error" class="ct-error">{{ error }}</p>
+		<p v-if="error" class="ct-error">
+			{{ error }}
+		</p>
 	</div>
 </template>
 

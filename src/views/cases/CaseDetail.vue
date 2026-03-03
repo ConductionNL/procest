@@ -47,7 +47,9 @@
 							:error="!!resultError"
 							@update:value="v => { resultText = v; resultError = '' }" />
 					</template>
-					<p v-if="resultError" class="form-error">{{ resultError }}</p>
+					<p v-if="resultError" class="form-error">
+						{{ resultError }}
+					</p>
 					<div class="case-detail__result-actions">
 						<NcButton type="primary" @click="confirmStatusChange">
 							{{ t('procest', 'Confirm') }}
@@ -196,47 +198,53 @@
 				</div>
 				<div v-else class="viewTableContainer">
 					<table class="viewTable">
-					<thead>
-						<tr>
-							<th>{{ t('procest', 'Title') }}</th>
-							<th>{{ t('procest', 'Status') }}</th>
-							<th>{{ t('procest', 'Assignee') }}</th>
-							<th>{{ t('procest', 'Due date') }}</th>
-							<th>{{ t('procest', 'Priority') }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="task in sortedTasks"
-							:key="task.id"
-							class="viewTableRow"
-							:class="{ 'viewTableRow--overdue': isOverdue(task) }"
-							@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
-							<td>{{ task.title || '—' }}</td>
-							<td>
-								<span class="status-badge" :class="'status-badge--' + task.status">
-									{{ getTaskStatusLabel(task.status) }}
-								</span>
-							</td>
-							<td>{{ task.assignee || '—' }}</td>
-							<td :class="dueDateClass(task)">
-								<template v-if="isOverdue(task)">{{ getOverdueText(task) }}</template>
-								<template v-else-if="isDueToday(task)">{{ t('procest', 'Due today') }}</template>
-								<template v-else>{{ formatDueDate(task.dueDate) }}</template>
-							</td>
-							<td>
-								<span
-									v-if="task.priority && task.priority !== 'normal'"
-									class="priority-badge"
-									:class="'priority-badge--' + task.priority">
-									{{ getTaskPriorityLabel(task.priority) }}
-								</span>
-								<span v-else>—</span>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
+						<thead>
+							<tr>
+								<th>{{ t('procest', 'Title') }}</th>
+								<th>{{ t('procest', 'Status') }}</th>
+								<th>{{ t('procest', 'Assignee') }}</th>
+								<th>{{ t('procest', 'Due date') }}</th>
+								<th>{{ t('procest', 'Priority') }}</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr
+								v-for="task in sortedTasks"
+								:key="task.id"
+								class="viewTableRow"
+								:class="{ 'viewTableRow--overdue': isOverdue(task) }"
+								@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
+								<td>{{ task.title || '—' }}</td>
+								<td>
+									<span class="status-badge" :class="'status-badge--' + task.status">
+										{{ getTaskStatusLabel(task.status) }}
+									</span>
+								</td>
+								<td>{{ task.assignee || '—' }}</td>
+								<td :class="dueDateClass(task)">
+									<template v-if="isOverdue(task)">
+										{{ getOverdueText(task) }}
+									</template>
+									<template v-else-if="isDueToday(task)">
+										{{ t('procest', 'Due today') }}
+									</template>
+									<template v-else>
+										{{ formatDueDate(task.dueDate) }}
+									</template>
+								</td>
+								<td>
+									<span
+										v-if="task.priority && task.priority !== 'normal'"
+										class="priority-badge"
+										:class="'priority-badge--' + task.priority">
+										{{ getTaskPriorityLabel(task.priority) }}
+									</span>
+									<span v-else>—</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
 
 			<!-- Activity timeline -->

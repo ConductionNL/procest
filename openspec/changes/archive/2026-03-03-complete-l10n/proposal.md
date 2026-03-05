@@ -31,6 +31,7 @@ The admin-settings spec requires: "All labels, error messages, validation messag
 2. Add missing keys to `en.json` in batches by category (see design Key Categories)
 3. Add corresponding Dutch translations to `nl.json`, preserving placeholder syntax
 4. Verify JSON syntax and that en.json and nl.json have identical key sets
+5. **Rebuild**: Run `npm run build` — Nextcloud Vue apps must be rebuilt after l10n changes for translations to take effect
 
 ## Capabilities
 
@@ -48,3 +49,7 @@ The admin-settings spec requires: "All labels, error messages, validation messag
 
 - admin-settings spec (localization requirement)
 - Existing codebase (no code changes — only l10n file updates)
+
+## Post-Completion Note
+
+Manual Dutch verification failed — Dutch texts are not displayed when Nextcloud is set to Nederlands. L10n files are complete; a follow-up change will address Dutch display (locale/translation loading). This change is ready to archive.

@@ -31,7 +31,7 @@ Procest has `l10n/en.json` and `l10n/nl.json` with 55 keys each. The codebase us
 
 | File | Reason |
 |------|--------|
-| All `src/` files | No code changes |
+| All `src/` files | No code changes (loadTranslations fix reverted — caused empty text) |
 | `l10n/*.pot` (if any) | Not used for this change |
 
 ## Design Decisions
@@ -86,6 +86,10 @@ Procest has `l10n/en.json` and `l10n/nl.json` with 55 keys each. The codebase us
 - **ISO duration**: Four distinct keys (generic + P56D, P42D, P28D). Add all.
 - **Priority**: Both lowercase (en.json) and capitalized (taskHelpers) keys exist; add capitalized Urgent, High, Normal, Low.
 - **QuickStatusDropdown**: `Change status` (no ellipsis) vs `Change status...` elsewhere — different keys.
+
+## Post-Apply: Rebuild Required
+
+After updating l10n files, run `npm run build` in the procest app directory. Nextcloud Vue apps compile assets at build time; l10n changes do not take effect until the app is rebuilt. Users may also need to hard refresh (Ctrl+Shift+R) or clear browser cache.
 
 ## Open Questions
 

@@ -38,49 +38,37 @@
 			</NcAppNavigationItem>
 		</template>
 		<template #footer>
-			<NcAppNavigationSettings>
-				<NcAppNavigationItem
-					:name="t('procest', 'Case Types')"
-					:to="{ name: 'CaseTypes' }">
-					<template #icon>
-						<ShapeOutline :size="20" />
-					</template>
-				</NcAppNavigationItem>
-				<NcAppNavigationItem
-					:name="t('procest', 'Configuration')"
-					:to="{ name: 'Settings' }">
-					<template #icon>
-						<Cog :size="20" />
-					</template>
-				</NcAppNavigationItem>
-			</NcAppNavigationSettings>
+			<NcAppNavigationItem
+				:name="t('procest', 'Settings')"
+				:to="{ name: 'Settings' }">
+				<template #icon>
+					<Cog :size="20" />
+				</template>
+			</NcAppNavigationItem>
 		</template>
 	</NcAppNavigation>
 </template>
 
 <script>
-import { NcAppNavigation, NcAppNavigationItem, NcAppNavigationSettings } from '@nextcloud/vue'
+import { NcAppNavigation, NcAppNavigationItem } from '@nextcloud/vue'
 import ViewDashboard from 'vue-material-design-icons/ViewDashboard.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
-import ShapeOutline from 'vue-material-design-icons/ShapeOutline.vue'
 
 export default {
 	name: 'MainMenu',
 	components: {
 		NcAppNavigation,
 		NcAppNavigationItem,
-		NcAppNavigationSettings,
 		ViewDashboard,
 		AccountCheck,
 		FolderOpen,
 		ClipboardCheckOutline,
 		BookOpenVariantOutline,
 		Cog,
-		ShapeOutline,
 	},
 	methods: {
 		openLink(url, target) {

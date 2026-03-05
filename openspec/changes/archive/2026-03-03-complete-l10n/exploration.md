@@ -13,6 +13,17 @@
 
 **Fix**: Add all missing keys to `nl.json` with Dutch translations. No code changes required.
 
+### If Dutch still doesn't show after applying l10n
+
+**Cause 1**: Nextcloud Vue apps require a rebuild after l10n changes; browser/Nextcloud may cache old assets.
+
+**Cause 2 (investigated, reverted)**: Tried importing `t`, `n`, `loadTranslations` from `@nextcloud/l10n` and calling `loadTranslations('procest', callback)` before mount. This caused **all text to display empty** — reverted. The root cause for Dutch not showing remains unclear; may require Nextcloud/server-side investigation (locale injection, app template).
+
+**Steps**:
+1. Run `npm run build` in the procest app directory
+3. Hard refresh the browser (Ctrl+Shift+R) or clear cache
+4. Optionally: disable and re-enable the app (`occ app:disable procest` then `occ app:enable procest`) to clear Nextcloud app cache
+
 ---
 
 ## Summary

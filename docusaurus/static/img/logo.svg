@@ -1,4 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-  <circle cx="20" cy="20" r="18" fill="#2fb298"/>
-  <text x="20" y="26" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold" fill="white">P</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <polygon points="256,26 455.19,141 455.19,371 256,486 56.81,371 56.81,141" fill="#4376FC"/>
+  <g transform="translate(136, 136) scale(10)" fill="#ffffff">
+    <path d="M5,3H19A2,2,0,0,1,21,5V19A2,2,0,0,1,19,21H5A2,2,0,0,1,3,19V5A2,2,0,0,1,5,3M5,5V9H19V5H5M5,11V19H9V11H5M11,11V19H19V11H11"/>
+    <circle cx="7" cy="14" r="1.5"/>
+    <circle cx="7" cy="18" r="1.5"/>
+    <rect x="13" y="13" width="4.5" height="1.5" rx="0.5"/>
+    <rect x="13" y="17" width="3" height="1.5" rx="0.5"/>
+  </g>
 </svg>

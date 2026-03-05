@@ -9,7 +9,7 @@
 			:title="t('procest', 'Cases')"
 			:description="t('procest', 'Manage cases and workflows')"
 			:schema="schema"
-			:objects="cases"
+			:objects="objects"
 			:pagination="pagination"
 			:loading="loading"
 			:sort-key="sortKey"
@@ -18,10 +18,10 @@
 			:selectable="true"
 			:include-columns="visibleColumns"
 			@add="showCreateDialog = true"
-			@refresh="fetchCases"
+			@refresh="refresh"
 			@sort="onSort"
 			@row-click="openCase"
-			@page-changed="goToPage">
+			@page-changed="onPageChange">
 			<template #column-identifier="{ value }">
 				<span class="case-id">{{ value || '\u2014' }}</span>
 			</template>
@@ -53,13 +53,12 @@
 </template>
 
 <script>
-import { CnIndexPage } from '@conduction/nextcloud-vue'
+import { inject } from 'vue'
+import { CnIndexPage, useListView } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { formatDeadlineCountdown, isCaseOverdue } from '../../utils/caseHelpers.js'
 import CaseCreateDialog from './CaseCreateDialog.vue'
 import QuickStatusDropdown from './components/QuickStatusDropdown.vue'
-
-let searchTimeout = null
 
 export default {
 	name: 'CaseList',
@@ -69,77 +68,32 @@ export default {
 		QuickStatusDropdown,
 	},
 
-	inject: {
-		sidebarState: { default: null },
+	setup() {
+		const sidebarState = inject('sidebarState', null)
+		return useListView('case', {
+			sidebarState,
+			defaultSort: { key: 'deadline', order: 'asc' },
+		})
 	},
 
 	data() {
 		return {
-			searchTerm: '',
-			sortKey: 'deadline',
-			sortOrder: 'asc',
 			showCreateDialog: false,
 			caseTypeCache: {},
 			statusTypeCache: {},
-			schema: null,
-			visibleColumns: null,
 		}
 	},
-	computed: {
-		objectStore() {
-			return useObjectStore()
-		},
-		loading() {
-			return this.objectStore.loading.case || false
-		},
-		cases() {
-			return this.objectStore.collections.case || []
-		},
-		pagination() {
-			return this.objectStore.pagination.case || { total: 0, page: 1, pages: 1, limit: 20 }
-		},
+
+	mounted() {
+		// Load supplementary reference data (composable already handles schema + fetch)
+		this.loadCaseTypes()
+		this.loadStatusTypes()
 	},
-	async mounted() {
-		this.schema = await this.objectStore.fetchSchema('case')
-		this.setupSidebar()
-		await Promise.all([
-			this.loadCaseTypes(),
-			this.loadStatusTypes(),
-		])
-		await this.fetchCases()
-	},
-	beforeDestroy() {
-		this.teardownSidebar()
-	},
+
 	methods: {
-		setupSidebar() {
-			if (!this.sidebarState) return
-			this.sidebarState.active = true
-			this.sidebarState.schema = this.schema
-			this.sidebarState.searchValue = this.searchTerm
-			this.sidebarState.activeFilters = {}
-			this.sidebarState.onSearch = (value) => {
-				this.onSearchInput(value)
-			}
-			this.sidebarState.onColumnsChange = (columns) => {
-				this.visibleColumns = columns
-			}
-			this.sidebarState.onFilterChange = ({ key, values }) => {
-				this.onFacetFilterChange(key, values)
-			}
-		},
-		teardownSidebar() {
-			if (!this.sidebarState) return
-			this.sidebarState.active = false
-			this.sidebarState.schema = null
-			this.sidebarState.activeFilters = {}
-			this.sidebarState.facetData = {}
-			this.sidebarState.onSearch = null
-			this.sidebarState.onColumnsChange = null
-			this.sidebarState.onFilterChange = null
-		},
 		async loadCaseTypes() {
-			const results = await this.objectStore.fetchCollection('caseType', { _limit: 100 })
+			const objectStore = useObjectStore()
+			const results = await objectStore.fetchCollection('caseType', { _limit: 100 })
 			if (results) {
 				for (const ct of results) {
 					this.$set(this.caseTypeCache, ct.id, ct)
@@ -148,7 +102,8 @@ export default {
 		},
 
 		async loadStatusTypes() {
-			const results = await this.objectStore.fetchCollection('statusType', { _limit: 200 })
+			const objectStore = useObjectStore()
+			const results = await objectStore.fetchCollection('statusType', { _limit: 200 })
 			if (results) {
 				for (const st of results) {
 					this.$set(this.statusTypeCache, st.id, st)
@@ -194,66 +149,8 @@ export default {
 			return formatDeadlineCountdown(caseItem, isFinal).style
 		},
 
-		onSearchInput(value) {
-			this.searchTerm = value
-			if (this.sidebarState) {
-				this.sidebarState.searchValue = value
-			}
-			clearTimeout(searchTimeout)
-			searchTimeout = setTimeout(() => {
-				this.fetchCases()
-			}, 300)
-		},
-
-		onFacetFilterChange(key, values) {
-			if (!this.sidebarState) return
-			this.sidebarState.activeFilters = {
-				...this.sidebarState.activeFilters,
-				[key]: values && values.length > 0 ? values : undefined,
-			}
-			this.fetchCases()
-		},
-
-		onSort({ key, order }) {
-			this.sortKey = key
-			this.sortOrder = order
-			this.fetchCases()
-		},
-
-		goToPage(page) {
-			this.fetchCases(page)
-		},
-
-		async fetchCases(page = 1) {
-			const params = {
-				_limit: 20,
-				_page: page,
-			}
-
-			if (this.searchTerm) {
-				params._search = this.searchTerm
-			}
-
-			if (this.sortKey) {
-				params._order = JSON.stringify({ [this.sortKey]: this.sortOrder })
-			}
-
-			if (this.sidebarState?.activeFilters) {
-				for (const [key, values] of Object.entries(this.sidebarState.activeFilters)) {
-					if (values && values.length > 0) {
-						params[key] = values.length === 1 ? values[0] : values
-					}
-				}
-			}
-
-			await this.objectStore.fetchCollection('case', params)
-			if (this.sidebarState) {
-				this.sidebarState.facetData = this.objectStore.facets.case || {}
-			}
-		},
-
 		onQuickStatusChanged() {
-			this.fetchCases()
+			this.refresh()
 		},
 
 		onCaseCreated(caseId) {

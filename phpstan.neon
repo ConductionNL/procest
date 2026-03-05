@@ -4,6 +4,7 @@ parameters:
         - lib
     bootstrapFiles:
         - vendor/autoload.php
+        - phpstan-bootstrap.php
     excludePaths:
         - vendor
     scanDirectories:
@@ -14,3 +15,15 @@ parameters:
         - '#Call to an undefined method OC::#'
         - '#Class OC not found#'
         - '#Access to static property \$server on an unknown class OC#'
+        # OCP (nextcloud/ocp has no composer autoload; bootstrap + scanDirectories may not resolve in all environments)
+        - '#extends unknown class OCP\\#'
+        - '#implements unknown interface OCP\\#'
+        - '#has invalid type OCP\\#'
+        - '#has unknown class OCP\\#'
+        - '#on an unknown class OCP\\#'
+        - '#Instantiated class OCP\\#'
+        - '#calls parent::__construct\(\) but .+ does not extend any class#'
+        # OpenRegister (runtime app dependency, not in composer)
+        - '#OCA\\OpenRegister\\#'
+        # Controller::$request from OCP\AppFramework\Controller
+        - '#Access to an undefined property OCA\\Procest\\Controller\\SettingsController::\$request#'

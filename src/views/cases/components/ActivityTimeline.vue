@@ -1,6 +1,8 @@
 <template>
 	<div class="activity-timeline">
-		<h3 class="activity-timeline__title">{{ t('procest', 'Activity') }}</h3>
+		<h3 class="activity-timeline__title">
+			{{ t('procest', 'Activity') }}
+		</h3>
 
 		<!-- Add note input -->
 		<div v-if="!isReadOnly" class="activity-timeline__add-note">

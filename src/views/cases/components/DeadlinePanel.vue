@@ -1,6 +1,8 @@
 <template>
 	<div class="deadline-panel">
-		<h3 class="deadline-panel__title">{{ t('procest', 'Deadline & Timing') }}</h3>
+		<h3 class="deadline-panel__title">
+			{{ t('procest', 'Deadline & Timing') }}
+		</h3>
 
 		<div class="deadline-panel__grid">
 			<div class="deadline-panel__item">

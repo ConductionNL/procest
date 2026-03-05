@@ -151,7 +151,9 @@
 				</div>
 			</template>
 
-			<p v-if="error" class="statuses-tab__error">{{ error }}</p>
+			<p v-if="error" class="statuses-tab__error">
+				{{ error }}
+			</p>
 		</template>
 	</div>
 </template>

@@ -1,7 +1,7 @@
 <template>
 	<div class="case-detail">
 		<div class="case-detail__header">
-			<NcButton @click="$emit('navigate', 'cases')">
+			<NcButton @click="$router.push({ name: 'Cases' })">
 				{{ t('procest', 'Back to list') }}
 			</NcButton>
 			<h2>{{ caseData.title || t('procest', 'Case') }}</h2>
@@ -47,7 +47,9 @@
 							:error="!!resultError"
 							@update:value="v => { resultText = v; resultError = '' }" />
 					</template>
-					<p v-if="resultError" class="form-error">{{ resultError }}</p>
+					<p v-if="resultError" class="form-error">
+						{{ resultError }}
+					</p>
 					<div class="case-detail__result-actions">
 						<NcButton type="primary" @click="confirmStatusChange">
 							{{ t('procest', 'Confirm') }}
@@ -186,7 +188,7 @@
 			<div class="case-detail__section">
 				<div class="section-header">
 					<h3>{{ t('procest', 'Tasks') }} ({{ completedTaskCount }}/{{ tasks.length }})</h3>
-					<NcButton v-if="!isReadOnly" @click="$emit('navigate', 'task-new', caseId)">
+					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
 						{{ t('procest', 'New task') }}
 					</NcButton>
 				</div>
@@ -194,47 +196,55 @@
 				<div v-if="tasks.length === 0" class="section-empty">
 					{{ t('procest', 'No tasks yet') }}
 				</div>
-				<table v-else class="tasks-table">
-					<thead>
-						<tr>
-							<th>{{ t('procest', 'Title') }}</th>
-							<th>{{ t('procest', 'Status') }}</th>
-							<th>{{ t('procest', 'Assignee') }}</th>
-							<th>{{ t('procest', 'Due date') }}</th>
-							<th>{{ t('procest', 'Priority') }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="task in sortedTasks"
-							:key="task.id"
-							class="tasks-table__row"
-							:class="{ 'tasks-table__row--overdue': isOverdue(task) }"
-							@click="$emit('navigate', 'task-detail', task.id)">
-							<td>{{ task.title || '—' }}</td>
-							<td>
-								<span class="status-badge" :class="'status-badge--' + task.status">
-									{{ getTaskStatusLabel(task.status) }}
-								</span>
-							</td>
-							<td>{{ task.assignee || '—' }}</td>
-							<td :class="dueDateClass(task)">
-								<template v-if="isOverdue(task)">{{ getOverdueText(task) }}</template>
-								<template v-else-if="isDueToday(task)">{{ t('procest', 'Due today') }}</template>
-								<template v-else>{{ formatDueDate(task.dueDate) }}</template>
-							</td>
-							<td>
-								<span
-									v-if="task.priority && task.priority !== 'normal'"
-									class="priority-badge"
-									:class="'priority-badge--' + task.priority">
-									{{ getTaskPriorityLabel(task.priority) }}
-								</span>
-								<span v-else>—</span>
-							</td>
-						</tr>
-					</tbody>
-				</table>
+				<div v-else class="viewTableContainer">
+					<table class="viewTable">
+						<thead>
+							<tr>
+								<th>{{ t('procest', 'Title') }}</th>
+								<th>{{ t('procest', 'Status') }}</th>
+								<th>{{ t('procest', 'Assignee') }}</th>
+								<th>{{ t('procest', 'Due date') }}</th>
+								<th>{{ t('procest', 'Priority') }}</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr
+								v-for="task in sortedTasks"
+								:key="task.id"
+								class="viewTableRow"
+								:class="{ 'viewTableRow--overdue': isOverdue(task) }"
+								@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
+								<td>{{ task.title || '—' }}</td>
+								<td>
+									<span class="status-badge" :class="'status-badge--' + task.status">
+										{{ getTaskStatusLabel(task.status) }}
+									</span>
+								</td>
+								<td>{{ task.assignee || '—' }}</td>
+								<td :class="dueDateClass(task)">
+									<template v-if="isOverdue(task)">
+										{{ getOverdueText(task) }}
+									</template>
+									<template v-else-if="isDueToday(task)">
+										{{ t('procest', 'Due today') }}
+									</template>
+									<template v-else>
+										{{ formatDueDate(task.dueDate) }}
+									</template>
+								</td>
+								<td>
+									<span
+										v-if="task.priority && task.priority !== 'normal'"
+										class="priority-badge"
+										:class="'priority-badge--' + task.priority">
+										{{ getTaskPriorityLabel(task.priority) }}
+									</span>
+									<span v-else>—</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
 
 			<!-- Activity timeline -->
@@ -334,7 +344,7 @@ export default {
 			return useObjectStore()
 		},
 		loading() {
-			return this.objectStore.isLoading('case')
+			return this.objectStore.loading.case || false
 		},
 		caseData() {
 			return this.objectStore.getObject('case', this.caseId) || {}
@@ -613,7 +623,7 @@ export default {
 			if (confirm(message)) {
 				const success = await this.objectStore.deleteObject('case', this.caseId)
 				if (success) {
-					this.$emit('navigate', 'cases')
+					this.$router.push({ name: 'Cases' })
 				}
 			}
 		},
@@ -837,27 +847,44 @@ export default {
 }
 
 /* Tasks table */
-.tasks-table {
+.viewTableContainer {
+	background: var(--color-main-background);
+	border-radius: var(--border-radius);
+	overflow: hidden;
+	box-shadow: 0 2px 4px var(--color-box-shadow);
+	border: 1px solid var(--color-border);
+}
+
+.viewTable {
 	width: 100%;
 	border-collapse: collapse;
+	background-color: var(--color-main-background);
 }
 
-.tasks-table th,
-.tasks-table td {
-	padding: 8px 12px;
+.viewTable th,
+.viewTable td {
+	padding: 12px;
 	text-align: left;
 	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
 }
 
-.tasks-table__row {
+.viewTable th {
+	background-color: var(--color-background-dark);
+	font-weight: 500;
+	color: var(--color-text-maxcontrast);
+}
+
+.viewTableRow {
 	cursor: pointer;
+	transition: background-color 0.2s ease;
 }
 
-.tasks-table__row:hover {
+.viewTableRow:hover {
 	background: var(--color-background-hover);
 }
 
-.tasks-table__row--overdue {
+.viewTableRow--overdue {
 	border-left: 3px solid var(--color-error);
 }
 

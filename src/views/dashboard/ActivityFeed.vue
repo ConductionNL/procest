@@ -1,6 +1,8 @@
 <template>
 	<div class="activity-feed">
-		<h3 class="activity-feed__title">{{ t('procest', 'Recent Activity') }}</h3>
+		<h3 class="activity-feed__title">
+			{{ t('procest', 'Recent Activity') }}
+		</h3>
 
 		<template v-if="loading">
 			<div v-for="i in 5" :key="i" class="activity-feed__skeleton">
@@ -18,7 +20,9 @@
 		</template>
 
 		<template v-else-if="entries.length === 0">
-			<p class="activity-feed__empty">{{ t('procest', 'No recent activity') }}</p>
+			<p class="activity-feed__empty">
+				{{ t('procest', 'No recent activity') }}
+			</p>
 		</template>
 
 		<template v-else>

@@ -23,7 +23,9 @@
 					:placeholder="t('procest', 'Select user...')" />
 			</div>
 
-			<p v-if="error" class="form-error">{{ error }}</p>
+			<p v-if="error" class="form-error">
+				{{ error }}
+			</p>
 
 			<div class="add-participant-dialog__actions">
 				<NcButton @click="$emit('close')">

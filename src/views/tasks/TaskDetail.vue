@@ -168,7 +168,7 @@ export default {
 			return !this.taskId || this.taskId === 'new'
 		},
 		loading() {
-			return this.objectStore.isLoading('task')
+			return this.objectStore.loading.task || false
 		},
 		taskData() {
 			if (this.isNew) return {}
@@ -255,7 +255,7 @@ export default {
 
 			if (result) {
 				if (this.isNew) {
-					this.$emit('navigate', 'task-detail', result.id)
+					this.$router.push({ name: 'TaskDetail', params: { id: result.id } })
 				} else {
 					this.populateForm()
 				}
@@ -293,18 +293,18 @@ export default {
 			if (confirm(t('procest', 'Are you sure you want to delete this task?'))) {
 				const success = await this.objectStore.deleteObject('task', this.taskId)
 				if (success) {
-					this.$emit('navigate', 'tasks')
+					this.$router.push({ name: 'Tasks' })
 				}
 			}
 		},
 
 		goBack() {
-			this.$emit('navigate', 'tasks')
+			this.$router.push({ name: 'Tasks' })
 		},
 
 		openCase() {
 			if (this.caseId) {
-				this.$emit('navigate', 'case-detail', this.caseId)
+				this.$router.push({ name: 'CaseDetail', params: { id: this.caseId } })
 			}
 		},
 	},

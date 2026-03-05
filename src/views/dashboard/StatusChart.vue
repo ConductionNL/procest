@@ -1,6 +1,8 @@
 <template>
 	<div class="status-chart">
-		<h3 class="status-chart__title">{{ t('procest', 'Cases by Status') }}</h3>
+		<h3 class="status-chart__title">
+			{{ t('procest', 'Cases by Status') }}
+		</h3>
 
 		<template v-if="loading">
 			<div v-for="i in 4" :key="i" class="status-chart__skeleton">
@@ -18,7 +20,9 @@
 		</template>
 
 		<template v-else-if="statusData.length === 0">
-			<p class="status-chart__empty">{{ t('procest', 'No open cases') }}</p>
+			<p class="status-chart__empty">
+				{{ t('procest', 'No open cases') }}
+			</p>
 		</template>
 
 		<template v-else>

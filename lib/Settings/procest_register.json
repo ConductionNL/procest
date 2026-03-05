@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, and their instance counterparts.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "x-openregister": {
     "type": "application",
@@ -15,12 +15,23 @@
   "components": {
     "schemas": {
       "caseType": {
+        "slug": "caseType",
+        "icon": "BriefcaseVariantOutline",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
-        "required": ["title", "purpose", "trigger", "subject", "processingDeadline", "confidentiality", "origin"],
+        "required": [
+          "title",
+          "purpose",
+          "trigger",
+          "subject",
+          "processingDeadline",
+          "confidentiality",
+          "origin"
+        ],
         "properties": {
           "title": {
             "type": "string",
@@ -53,7 +64,16 @@
           },
           "confidentiality": {
             "type": "string",
-            "enum": ["openbaar", "beperkt_openbaar", "intern", "zaakvertrouwelijk", "vertrouwelijk", "confidentieel", "geheim", "zeer_geheim"],
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
             "description": "Confidentiality level"
           },
           "isDraft": {
@@ -73,7 +93,10 @@
           },
           "origin": {
             "type": "string",
-            "enum": ["internal", "external"],
+            "enum": [
+              "internal",
+              "external"
+            ],
             "description": "Whether cases of this type originate internally or externally"
           },
           "suspensionAllowed": {
@@ -98,12 +121,19 @@
         }
       },
       "statusType": {
+        "slug": "statusType",
+        "icon": "ListStatus",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:ActionStatusType",
         "x-zgw-equivalent": "StatusType",
         "title": "Status Type",
         "description": "Status lifecycle phase definition for a case type",
         "type": "object",
-        "required": ["name", "caseType", "order"],
+        "required": [
+          "name",
+          "caseType",
+          "order"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -132,12 +162,18 @@
         }
       },
       "resultType": {
+        "slug": "resultType",
+        "icon": "FlagOutline",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:Thing",
         "x-zgw-equivalent": "ResultaatType",
         "title": "Result Type",
         "description": "Case outcome type with archival rules",
         "type": "object",
-        "required": ["name", "caseType"],
+        "required": [
+          "name",
+          "caseType"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -159,18 +195,27 @@
           },
           "archivalAction": {
             "type": "string",
-            "enum": ["bewaren", "vernietigen"],
+            "enum": [
+              "bewaren",
+              "vernietigen"
+            ],
             "description": "What to do after archival period: keep or destroy"
           }
         }
       },
       "roleType": {
+        "slug": "roleType",
+        "icon": "BadgeAccountOutline",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:Role",
         "x-zgw-equivalent": "RolType",
         "title": "Role Type",
         "description": "Participant role type definition for a case type",
         "type": "object",
-        "required": ["name", "caseType"],
+        "required": [
+          "name",
+          "caseType"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -189,12 +234,19 @@
         }
       },
       "propertyDefinition": {
+        "slug": "propertyDefinition",
+        "icon": "FormatListBulletedType",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:PropertyValueSpecification",
         "x-zgw-equivalent": "Eigenschap",
         "title": "Property Definition",
         "description": "Custom field definition for a case type",
         "type": "object",
-        "required": ["name", "caseType", "propertyType"],
+        "required": [
+          "name",
+          "caseType",
+          "propertyType"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -212,7 +264,14 @@
           },
           "propertyType": {
             "type": "string",
-            "enum": ["string", "number", "boolean", "date", "url", "email"],
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "date",
+              "url",
+              "email"
+            ],
             "description": "Data type of this property"
           },
           "required": {
@@ -227,12 +286,18 @@
         }
       },
       "documentType": {
+        "slug": "documentType",
+        "icon": "FileDocumentMultipleOutline",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:DigitalDocument",
         "x-zgw-equivalent": "InformatieObjectType",
         "title": "Document Type",
         "description": "Document type requirement for a case type",
         "type": "object",
-        "required": ["name", "caseType"],
+        "required": [
+          "name",
+          "caseType"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -255,18 +320,26 @@
           },
           "allowedMimeTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Allowed MIME types (e.g. application/pdf, image/png)"
           }
         }
       },
       "decisionType": {
+        "slug": "decisionType",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:ChooseAction",
         "x-zgw-equivalent": "BesluitType",
         "title": "Decision Type",
         "description": "Decision type definition for a case type",
         "type": "object",
-        "required": ["name", "caseType"],
+        "required": [
+          "name",
+          "caseType"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -290,12 +363,20 @@
         }
       },
       "case": {
+        "slug": "case",
+        "icon": "BriefcaseOutline",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "title": "Case",
         "description": "A case instance in the case management system",
         "type": "object",
-        "required": ["title", "caseType", "status", "startDate"],
+        "required": [
+          "title",
+          "caseType",
+          "status",
+          "startDate"
+        ],
         "properties": {
           "title": {
             "type": "string",
@@ -304,7 +385,8 @@
           },
           "description": {
             "type": "string",
-            "description": "Detailed description of this case"
+            "description": "Detailed description of this case",
+            "visible": false
           },
           "identifier": {
             "type": "string",
@@ -313,32 +395,40 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the case type"
+            "description": "Reference to the case type",
+            "title": "Case type",
+            "facetable": true
           },
           "status": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the current status type"
+            "description": "Reference to the current status type",
+            "title": "Status",
+            "facetable": true
           },
           "result": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the result record (set on completion)"
+            "description": "Reference to the result record (set on completion)",
+            "visible": false
           },
           "startDate": {
             "type": "string",
             "format": "date",
-            "description": "Date the case was started"
+            "description": "Date the case was started",
+            "visible": false
           },
           "endDate": {
             "type": "string",
             "format": "date",
-            "description": "Date the case was completed"
+            "description": "Date the case was completed",
+            "visible": false
           },
           "plannedEndDate": {
             "type": "string",
             "format": "date",
-            "description": "Planned end date"
+            "description": "Planned end date",
+            "visible": false
           },
           "deadline": {
             "type": "string",
@@ -347,72 +437,123 @@
           },
           "confidentiality": {
             "type": "string",
-            "enum": ["openbaar", "beperkt_openbaar", "intern", "zaakvertrouwelijk", "vertrouwelijk", "confidentieel", "geheim", "zeer_geheim"],
-            "description": "Confidentiality level"
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
+            "description": "Confidentiality level",
+            "title": "Confidentiality",
+            "facetable": true
           },
           "assignee": {
             "type": "string",
-            "description": "Nextcloud user ID of the primary handler"
+            "description": "Nextcloud user ID of the primary handler",
+            "title": "Assignee",
+            "facetable": true
           },
           "priority": {
             "type": "string",
-            "enum": ["low", "normal", "high", "urgent"],
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
             "default": "normal",
-            "description": "Case priority"
+            "description": "Case priority",
+            "title": "Priority",
+            "facetable": true
           },
           "parentCase": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to parent case (for sub-cases)"
+            "description": "Reference to parent case (for sub-cases)",
+            "visible": false
           },
           "relatedCases": {
             "type": "array",
-            "items": { "type": "string", "format": "uuid" },
-            "description": "References to related cases"
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "References to related cases",
+            "visible": false
           },
           "geometry": {
             "type": "object",
-            "description": "GeoJSON geometry for location-based cases"
+            "description": "GeoJSON geometry for location-based cases",
+            "visible": false
           },
           "statusHistory": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "status": { "type": "string" },
-                "date": { "type": "string", "format": "date-time" },
-                "changedBy": { "type": "string" }
+                "status": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "changedBy": {
+                  "type": "string"
+                }
               }
             },
-            "description": "History of status changes"
+            "description": "History of status changes",
+            "visible": false
           },
           "activity": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "date": { "type": "string", "format": "date-time" },
-                "type": { "type": "string" },
-                "description": { "type": "string" },
-                "user": { "type": "string" }
+                "date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "user": {
+                  "type": "string"
+                }
               }
             },
-            "description": "Activity log entries"
+            "description": "Activity log entries",
+            "visible": false
           },
           "extensionCount": {
             "type": "integer",
             "default": 0,
-            "description": "Number of deadline extensions applied"
+            "description": "Number of deadline extensions applied",
+            "visible": false
           }
         }
       },
       "task": {
+        "slug": "task",
+        "icon": "CheckboxMarkedOutline",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:Action",
         "x-zgw-equivalent": "Taak",
         "title": "Task",
         "description": "A task within a case",
         "type": "object",
-        "required": ["title", "case"],
+        "required": [
+          "title",
+          "case"
+        ],
         "properties": {
           "title": {
             "type": "string",
@@ -421,13 +562,22 @@
           },
           "description": {
             "type": "string",
-            "description": "Detailed description of this task"
+            "description": "Detailed description of this task",
+            "visible": false
           },
           "status": {
             "type": "string",
-            "enum": ["available", "active", "completed", "terminated", "disabled"],
+            "enum": [
+              "available",
+              "active",
+              "completed",
+              "terminated",
+              "disabled"
+            ],
             "default": "available",
-            "description": "Task status (CMMN HumanTask lifecycle)"
+            "description": "Task status (CMMN HumanTask lifecycle)",
+            "title": "Status",
+            "facetable": true
           },
           "case": {
             "type": "string",
@@ -436,7 +586,9 @@
           },
           "assignee": {
             "type": "string",
-            "description": "Nextcloud user ID of the assigned user"
+            "description": "Nextcloud user ID of the assigned user",
+            "title": "Assignee",
+            "facetable": true
           },
           "dueDate": {
             "type": "string",
@@ -445,24 +597,40 @@
           },
           "priority": {
             "type": "string",
-            "enum": ["low", "normal", "high", "urgent"],
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
             "default": "normal",
-            "description": "Task priority"
+            "description": "Task priority",
+            "title": "Priority",
+            "facetable": true
           },
           "completedDate": {
             "type": "string",
             "format": "date-time",
-            "description": "Date the task was completed"
+            "description": "Date the task was completed",
+            "visible": false
           }
         }
       },
       "role": {
+        "slug": "role",
+        "icon": "AccountHardHat",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:Role",
         "x-zgw-equivalent": "Rol",
         "title": "Role",
         "description": "A role assignment on a case",
         "type": "object",
-        "required": ["name", "roleType", "case", "participant"],
+        "required": [
+          "name",
+          "roleType",
+          "case",
+          "participant"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -490,12 +658,19 @@
         }
       },
       "result": {
+        "slug": "result",
+        "icon": "FlagCheckered",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:Thing",
         "x-zgw-equivalent": "Resultaat",
         "title": "Result",
         "description": "A case outcome record",
         "type": "object",
-        "required": ["name", "case", "resultType"],
+        "required": [
+          "name",
+          "case",
+          "resultType"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -519,12 +694,18 @@
         }
       },
       "decision": {
+        "slug": "decision",
+        "icon": "Gavel",
+        "version": "1.0.0",
         "x-schema-org-type": "schema:ChooseAction",
         "x-zgw-equivalent": "Besluit",
         "title": "Decision",
         "description": "A formal decision on a case",
         "type": "object",
-        "required": ["title", "case"],
+        "required": [
+          "title",
+          "case"
+        ],
         "properties": {
           "title": {
             "type": "string",
@@ -565,6 +746,30 @@
             "description": "Date the decision expires"
           }
         }
+      }
+    },
+    "registers": {
+      "procest": {
+        "slug": "procest",
+        "title": "Procest",
+        "version": "1.0.0",
+        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "schemas": [
+          "caseType",
+          "statusType",
+          "resultType",
+          "roleType",
+          "propertyDefinition",
+          "documentType",
+          "decisionType",
+          "case",
+          "task",
+          "role",
+          "result",
+          "decision"
+        ],
+        "tablePrefix": "",
+        "folder": "Open Registers/Procest"
       }
     }
   }

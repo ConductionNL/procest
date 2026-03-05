@@ -1,7 +1,8 @@
 <template>
 	<div class="my-work">
 		<div class="my-work__header">
-			<h2>{{ t('procest', 'My Work') }}
+			<h2>
+				{{ t('procest', 'My Work') }}
 				<span v-if="!loading" class="my-work__count">({{ totalCount }})</span>
 			</h2>
 		</div>
@@ -368,10 +369,10 @@ export default {
 		},
 		onItemClick(item) {
 			if (item.type === 'case') {
-				this.$emit('navigate', 'case-detail', item.id)
+				this.$router.push({ name: 'CaseDetail', params: { id: item.id } })
 			} else if (item.type === 'task' && item.objectUuid) {
 				// Navigate to the linked case.
-				this.$emit('navigate', 'case-detail', item.objectUuid)
+				this.$router.push({ name: 'CaseDetail', params: { id: item.objectUuid } })
 			}
 		},
 	},

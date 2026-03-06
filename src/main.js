@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import { PiniaVuePlugin } from 'pinia'
+import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
 import pinia from './pinia.js'
 import router from './router/index.js'
 import App from './App.vue'
@@ -10,8 +11,10 @@ import '@conduction/nextcloud-vue/css/index.css'
 Vue.mixin({ methods: { t, n } })
 Vue.use(PiniaVuePlugin)
 
-new Vue({
-	pinia,
-	router,
-	render: h => h(App),
-}).$mount('#content')
+loadTranslations('procest', () => {
+	new Vue({
+		pinia,
+		router,
+		render: h => h(App),
+	}).$mount('#content')
+})

@@ -7,6 +7,16 @@
 - npm
 - A running Nextcloud instance with [OpenRegister](https://github.com/ConductionNL/openregister) installed
 
+## OpenSpec (change management)
+
+This project uses OpenSpec for proposal → specs → design → tasks workflows. The schema is shared from `apps-extra/openspec/schemas`. **After cloning**, run the one-time setup:
+
+```powershell
+.\openspec\setup-schemas.ps1
+```
+
+See [openspec/README.md](openspec/README.md) for details.
+
 ## Local Development
 
 This app is developed using the [nextcloud-docker-dev](https://github.com/juliushaertl/nextcloud-docker-dev) environment. The app is volume-mounted into the Nextcloud container.

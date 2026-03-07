@@ -8,6 +8,13 @@
 			:loading="!storesReady">
 			<CaseTypeAdmin v-if="storesReady" />
 		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'ZGW API Mapping')"
+			:description="t('procest', 'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields')"
+			:loading="!storesReady">
+			<ZgwMappingSettings v-if="storesReady" />
+		</CnSettingsSection>
 	</div>
 </template>
 
@@ -15,6 +22,7 @@
 import { CnSettingsSection } from '@conduction/nextcloud-vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
+import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -23,6 +31,7 @@ export default {
 		CnSettingsSection,
 		Settings,
 		CaseTypeAdmin,
+		ZgwMappingSettings,
 	},
 	data() {
 		return {

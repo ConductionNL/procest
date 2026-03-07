@@ -71,6 +71,7 @@ Vrij en open source onder de AGPL-licentie.
     <repair-steps>
         <post-migration>
             <step>OCA\Procest\Repair\InitializeSettings</step>
+            <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
         </post-migration>
     </repair-steps>
 

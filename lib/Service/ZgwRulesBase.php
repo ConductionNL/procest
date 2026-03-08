@@ -580,17 +580,23 @@ abstract class ZgwRulesBase
         }
 
         try {
-            $searchParams = [$field1Search => $field1Value];
+            // Build query directly to avoid buildSearchQuery's underscore-splitting
+            // which breaks camelCase field names like sourceOrganisation.
+            $query = [
+                '@self' => [
+                    'register' => (int) $register,
+                    'schema'   => (int) $schema,
+                ],
+                $field1Search => $field1Value,
+            ];
             if ($field2Value !== '') {
-                $searchParams[$field2Search] = $field2Value;
+                $query[$field2Search] = $field2Value;
             }
 
-            $query  = $this->objectService->buildSearchQuery(
-                requestParams: $searchParams,
-                register: $register,
-                schema: $schema
+            $result = $this->objectService->searchObjectsPaginated(
+                query: $query,
+                _multitenancy: false
             );
-            $result = $this->objectService->searchObjectsPaginated(query: $query);
             $total  = $result['total'] ?? count($result['results'] ?? []);
 
             if ($total > 0) {

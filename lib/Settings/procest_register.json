@@ -607,6 +607,61 @@
             "default": 0,
             "description": "Number of deadline extensions applied",
             "visible": false
+          },
+          "sourceOrganisation": {
+            "type": "string",
+            "maxLength": 9,
+            "description": "RSIN of the organization that created this case",
+            "visible": false
+          },
+          "archiveNomination": {
+            "type": "string",
+            "enum": [
+              "blijvend_bewaren",
+              "vernietigen"
+            ],
+            "description": "Whether the case should be permanently archived or destroyed",
+            "visible": false
+          },
+          "archiveActionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the archive action should be executed",
+            "visible": false
+          },
+          "archiveStatus": {
+            "type": "string",
+            "enum": [
+              "nog_te_archiveren",
+              "gearchiveerd",
+              "gearchiveerd_procestermijn_onbekend",
+              "overgedragen"
+            ],
+            "description": "Current archive status of the case",
+            "visible": false
+          },
+          "paymentIndication": {
+            "type": "string",
+            "enum": [
+              "nvt",
+              "nog_niet",
+              "gedeeltelijk",
+              "geheel"
+            ],
+            "description": "Payment status indicator",
+            "visible": false
+          },
+          "lastPaymentDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of the last payment",
+            "visible": false
+          },
+          "communicationChannel": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL reference to the communication channel",
+            "visible": false
           }
         }
       },

@@ -1009,6 +1009,33 @@ class ZrcController extends Controller
                 $isEindstatus = true;
             }
 
+            // ZGW standard: if isFinal not explicitly set, the statustype with
+            // the highest volgnummer for this zaaktype is the eindstatus.
+            if ($isEindstatus !== true) {
+                $caseTypeUuid = $stData['caseType'] ?? '';
+                $thisOrder    = (int) ($stData['order'] ?? 0);
+                if ($caseTypeUuid !== '' && $thisOrder > 0) {
+                    $query  = $this->zgwService->getObjectService()->buildSearchQuery(
+                        requestParams: ['caseType' => $caseTypeUuid, '_limit' => 100],
+                        register: $stConfig['sourceRegister'],
+                        schema: $stConfig['sourceSchema']
+                    );
+                    $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+                    $maxOrder = 0;
+                    foreach (($result['results'] ?? []) as $st) {
+                        $stObj = is_array($st) ? $st : $st->jsonSerialize();
+                        $order = (int) ($stObj['order'] ?? 0);
+                        if ($order > $maxOrder) {
+                            $maxOrder = $order;
+                        }
+                    }
+
+                    if ($thisOrder >= $maxOrder && $maxOrder > 0) {
+                        $isEindstatus = true;
+                    }
+                }
+            }
+
             $zaakUrl = $body['zaak'] ?? '';
             if ($zaakUrl === '') {
                 return;

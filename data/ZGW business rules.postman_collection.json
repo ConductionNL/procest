@@ -20,9 +20,10 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
+                      "",
+                      "     var secretCurrentOrg = pm.environment.get(\"secret_limited\");",
+                      "     var client_idCurrentOrg =  pm.environment.get(\"client_id_limited\");",
                       "\r",
-                      "     var secretCurrentOrg = pm.environment.get(\"secret_limited\");\r",
-                      "     var client_idCurrentOrg =  pm.environment.get(\"client_id_limited\");\r",
                       "     var tokenuser = pm.environment.get(\"tokenuser\");\r",
                       "    console.info(secretCurrentOrg,\"\",client_idCurrentOrg,\"\",tokenuser) \r",
                       "     \r",
@@ -426,7 +427,6 @@
                     "exec": [
                       "var uuid = require('uuid');\r",
                       "var myUUID = uuid.v4(); \r",
-                      "pm.environment.set(\"client_id_test_1\", myUUID);\r",
                       "var myUUID = uuid.v4(); \r",
                       "pm.environment.set(\"client_id_test_2\", myUUID);"
                     ],
@@ -2419,7 +2419,8 @@
                   "listen": "prerequest",
                   "script": {
                     "packages": {},
-                    "type": "text/javascript"
+                    "type": "text/javascript",
+                    "exec": []
                   }
                 }
               ],
@@ -3820,7 +3821,12 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));"
+                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");"
                     ],
                     "type": "text/javascript",
                     "packages": {}
@@ -4042,6 +4048,12 @@
                   "script": {
                     "exec": [
                       "    pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt-limited\"));\r",
+                      "    pm.environment.set(\"_original_client_id\", pm.environment.get(\"client_id\"));",
+                      "    pm.environment.set(\"_original_secret\", pm.environment.get(\"secret\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
                       "   "
                     ],
                     "type": "text/javascript",
@@ -4084,7 +4096,8 @@
                   "listen": "prerequest",
                   "script": {
                     "packages": {},
-                    "type": "text/javascript"
+                    "type": "text/javascript",
+                    "exec": []
                   }
                 }
               ],
@@ -4307,7 +4320,12 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));"
+                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");"
                     ],
                     "type": "text/javascript",
                     "packages": {}
@@ -4861,7 +4879,13 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt-limited\"));"
+                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt-limited\"));",
+                      "    pm.environment.set(\"_original_client_id\", pm.environment.get(\"client_id\"));",
+                      "    pm.environment.set(\"_original_secret\", pm.environment.get(\"secret\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));"
                     ],
                     "type": "text/javascript",
                     "packages": {}
@@ -5695,7 +5719,12 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));"
+                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");"
                     ],
                     "type": "text/javascript",
                     "packages": {}
@@ -6728,7 +6757,12 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));"
+                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");"
                     ],
                     "type": "text/javascript",
                     "packages": {}
@@ -6767,7 +6801,8 @@
                   "listen": "prerequest",
                   "script": {
                     "packages": {},
-                    "type": "text/javascript"
+                    "type": "text/javascript",
+                    "exec": []
                   }
                 }
               ],
@@ -7025,7 +7060,13 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt-limited\"));"
+                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt-limited\"));",
+                      "    pm.environment.set(\"_original_client_id\", pm.environment.get(\"client_id\"));",
+                      "    pm.environment.set(\"_original_secret\", pm.environment.get(\"secret\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));"
                     ],
                     "type": "text/javascript",
                     "packages": {}
@@ -7140,7 +7181,12 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));"
+                      "pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");"
                     ],
                     "type": "text/javascript",
                     "packages": {}
@@ -16525,6 +16571,11 @@
                   "script": {
                     "exec": [
                       "    pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));\r",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");",
                       "   "
                     ],
                     "type": "text/javascript",
@@ -18621,9 +18672,10 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
+                      "",
+                      "     var secretCurrentOrg = pm.environment.get(\"secret_limited\");",
+                      "     var client_idCurrentOrg =  pm.environment.get(\"client_id_limited\");",
                       "\r",
-                      "     var secretCurrentOrg = pm.environment.get(\"secret_limited\");\r",
-                      "     var client_idCurrentOrg =  pm.environment.get(\"client_id_limited\");\r",
                       "     var tokenuser = pm.environment.get(\"tokenuser\");\r",
                       "    console.info(secretCurrentOrg,\"\",client_idCurrentOrg,\"\",tokenuser) \r",
                       "     \r",
@@ -18742,6 +18794,12 @@
                   "script": {
                     "exec": [
                       "    pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt-limited\"));\r",
+                      "    pm.environment.set(\"_original_client_id\", pm.environment.get(\"client_id\"));",
+                      "    pm.environment.set(\"_original_secret\", pm.environment.get(\"secret\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
                       "   "
                     ],
                     "type": "text/javascript",
@@ -19319,6 +19377,11 @@
                   "script": {
                     "exec": [
                       "    pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));\r",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");",
                       "   "
                     ],
                     "type": "text/javascript",
@@ -19401,6 +19464,11 @@
                   "script": {
                     "exec": [
                       "    pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));\r",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");",
                       "   "
                     ],
                     "type": "text/javascript",
@@ -20925,7 +20993,8 @@
                   "listen": "prerequest",
                   "script": {
                     "packages": {},
-                    "type": "text/javascript"
+                    "type": "text/javascript",
+                    "exec": []
                   }
                 }
               ],
@@ -21167,7 +21236,8 @@
                   "listen": "prerequest",
                   "script": {
                     "packages": {},
-                    "type": "text/javascript"
+                    "type": "text/javascript",
+                    "exec": []
                   }
                 }
               ],
@@ -22828,6 +22898,11 @@
                   "script": {
                     "exec": [
                       "    pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt_full\"));\r",
+                      "    var origId = pm.environment.get(\"_original_client_id\");",
+                      "    var origSecret = pm.environment.get(\"_original_secret\");",
+                      "    if (origId) { pm.environment.set(\"client_id\", origId); }",
+                      "    if (origSecret) { pm.environment.set(\"secret\", origSecret); }",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret\") || \"procest-admin-secret-key-for-testing\");",
                       "   "
                     ],
                     "type": "text/javascript",
@@ -28192,6 +28267,12 @@
                   "script": {
                     "exec": [
                       "    pm.environment.set(\"jwt_token\", pm.environment.get(\"jwt-limited\"));\r",
+                      "    pm.environment.set(\"_original_client_id\", pm.environment.get(\"client_id\"));",
+                      "    pm.environment.set(\"_original_secret\", pm.environment.get(\"secret\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
+                      "    pm.environment.set(\"client_id\", pm.environment.get(\"client_id_limited\"));",
+                      "    pm.environment.set(\"secret\", pm.environment.get(\"secret_limited\"));",
                       "   "
                     ],
                     "type": "text/javascript",

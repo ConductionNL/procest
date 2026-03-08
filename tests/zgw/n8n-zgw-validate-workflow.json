@@ -1,0 +1,39 @@
+{
+  "name": "ZGW Pre-Validation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst input = items[0].json;\nconst body = input.body || {};\nconst resource = input.resource || '';\nconst action = input.action || '';\nconst zgwApi = input.zgwApi || '';\n\nlet valid = true;\nlet status = 200;\nlet detail = '';\nlet enrichedBody = {...body};\n\n// Rule: Auto-generate identificatie for zaak creates\nif (zgwApi === 'zaken' && resource === 'zaken' && action === 'create') {\n  if (!body.identificatie || body.identificatie === '') {\n    const ts = Date.now().toString(36).toUpperCase();\n    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();\n    enrichedBody.identificatie = 'ZAAK-' + ts + '-' + rand;\n  }\n}\n\nreturn [{ json: { valid, status, detail, enrichedBody } }];"
+      },
+      "id": "validate-code",
+      "name": "Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    }
+  ],
+  "connections": {
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

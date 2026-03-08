@@ -23,6 +23,7 @@ namespace OCA\Procest\AppInfo;
 
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
+use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -58,6 +59,8 @@ class Application extends App implements IBootstrap
             event: DeepLinkRegistrationEvent::class,
             listener: DeepLinkRegistrationListener::class
         );
+
+        $context->registerMiddleware(class: ZgwAuthMiddleware::class);
     }//end register()
 
     /**

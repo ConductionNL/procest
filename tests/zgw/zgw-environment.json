@@ -1,0 +1,150 @@
+{
+  "id": "procest-zgw-local",
+  "name": "Procest ZGW Local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "zrc_url",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/zaken/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "ztc_url",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/catalogi/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "brc_url",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/besluiten/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "drc_url",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/documenten/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "nrc_url",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/notificaties/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "ac_url",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/autorisaties/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "client_id",
+      "value": "procest-admin",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "secret",
+      "value": "procest-admin-secret-key-for-testing",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "client_id_limited",
+      "value": "procest-limited",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "secret_limited",
+      "value": "procest-limited-secret-key-for-test",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "client_id_test_1",
+      "value": "procest-test-1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "client_id_test_2",
+      "value": "procest-test-2",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "referentielijst_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "mock_url",
+      "value": "http://localhost:8080/index.php/apps/procest/api/zgw",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "procestype_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/procestypen/838e405a-9b12-43c4-a985-d7a7490d422e",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "procestype_procestermijn_nihil_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/procestypen/838e405a-9b12-43c4-a985-d7a7490d422e",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "procestype_procestermijn_vast_te_leggen_datum_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/procestypen/838e405a-9b12-43c4-a985-d7a7490d422e",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "procestype_procestermijn_ingeschatte_bestaansduur_object_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/procestypen/838e405a-9b12-43c4-a985-d7a7490d422e",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "selectielijstklasse_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/resultaten/0eb8f19f-d55e-4a15-8b5f-26cdf07482c1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "selectielijstklasse_procestermijn_nihil_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/resultaten/3fc7002b-31b6-4abe-82af-b6d46a9a1736",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "selectielijstklasse_procestermijn_vast_te_leggen_datum_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/resultaten/80ffe8cb-e430-4ae9-a48b-34a9ef21e3cd",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "selectielijstklasse_procestermijn_ingeschatte_bestaansduur_object_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/resultaten/80d8bce6-81a4-43c5-9a7b-ca56880eacb4",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "resultaattypeomschrijving_url",
+      "value": "https://selectielijst.openzaak.nl/api/v1/resultaattypeomschrijvingen/ce8cf476-0b59-496f-8eee-957a7c6e2506",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}

@@ -44,7 +44,7 @@ Free and open source under the AGPL license.
 
 Vrij en open source onder de AGPL-licentie.
     ]]></description>
-    <version>0.1.9</version>
+    <version>0.1.10</version>
     <licence>agpl</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Procest</namespace>

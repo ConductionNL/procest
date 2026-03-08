@@ -49,6 +49,7 @@ class ZgwMappingService
      * @var string[]
      */
     private const RESOURCE_KEYS = [
+        'catalogus',
         'zaak',
         'zaaktype',
         'status',
@@ -61,6 +62,19 @@ class ZgwMappingService
         'besluit',
         'besluittype',
         'informatieobjecttype',
+        'zaaktypeinformatieobjecttype',
+        'zaakeigenschap',
+        'zaakinformatieobject',
+        'zaakobject',
+        'klantcontact',
+        'besluitinformatieobject',
+        'verzending',
+        'applicatie',
+        'enkelvoudiginformatieobject',
+        'objectinformatieobject',
+        'gebruiksrechten',
+        'kanaal',
+        'abonnement',
     ];
 
     /**
@@ -141,7 +155,7 @@ class ZgwMappingService
         $mappings = [];
 
         foreach (self::RESOURCE_KEYS as $key) {
-            $mappings[$key] = $this->getMapping($key);
+            $mappings[$key] = $this->getMapping(resourceKey: $key);
         }
 
         return $mappings;
@@ -184,7 +198,7 @@ class ZgwMappingService
      */
     public function hasMapping(string $resourceKey): bool
     {
-        return $this->getMapping($resourceKey) !== null;
+        return $this->getMapping(resourceKey: $resourceKey) !== null;
     }//end hasMapping()
 
     /**

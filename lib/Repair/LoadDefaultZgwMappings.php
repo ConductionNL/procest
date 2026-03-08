@@ -416,7 +416,10 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'publicationRequired'      => '{{ publicatieIndicatie }}',
                 'selectionListProcessType' => '{{ selectielijstProcestype }}',
                 'responsible'              => '{{ verantwoordelijke }}',
-                'decisionTypes'            => 'besluittypen',
+                'productsOrServices'       => '{{ productenOfDiensten | json_encode }}',
+                'referenceProcess'         => '{{ referentieproces | json_encode }}',
+                'relatedCaseTypes'         => '{{ gerelateerdeZaaktypen | json_encode }}',
+                'versionDate'              => '{{ versiedatum }}',
             ],
             'reverseCast'           => [
                 'isDraft'             => 'bool',
@@ -1448,13 +1451,6 @@ class LoadDefaultZgwMappings implements IRepairStep
                     'algorithm' => 'HS256',
                     'superuser' => false,
                     'scopes'    => [
-                        [
-                            'component' => 'zrc',
-                            'scopes'    => [
-                                'zaken.lezen',
-                                'zaken.aanmaken',
-                            ],
-                        ],
                         [
                             'component' => 'ztc',
                             'scopes'    => [

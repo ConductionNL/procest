@@ -398,6 +398,15 @@ class ZtcController extends Controller
                 $existingData['identifier'] = (string) $existingData['identifier'];
             }
 
+            // Re-encode fields that are stored as JSON strings but auto-decoded
+            // by jsonSerialize. Only string-typed schema fields need re-encoding.
+            $jsonStringFields = ['productsOrServices', 'referenceProcess', 'relatedCaseTypes'];
+            foreach ($jsonStringFields as $field) {
+                if (isset($existingData[$field]) === true && is_array($existingData[$field]) === true) {
+                    $existingData[$field] = json_encode($existingData[$field]);
+                }
+            }
+
             $object     = $this->zgwService->getObjectService()->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],

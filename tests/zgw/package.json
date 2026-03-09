@@ -1,0 +1,15 @@
+{
+  "name": "procest-zgw-tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Newman test suite for Procest ZGW API compliance",
+  "license": "EUPL-1.2",
+  "scripts": {
+    "test": "bash run-zgw-tests.sh",
+    "test:oas": "bash run-zgw-tests.sh --oas-only",
+    "test:business": "bash run-zgw-tests.sh --business-only"
+  },
+  "dependencies": {
+    "newman": "^6.0.0"
+  }
+}

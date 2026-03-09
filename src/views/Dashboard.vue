@@ -1,9 +1,15 @@
 <template>
-	<div class="procest-dashboard">
-		<!-- Header with quick actions -->
-		<div class="dashboard-header">
-			<h2>{{ t('procest', 'Dashboard') }}</h2>
-			<div class="quick-actions">
+	<div>
+		<CnDashboardPage
+			:title="t('procest', 'Dashboard')"
+			:widgets="widgetDefs"
+			:layout="dashboardLayout"
+			:loading="globalLoading && !hasData"
+			:empty-label="t('procest', 'No widgets configured')"
+			:unavailable-label="t('procest', 'Widget not available')"
+			@layout-change="onLayoutChange">
+			<!-- Header actions: quick action buttons -->
+			<template #header-actions>
 				<NcButton type="primary" @click="showCreateDialog = true">
 					<template #icon>
 						<Plus :size="20" />
@@ -23,57 +29,53 @@
 						<Refresh :size="20" :class="{ 'icon-spinning': globalLoading }" />
 					</template>
 				</NcButton>
-			</div>
-		</div>
+			</template>
 
-		<NcLoadingIcon v-if="globalLoading && !hasData" />
+			<!-- KPI Cards widget -->
+			<template #widget-kpis>
+				<div class="kpi-row">
+					<div class="kpi-card">
+						<div class="kpi-icon">
+							<FolderOpen :size="24" />
+						</div>
+						<div class="kpi-content">
+							<span class="kpi-value">{{ kpis.openCount }}</span>
+							<span class="kpi-label">{{ t('procest', 'Open Cases') }}</span>
+						</div>
+					</div>
+					<div class="kpi-card" :class="{ 'kpi-card--warning': kpis.overdueCount > 0 }">
+						<div class="kpi-icon" :class="{ 'kpi-icon--warning': kpis.overdueCount > 0 }">
+							<AlertCircle :size="24" />
+						</div>
+						<div class="kpi-content">
+							<span class="kpi-value">{{ kpis.overdueCount }}</span>
+							<span class="kpi-label">{{ t('procest', 'Overdue') }}</span>
+						</div>
+					</div>
+					<div class="kpi-card">
+						<div class="kpi-icon kpi-icon--success">
+							<CheckCircle :size="24" />
+						</div>
+						<div class="kpi-content">
+							<span class="kpi-value">{{ kpis.completedCount }}</span>
+							<span class="kpi-label">{{ t('procest', 'Completed This Month') }}</span>
+						</div>
+					</div>
+					<div class="kpi-card">
+						<div class="kpi-icon">
+							<ClipboardCheckOutline :size="24" />
+						</div>
+						<div class="kpi-content">
+							<span class="kpi-value">{{ kpis.taskCount }}</span>
+							<span class="kpi-label">{{ t('procest', 'My Tasks') }}</span>
+						</div>
+					</div>
+				</div>
+			</template>
 
-		<template v-else>
-			<!-- KPI Cards -->
-			<div class="kpi-row">
-				<div class="kpi-card">
-					<div class="kpi-icon">
-						<FolderOpen :size="24" />
-					</div>
-					<div class="kpi-content">
-						<span class="kpi-value">{{ kpis.openCount }}</span>
-						<span class="kpi-label">{{ t('procest', 'Open Cases') }}</span>
-					</div>
-				</div>
-				<div class="kpi-card" :class="{ 'kpi-card--warning': kpis.overdueCount > 0 }">
-					<div class="kpi-icon" :class="{ 'kpi-icon--warning': kpis.overdueCount > 0 }">
-						<AlertCircle :size="24" />
-					</div>
-					<div class="kpi-content">
-						<span class="kpi-value">{{ kpis.overdueCount }}</span>
-						<span class="kpi-label">{{ t('procest', 'Overdue') }}</span>
-					</div>
-				</div>
-				<div class="kpi-card">
-					<div class="kpi-icon kpi-icon--success">
-						<CheckCircle :size="24" />
-					</div>
-					<div class="kpi-content">
-						<span class="kpi-value">{{ kpis.completedCount }}</span>
-						<span class="kpi-label">{{ t('procest', 'Completed This Month') }}</span>
-					</div>
-				</div>
-				<div class="kpi-card">
-					<div class="kpi-icon">
-						<ClipboardCheckOutline :size="24" />
-					</div>
-					<div class="kpi-content">
-						<span class="kpi-value">{{ kpis.taskCount }}</span>
-						<span class="kpi-label">{{ t('procest', 'My Tasks') }}</span>
-					</div>
-				</div>
-			</div>
-
-			<!-- Charts row -->
-			<div class="charts-row">
-				<!-- Cases by Status -->
-				<div class="chart-card">
-					<h3>{{ t('procest', 'Cases by Status') }}</h3>
+			<!-- Cases by Status widget -->
+			<template #widget-cases-by-status>
+				<div class="status-widget-content">
 					<div v-if="statusData.length === 0" class="chart-empty">
 						{{ t('procest', 'No open cases') }}
 					</div>
@@ -92,13 +94,11 @@
 						</div>
 					</div>
 				</div>
+			</template>
 
-				<!-- My Work Preview -->
-				<div class="chart-card">
-					<h3>
-						{{ t('procest', 'My Work') }}
-						<span v-if="myWorkItems.length > 0" class="my-work-count">({{ myWorkItems.length }})</span>
-					</h3>
+			<!-- My Work widget -->
+			<template #widget-my-work>
+				<div class="my-work-widget-content">
 					<div v-if="myWorkItems.length === 0" class="chart-empty">
 						{{ t('procest', 'No items assigned to you') }}
 					</div>
@@ -127,26 +127,28 @@
 						</NcButton>
 					</div>
 				</div>
-			</div>
+			</template>
 
-			<!-- Welcome message for fresh installs -->
-			<div v-if="showEmptyState" class="welcome-message">
-				<p v-if="isAdmin">
-					{{ t('procest', 'Welcome to Procest! Get started by creating your first case type in Settings.') }}
-				</p>
-				<p v-else>
-					{{ t('procest', 'Welcome to Procest! Get started by creating your first case or task using the buttons above.') }}
-				</p>
-			</div>
+			<!-- Empty state override with welcome message -->
+			<template #empty>
+				<div v-if="showEmptyState" class="welcome-message">
+					<p v-if="isAdmin">
+						{{ t('procest', 'Welcome to Procest! Get started by creating your first case type in Settings.') }}
+					</p>
+					<p v-else>
+						{{ t('procest', 'Welcome to Procest! Get started by creating your first case or task using the buttons above.') }}
+					</p>
+				</div>
+			</template>
+		</CnDashboardPage>
 
-			<!-- Error display -->
-			<div v-if="error" class="dashboard-error">
-				<p>{{ error }}</p>
-				<NcButton @click="loadDashboardData">
-					{{ t('procest', 'Retry') }}
-				</NcButton>
-			</div>
-		</template>
+		<!-- Error display -->
+		<div v-if="error" class="dashboard-error">
+			<p>{{ error }}</p>
+			<NcButton @click="loadDashboardData">
+				{{ t('procest', 'Retry') }}
+			</NcButton>
+		</div>
 
 		<!-- Case Create Dialog -->
 		<CaseCreateDialog
@@ -163,7 +165,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton } from '@nextcloud/vue'
+import { CnDashboardPage } from '@conduction/nextcloud-vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
@@ -188,11 +191,21 @@ const BAR_COLORS = [
 	'var(--color-text-maxcontrast)',
 ]
 
+/**
+ * Default dashboard layout — positions for the 3 built-in widgets.
+ * KPIs span full width (12 cols), status chart and my work share the second row.
+ */
+const DEFAULT_LAYOUT = [
+	{ id: 1, widgetId: 'kpis', gridX: 0, gridY: 0, gridWidth: 12, gridHeight: 2, showTitle: false },
+	{ id: 2, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 3, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+]
+
 export default {
 	name: 'Dashboard',
 	components: {
 		NcButton,
-		NcLoadingIcon,
+		CnDashboardPage,
 		Plus,
 		Refresh,
 		FolderOpen,
@@ -218,6 +231,7 @@ export default {
 			globalLoading: false,
 			error: null,
 			refreshTimer: null,
+			dashboardLayout: [...DEFAULT_LAYOUT],
 		}
 	},
 	computed: {
@@ -238,6 +252,17 @@ export default {
 				&& this.completedCases.length === 0
 				&& this.caseTypes.length === 0
 				&& !this.error
+		},
+		/**
+		 * Widget definitions for CnDashboardPage.
+		 * Each widget is a custom type — rendered by the matching #widget-{id} slot.
+		 */
+		widgetDefs() {
+			return [
+				{ id: 'kpis', title: t('procest', 'Key Metrics'), type: 'custom' },
+				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
+				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
+			]
 		},
 	},
 	async mounted() {
@@ -308,6 +333,11 @@ export default {
 			}
 		},
 
+		onLayoutChange(newLayout) {
+			this.dashboardLayout = newLayout
+			// TODO: Persist layout to app config when ready
+		},
+
 		barWidth(count) {
 			const max = Math.max(1, ...this.statusData.map(s => s.count))
 			const pct = (count / max) * 100
@@ -326,10 +356,6 @@ export default {
 			}
 		},
 
-		onViewAllOverdue() {
-			this.$router.push({ name: 'Cases', query: { overdue: 'true' } })
-		},
-
 		onCaseCreated(caseId) {
 			this.showCreateDialog = false
 			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
@@ -344,33 +370,14 @@ export default {
 </script>
 
 <style scoped>
-.procest-dashboard {
-	padding: 20px;
-	max-width: 1200px;
-}
-
-/* Header */
-.dashboard-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 24px;
-	flex-wrap: wrap;
-	gap: 12px;
-}
-
-.quick-actions {
-	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
-}
-
 /* KPI Cards */
 .kpi-row {
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
 	gap: 16px;
-	margin-bottom: 24px;
+	padding: 8px;
+	height: 100%;
+	align-content: center;
 }
 
 @media (max-width: 900px) {
@@ -379,17 +386,11 @@ export default {
 	}
 }
 
-@media (max-width: 500px) {
-	.kpi-row {
-		grid-template-columns: 1fr;
-	}
-}
-
 .kpi-card {
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 16px;
+	padding: 12px 16px;
 	background: var(--color-main-background);
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);
@@ -438,31 +439,10 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
-/* Charts row */
-.charts-row {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 16px;
-	margin-bottom: 24px;
-}
-
-@media (max-width: 700px) {
-	.charts-row {
-		grid-template-columns: 1fr;
-	}
-}
-
-.chart-card {
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	padding: 16px;
-}
-
-.chart-card h3 {
-	margin: 0 0 12px;
-	font-size: 15px;
-	font-weight: 600;
+/* Status chart widget */
+.status-widget-content {
+	padding: 12px;
+	height: 100%;
 }
 
 .chart-empty {
@@ -472,7 +452,6 @@ export default {
 	font-size: 14px;
 }
 
-/* Status bar chart */
 .status-chart {
 	display: flex;
 	flex-direction: column;
@@ -515,25 +494,24 @@ export default {
 	flex-shrink: 0;
 }
 
-/* My Work list */
-.my-work-count {
-	font-weight: 400;
-	color: var(--color-text-maxcontrast);
-	font-size: 13px;
+/* My Work widget */
+.my-work-widget-content {
+	padding: 4px 0;
+	height: 100%;
+	overflow: auto;
 }
 
 .my-work-list {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 2px;
 }
 
 .my-work-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	padding: 8px;
-	border-radius: var(--border-radius);
+	padding: 8px 12px;
 	cursor: pointer;
 }
 
@@ -595,7 +573,7 @@ export default {
 
 .view-all-link {
 	margin-top: 4px;
-	align-self: flex-start;
+	padding-left: 12px;
 }
 
 /* Welcome / empty / error */

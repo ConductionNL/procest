@@ -13,7 +13,10 @@
     "lint": "eslint src",
     "lint-fix": "npm run lint -- --fix",
     "stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
-    "stylelint-fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix"
+    "stylelint-fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix",
+    "test:zgw": "cd tests/zgw && bash run-zgw-tests.sh",
+    "test:zgw:oas": "cd tests/zgw && bash run-zgw-tests.sh --oas-only",
+    "test:zgw:business": "cd tests/zgw && bash run-zgw-tests.sh --business-only"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"

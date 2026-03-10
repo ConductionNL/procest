@@ -4,11 +4,3 @@
 /docusaurus/node_modules/
 /docusaurus/build/
 /docusaurus/.docusaurus/
-
-# Moved to apps-extra (parent folder)
-/.claude/
-/.cursor/
-/.github/
-/.mcp.json
-/.mcs.json
-/openspec/schemas/

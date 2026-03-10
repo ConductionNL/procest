@@ -238,6 +238,15 @@
               "blijvend_bewaren"
             ],
             "description": "What to do after archival period: keep or destroy"
+          },
+          "sourceDateArchiveProcedure": {
+            "type": "string",
+            "description": "BrondatumArchiefprocedure configuration (JSON-encoded object with afleidingswijze, procestermijn, datumkenmerk, etc.)"
+          },
+          "selectionListClass": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the selectielijstklasse"
           }
         }
       },
@@ -706,6 +715,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the parent case"
           },
           "assignee": {
@@ -769,6 +780,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "participant": {
@@ -803,6 +816,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "resultType": {
@@ -833,6 +848,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "statusType": {
@@ -865,6 +882,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "description": {
@@ -1021,6 +1040,12 @@
           "fileParts": {
             "type": "string",
             "description": "References to file parts for chunked uploads (JSON-encoded array)"
+          },
+          "usageRightsIndication": {
+            "type": "boolean",
+            "nullable": true,
+            "default": null,
+            "description": "Indicates whether usage rights have been set for this document"
           }
         }
       },
@@ -1217,6 +1242,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "propertyDefinition": {
@@ -1243,6 +1270,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "document": {
@@ -1278,6 +1307,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "objectUrl": {
@@ -1312,6 +1343,8 @@
           "case": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
             "description": "Reference to the case"
           },
           "contactDateTime": {
@@ -1346,6 +1379,8 @@
           "decision": {
             "type": "string",
             "format": "uuid",
+            "$ref": "decision",
+            "onDelete": "CASCADE",
             "description": "Reference to the decision"
           },
           "document": {

@@ -294,6 +294,10 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'verantwoordelijkeOrganisatie' => '{{ assignee }}',
                 'archiefnominatie'            => '{{ archiveNomination }}',
                 'archiefactiedatum'           => '{{ archiveActionDate }}',
+                'archiefstatus'               => '{{ archiveStatus }}',
+                'betalingsindicatie'          => '{{ paymentIndication }}',
+                'laatsteBetaaldatum'          => '{{ lastPaymentDate }}',
+                'hoofdzaak'                   => '{% if parentCase %}{{ _baseUrl }}/{{ parentCase }}{% endif %}',
             ],
             'reverseMapping'        => [
                 'title'              => '{{ omschrijving }}',
@@ -308,6 +312,10 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'assignee'           => '{{ verantwoordelijkeOrganisatie }}',
                 'archiveNomination'  => '{{ archiefnominatie }}',
                 'archiveActionDate'  => '{{ archiefactiedatum }}',
+                'archiveStatus'      => '{{ archiefstatus }}',
+                'paymentIndication'  => '{{ betalingsindicatie }}',
+                'lastPaymentDate'    => '{{ laatsteBetaaldatum }}',
+                'parentCase'         => '{{ hoofdzaak | zgw_extract_uuid }}',
             ],
             'valueMapping'          => [
                 'confidentiality' => [
@@ -321,24 +329,55 @@ class LoadDefaultZgwMappings implements IRepairStep
                     'zeer_geheim'       => 'zeer_geheim',
                 ],
             ],
+            'nullableFields'        => [
+                'einddatum',
+                'einddatumGepland',
+                'uiterlijkeEinddatumAfdoening',
+                'archiefnominatie',
+                'archiefactiedatum',
+                'archiefstatus',
+                'betalingsindicatie',
+                'laatsteBetaaldatum',
+                'hoofdzaak',
+            ],
             'queryParameterMapping' => [
-                'zaaktype'        => [
+                'zaaktype'            => [
                     'field'       => 'caseType',
                     'extractUuid' => true,
                 ],
-                'identificatie'   => [
+                'identificatie'       => [
                     'field' => 'identifier',
                 ],
-                'startdatum'      => [
+                'bronorganisatie'     => [
+                    'field' => 'sourceOrganisation',
+                ],
+                'startdatum'          => [
                     'field' => 'startDate',
                 ],
-                'startdatum__gte' => [
+                'startdatum__gte'     => [
                     'field'    => 'startDate',
                     'operator' => 'gte',
                 ],
-                'startdatum__lte' => [
+                'startdatum__lte'     => [
                     'field'    => 'startDate',
                     'operator' => 'lte',
+                ],
+                'einddatum'           => [
+                    'field' => 'endDate',
+                ],
+                'einddatum__isnull'   => [
+                    'field'    => 'endDate',
+                    'operator' => 'isnull',
+                ],
+                'archiefnominatie'    => [
+                    'field' => 'archiveNomination',
+                ],
+                'archiefactiedatum__lt' => [
+                    'field'    => 'archiveActionDate',
+                    'operator' => 'lt',
+                ],
+                'archiefstatus'       => [
+                    'field' => 'archiveStatus',
                 ],
             ],
         ];
@@ -625,16 +664,20 @@ class LoadDefaultZgwMappings implements IRepairStep
                     to: 'catalogi/zaaktypen',
                     varName: 'caseType'
                 ),
-                'archiefnominatie'     => '{{ archivalAction }}',
-                'archiefactietermijn'  => '{{ archivalPeriod }}',
+                'archiefnominatie'             => '{{ archivalAction }}',
+                'archiefactietermijn'          => '{{ archivalPeriod }}',
+                'brondatumArchiefprocedure'    => '{{ sourceDateArchiveProcedure | json_encode }}',
+                'selectielijstklasse'          => '{{ selectionListClass }}',
             ],
             'reverseMapping'        => [
-                'name'               => '{{ omschrijving }}',
-                'genericDescription' => '{{ omschrijvingGeneriek }}',
-                'description'        => '{{ toelichting }}',
-                'caseType'           => '{{ zaaktype | zgw_extract_uuid }}',
-                'archivalAction'     => '{{ archiefnominatie }}',
-                'archivalPeriod'     => '{{ archiefactietermijn }}',
+                'name'                        => '{{ omschrijving }}',
+                'genericDescription'          => '{{ omschrijvingGeneriek }}',
+                'description'                 => '{{ toelichting }}',
+                'caseType'                    => '{{ zaaktype | zgw_extract_uuid }}',
+                'archivalAction'              => '{{ archiefnominatie }}',
+                'archivalPeriod'              => '{{ archiefactietermijn }}',
+                'sourceDateArchiveProcedure'  => '{{ brondatumArchiefprocedure | json_encode }}',
+                'selectionListClass'          => '{{ selectielijstklasse }}',
             ],
             'valueMapping'          => [
                 'archivalAction' => [
@@ -643,9 +686,15 @@ class LoadDefaultZgwMappings implements IRepairStep
                     'blijvend_bewaren' => 'blijvend_bewaren',
                 ],
             ],
+            'cast'                  => [
+                'sourceDateArchiveProcedure' => 'jsonToArray',
+            ],
+            'reverseCast'           => [],
             'nullableFields'        => [
                 'archiefactietermijn',
                 'omschrijvingGeneriek',
+                'brondatumArchiefprocedure',
+                'selectielijstklasse',
             ],
             'queryParameterMapping' => [
                 'zaaktype' => [

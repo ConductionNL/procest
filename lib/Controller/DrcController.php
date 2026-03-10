@@ -447,6 +447,26 @@ class DrcController extends Controller
             }
         }
 
+        // drc-008a (VNG): Block EIO deletion when OIO relations exist.
+        if ($resource === self::EIO_RESOURCE && $this->zgwService->getObjectService() !== null) {
+            $oioRelations = $this->findOioRelationsForEio($uuid);
+            if (empty($oioRelations) === false) {
+                return new JSONResponse(
+                    [
+                        'detail'        => 'Het informatieobject kan niet verwijderd worden: er zijn gerelateerde ObjectInformatieObjecten.',
+                        'invalidParams' => [
+                            [
+                                'name'   => 'nonFieldErrors',
+                                'code'   => 'pending-relations',
+                                'reason' => 'Het informatieobject kan niet verwijderd worden.',
+                            ],
+                        ],
+                    ],
+                    Http::STATUS_BAD_REQUEST
+                );
+            }
+        }
+
         $response = $this->zgwService->handleDestroy($this->request, self::ZGW_API, $resource, $uuid);
 
         // Post-delete cleanup (only on successful deletion).
@@ -671,24 +691,24 @@ class DrcController extends Controller
             $body   = $this->zgwService->getRequestBody($this->request);
             $lockId = $body['lock'] ?? '';
 
-            // Check if this is a force unlock (no lock ID or wrong lock ID).
             $storedLockId = $existingData['lockId'] ?? '';
-            if ($lockId !== '' && $lockId !== $storedLockId) {
-                // Non-empty but wrong lock ID — reject unless force scope is available.
+            if ($lockId !== $storedLockId) {
+                // Lock ID is empty or wrong — require geforceerd-bijwerken scope.
                 $hasForceScope = $this->zgwService->consumerHasScope(
                     $this->request,
                     'documenten',
                     'geforceerd-bijwerken'
                 );
                 if ($hasForceScope === false) {
+                    $detail = $lockId === '' ? 'Geforceerd unlocken is niet toegestaan zonder juiste scope.' : 'Lock ID komt niet overeen en geforceerd unlocken is niet toegestaan.';
                     return new JSONResponse(
                         data: [
-                            'detail'        => 'Lock ID komt niet overeen en '.'geforceerd unlocken is niet toegestaan.',
+                            'detail'        => $detail,
                             'invalidParams' => [
                                 [
                                     'name'   => 'nonFieldErrors',
                                     'code'   => 'incorrect-lock-id',
-                                    'reason' => 'Lock ID komt niet overeen.',
+                                    'reason' => $detail,
                                 ],
                             ],
                         ],
@@ -696,8 +716,6 @@ class DrcController extends Controller
                     );
                 }
             }//end if
-
-            // drc-009k: Empty lock ID = forced unlock (always allowed per ZGW spec).
 
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['locked'] = false;
@@ -776,6 +794,53 @@ class DrcController extends Controller
             $auditUuid
         );
     }//end audittrailShow()
+
+    /**
+     * Find OIO relations for an EIO by UUID (drc-008a VNG).
+     *
+     * @param string $eioUuid The EIO UUID
+     *
+     * @return array List of OIO UUIDs linked to this EIO
+     */
+    private function findOioRelationsForEio(string $eioUuid): array
+    {
+        $objectService = $this->zgwService->getObjectService();
+        if ($objectService === null) {
+            return [];
+        }
+
+        $oioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'objectinformatieobject');
+        if ($oioConfig === null) {
+            return [];
+        }
+
+        try {
+            // OIO stores the full informatieobject URL — search with partial match.
+            $query  = $objectService->buildSearchQuery(
+                requestParams: ['document' => '%'.$eioUuid.'%', '_limit' => 1],
+                register: $oioConfig['sourceRegister'],
+                schema: $oioConfig['sourceSchema']
+            );
+            $result = $objectService->searchObjectsPaginated(query: $query);
+
+            $ids = [];
+            foreach (($result['results'] ?? []) as $obj) {
+                $data = is_array($obj) ? $obj : $obj->jsonSerialize();
+                $id   = $data['id'] ?? ($data['@self']['id'] ?? null);
+                if ($id !== null) {
+                    $ids[] = $id;
+                }
+            }
+
+            return $ids;
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->warning(
+                'drc-008a: Failed to check OIO relations for EIO '.$eioUuid.': '.$e->getMessage()
+            );
+        }//end try
+
+        return [];
+    }//end findOioRelationsForEio()
 
     /**
      * Cascade delete all gebruiksrechten for an EIO (drc-008 VNG).

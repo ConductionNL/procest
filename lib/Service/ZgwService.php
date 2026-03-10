@@ -405,10 +405,25 @@ class ZgwService
         $body['_valueMappings'] = $mappingConfig['valueMapping'] ?? [];
         unset($body['_route'], $body['zgwApi'], $body['resource'], $body['uuid']);
 
-        return $this->openRegisterMappingService->executeMapping(
+        $mapped = $this->openRegisterMappingService->executeMapping(
             mapping: $mapping,
             input: $body
         );
+
+        // Remove empty-string values for nullable/date fields to prevent OpenRegister
+        // from storing "" in date fields (which converts to today's date).
+        $nullableKeys = $mappingConfig['inboundNullable'] ?? [
+            'endDate', 'plannedEndDate', 'deadline', 'archiveNomination',
+            'archiveActionDate', 'paymentIndication', 'lastPaymentDate',
+            'communicationChannel', 'archiveStatus', 'parentCase',
+        ];
+        foreach ($nullableKeys as $key) {
+            if (isset($mapped[$key]) === true && $mapped[$key] === '') {
+                unset($mapped[$key]);
+            }
+        }
+
+        return $mapped;
     }//end applyInboundMapping()
 
     /**
@@ -491,13 +506,6 @@ class ZgwService
                     'detail' => 'Authenticatiegegevens zijn niet opgegeven.',
                 ],
                 statusCode: Http::STATUS_UNAUTHORIZED
-            );
-        }
-
-        if ($this->authorizationService === null) {
-            return new JSONResponse(
-                data: ['detail' => 'Authorization service not available'],
-                statusCode: Http::STATUS_SERVICE_UNAVAILABLE
             );
         }
 
@@ -1189,8 +1197,8 @@ class ZgwService
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
             $this->logger->error(
-                'ZGW update error: '.$e->getMessage(),
-                ['exception' => $e]
+                'ZGW update error ('.$resource.' '.$uuid.'): '.$e->getMessage(),
+                ['exception' => $e, 'trace' => $e->getTraceAsString()]
             );
             return new JSONResponse(
                 data: ['detail' => $e->getMessage()],

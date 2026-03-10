@@ -151,13 +151,6 @@ class ZgwAuthMiddleware extends Middleware
             return;
         }
 
-        if ($this->authorizationService === null || $this->consumerMapper === null) {
-            throw new ZgwAuthException(
-                message: 'Authentication services not available',
-                statusCode: Http::STATUS_SERVICE_UNAVAILABLE
-            );
-        }
-
         $authorization = $this->request->getHeader(name: 'Authorization');
         if ($authorization === '') {
             throw new ZgwAuthException(
@@ -166,7 +159,18 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        // Validate the JWT token and set user session.
+        // Extract and validate JWT payload.
+        $token   = substr(string: $authorization, offset: strlen(string: 'Bearer '));
+        $payload = $this->decodeJwtPayload(token: $token);
+
+        if ($payload === null || isset($payload['iss']) === false) {
+            throw new ZgwAuthException(
+                message: 'Invalid token payload',
+                statusCode: Http::STATUS_FORBIDDEN
+            );
+        }
+
+        // Validate JWT signature via OpenRegister's AuthorizationService.
         try {
             $this->authorizationService->authorizeJwt(authorization: $authorization);
         } catch (\Exception $e) {
@@ -179,17 +183,7 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        // Extract issuer from JWT to look up the Consumer and check scopes.
-        $token   = substr(string: $authorization, offset: strlen(string: 'Bearer '));
-        $payload = $this->decodeJwtPayload(token: $token);
-
-        if ($payload === null || isset($payload['iss']) === false) {
-            throw new ZgwAuthException(
-                message: 'Invalid token payload',
-                statusCode: Http::STATUS_FORBIDDEN
-            );
-        }
-
+        // Enforce scope-based authorization via ConsumerMapper.
         $consumer = $this->findConsumerByIssuer(issuer: $payload['iss']);
         if ($consumer === null) {
             throw new ZgwAuthException(

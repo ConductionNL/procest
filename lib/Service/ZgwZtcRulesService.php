@@ -483,17 +483,13 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         $isDraft = $existingObject['isDraft'] ?? ($existingObject['concept'] ?? true);
-
         if ($isDraft === 'false' || $isDraft === false || $isDraft === '0' || $isDraft === 0) {
-            // ztc-009g/k: PATCH with only eindeGeldigheid is allowed on published types.
-            if ($action === 'patch' && array_key_exists('eindeGeldigheid', $body) === true) {
-                $contentKeys = array_values(
-                        array_diff(
-                    array_keys($body),
-                    ['_route', 'zgwApi', 'resource', 'uuid', 'concept']
-                )
-                        );
-                if (count($contentKeys) === 1 && $contentKeys[0] === 'eindeGeldigheid') {
+            // ztc-009c/g/k: PATCH with only geldigheid fields is allowed on published types.
+            if ($action === 'patch') {
+                $metadataKeys = ['_route', 'zgwApi', 'resource', 'uuid', 'concept'];
+                $allowedKeys  = ['eindeGeldigheid', 'beginGeldigheid', 'beginObject'];
+                $contentKeys  = array_values(array_diff(array_keys($body), $metadataKeys, $allowedKeys));
+                if (count($contentKeys) === 0 && array_key_exists('eindeGeldigheid', $body) === true) {
                     return null;
                 }
             }

@@ -641,11 +641,15 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 );
             }
 
-            // Check if URL contains a UUID anywhere (even if not valid at end).
-            $hasUuid = $this->extractUuid($commKanaal) !== null;
             if ($this->isValidUrl($commKanaal) === false) {
-                // URL with garbled UUID → bad-url; collection endpoint → invalid-resource.
-                $code = $hasUuid === true ? 'bad-url' : 'invalid-resource';
+                // Determine error code: if the last path segment looks like a garbled
+                // UUID (contains hex chars + dashes) → bad-url.
+                // If it's a collection endpoint (word-only) → invalid-resource.
+                $path     = (string) parse_url($commKanaal, PHP_URL_PATH);
+                $segments = array_filter(explode('/', trim($path, '/')));
+                $last     = end($segments);
+                $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', $last) === 1;
+                $code     = $looksLikeUuid === true ? 'bad-url' : 'invalid-resource';
                 return $this->error(
                     400,
                     'De communicatiekanaal URL is ongeldig.',
@@ -909,7 +913,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             return null;
         }
 
-        $allowedProducts = $ztData['productsAndServices'] ?? ($ztData['productenOfDiensten'] ?? []);
+        $allowedProducts = $ztData['productsOrServices'] ?? ($ztData['productsAndServices'] ?? ($ztData['productenOfDiensten'] ?? []));
         if (is_string($allowedProducts) === true) {
             $allowedProducts = json_decode($allowedProducts, true) ?? [];
         }

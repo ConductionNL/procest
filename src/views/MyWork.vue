@@ -192,6 +192,7 @@ import { NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import { useObjectStore } from '../store/modules/object.js'
+import { getCurrentUserId } from '../utils/currentUser.js'
 import { getGroupedMyWorkItems } from '../utils/dashboardHelpers.js'
 import { fetchTasksForCases } from '../services/taskApi.js'
 
@@ -292,7 +293,7 @@ export default {
 		async fetchData() {
 			this.loading = true
 			try {
-				const currentUser = OC?.currentUser || ''
+				const currentUser = getCurrentUserId()
 
 				// Fetch active cases assigned to current user.
 				const caseResults = await this.objectStore.fetchCollection('case', {
@@ -322,7 +323,7 @@ export default {
 			}
 
 			try {
-				const currentUser = OC?.currentUser || ''
+				const currentUser = getCurrentUserId()
 
 				// Find final status IDs by fetching statusTypes with isFinal.
 				const statusTypes = await this.objectStore.fetchCollection('statusType', { _limit: 200 })

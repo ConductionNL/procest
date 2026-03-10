@@ -30,7 +30,7 @@
 				v-for="(entry, index) in entries"
 				:key="index"
 				class="activity-feed__entry">
-				<span class="activity-feed__icon" v-html="typeIcon(entry.type)" />
+				<span class="activity-feed__icon">{{ typeIcon(entry.type) }}</span>
 				<div class="activity-feed__content">
 					<span class="activity-feed__description">{{ entry.description }}</span>
 					<span class="activity-feed__meta">
@@ -55,11 +55,11 @@ import { NcButton } from '@nextcloud/vue'
 import { formatRelativeTime } from '../../utils/dashboardHelpers.js'
 
 const TYPE_ICONS = {
-	created: '&#43;',
-	status_change: '&#8594;',
-	update: '&#9998;',
-	extension: '&#9201;',
-	note: '&#128172;',
+	created: '+',
+	status_change: '→',
+	update: '✎',
+	extension: '⏱',
+	note: '💬',
 }
 
 export default {
@@ -75,7 +75,7 @@ export default {
 	emits: ['view-all', 'retry'],
 	methods: {
 		typeIcon(type) {
-			return TYPE_ICONS[type] || '&#8226;'
+			return TYPE_ICONS[type] || '•'
 		},
 		formatTime(date) {
 			return formatRelativeTime(date)

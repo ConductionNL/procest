@@ -208,6 +208,13 @@ class ZrcController extends Controller
                 if ($reopenError !== null) {
                     return $reopenError;
                 }
+
+                // zrc-007q: Before adding an eindstatus, verify all linked IOs
+                // have indicatieGebruiksrecht set (not null).
+                $gebruiksrechtError = $this->checkIndicatieGebruiksrechtBeforeClose($originalBody);
+                if ($gebruiksrechtError !== null) {
+                    return $gebruiksrechtError;
+                }
             }
 
             $object     = $this->zgwService->getObjectService()->saveObject(
@@ -324,6 +331,16 @@ class ZrcController extends Controller
             return $authError;
         }
 
+        // zrc-010/zrc-015: Pre-validate body fields that don't require
+        // the existing object, so validation errors are returned even
+        // when the OpenRegister find() call fails transiently.
+        if ($resource === 'zaken') {
+            $preValidation = $this->preValidateZaakBody(false);
+            if ($preValidation !== null) {
+                return $preValidation;
+            }
+        }
+
         [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting($resource, $uuid);
 
         $response = $this->zgwService->handleUpdate(
@@ -365,6 +382,16 @@ class ZrcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // zrc-010/zrc-015: Pre-validate body fields that don't require
+        // the existing object, so validation errors are returned even
+        // when the OpenRegister find() call fails transiently.
+        if ($resource === 'zaken') {
+            $preValidation = $this->preValidateZaakBody(true);
+            if ($preValidation !== null) {
+                return $preValidation;
+            }
         }
 
         [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting($resource, $uuid);
@@ -830,6 +857,166 @@ class ZrcController extends Controller
     }//end permissionDeniedResponse()
 
     /**
+     * Pre-validate zaak body fields before calling handleUpdate (zrc-010/zrc-015).
+     *
+     * Validates communicatiekanaal URL format and productenOfDiensten
+     * without requiring the existing object from OpenRegister.
+     * This ensures validation errors are returned with proper invalidParams
+     * even when OpenRegister's find() call fails transiently.
+     *
+     * @param bool $isPatch Whether this is a PATCH operation
+     *
+     * @return JSONResponse|null A 400 response if validation fails, null if valid
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    private function preValidateZaakBody(bool $isPatch): ?JSONResponse
+    {
+        try {
+            $body = $this->zgwService->getRequestBody($this->request);
+
+            // zrc-010: Validate communicatiekanaal URL.
+            $commKanaal = $body['communicatiekanaal'] ?? null;
+            if ($commKanaal !== null && $commKanaal !== '') {
+                if (filter_var($commKanaal, FILTER_VALIDATE_URL) === false) {
+                    return new JSONResponse(
+                        data: [
+                            'detail'        => 'De communicatiekanaal URL is ongeldig.',
+                            'invalidParams' => [
+                                [
+                                    'name'   => 'communicatiekanaal',
+                                    'code'   => 'bad-url',
+                                    'reason' => 'De communicatiekanaal URL is ongeldig.',
+                                ],
+                            ],
+                        ],
+                        statusCode: Http::STATUS_BAD_REQUEST
+                    );
+                }
+
+                // Check if URL ends with a valid UUID (resource endpoint, not collection).
+                $path     = (string) parse_url($commKanaal, PHP_URL_PATH);
+                $hasUuid  = preg_match(
+                    '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i',
+                    $path
+                ) === 1;
+
+                if ($hasUuid === false) {
+                    // Determine error code: garbled UUID → bad-url, collection endpoint → invalid-resource.
+                    $segments     = array_filter(explode('/', trim($path, '/')));
+                    $last         = end($segments);
+                    $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', (string) $last) === 1;
+                    $code         = $looksLikeUuid === true ? 'bad-url' : 'invalid-resource';
+                    return new JSONResponse(
+                        data: [
+                            'detail'        => 'De communicatiekanaal URL is ongeldig.',
+                            'invalidParams' => [
+                                [
+                                    'name'   => 'communicatiekanaal',
+                                    'code'   => $code,
+                                    'reason' => 'De communicatiekanaal URL is ongeldig.',
+                                ],
+                            ],
+                        ],
+                        statusCode: Http::STATUS_BAD_REQUEST
+                    );
+                }
+            }//end if
+
+            // zrc-015: Validate productenOfDiensten.
+            $producten = $body['productenOfDiensten'] ?? null;
+            if (is_array($producten) === true
+                && empty($producten) === false
+                && $this->zgwService->getObjectService() !== null
+            ) {
+                $zaaktypeUrl = $body['zaaktype'] ?? '';
+                if (empty($zaaktypeUrl) === false) {
+                    $error = $this->preValidateProductenOfDiensten(
+                        $producten,
+                        $zaaktypeUrl
+                    );
+                    if ($error !== null) {
+                        return $error;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Pre-validation is best-effort; fall through to handleUpdate.
+            $this->zgwService->getLogger()->debug(
+                'preValidateZaakBody: '.$e->getMessage()
+            );
+        }//end try
+
+        return null;
+    }//end preValidateZaakBody()
+
+    /**
+     * Pre-validate productenOfDiensten against zaaktype (zrc-015).
+     *
+     * @param array  $producten   The productenOfDiensten URLs
+     * @param string $zaaktypeUrl The zaaktype URL
+     *
+     * @return JSONResponse|null A 400 response if invalid, null if valid
+     */
+    private function preValidateProductenOfDiensten(
+        array $producten,
+        string $zaaktypeUrl
+    ): ?JSONResponse {
+        $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+        if (preg_match($uuidPattern, $zaaktypeUrl, $matches) !== 1) {
+            return null;
+        }
+
+        $ztConfig = $this->zgwService->getZgwMappingService()->getMapping('zaaktype');
+        if ($ztConfig === null) {
+            return null;
+        }
+
+        try {
+            $ztObj  = $this->zgwService->getObjectService()->find(
+                $matches[1],
+                register: $ztConfig['sourceRegister'],
+                schema: $ztConfig['sourceSchema']
+            );
+            $ztData = is_array($ztObj) === true ? $ztObj : $ztObj->jsonSerialize();
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $allowed = $ztData['productsOrServices']
+            ?? ($ztData['productsAndServices']
+            ?? ($ztData['productenOfDiensten'] ?? []));
+        if (is_string($allowed) === true) {
+            $allowed = json_decode($allowed, true) ?? [];
+        }
+
+        if (is_array($allowed) === false || empty($allowed) === true) {
+            return null;
+        }
+
+        foreach ($producten as $product) {
+            if (in_array($product, $allowed, true) === false) {
+                return new JSONResponse(
+                    data: [
+                        'detail'        => 'productenOfDiensten bevat een waarde die niet in het zaaktype voorkomt.',
+                        'invalidParams' => [
+                            [
+                                'name'   => 'productenOfDiensten',
+                                'code'   => 'invalid-products-services',
+                                'reason' => "Product '{$product}' is niet toegestaan voor dit zaaktype.",
+                            ],
+                        ],
+                    ],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+        }
+
+        return null;
+    }//end preValidateProductenOfDiensten()
+
+    /**
      * Delete a zaak with cascade delete of all sub-resources (zrc-023).
      *
      * Deletes: statussen, resultaten, rollen, zaakeigenschappen,
@@ -1044,6 +1231,206 @@ class ZrcController extends Controller
 
         return null;
     }//end checkReopenScope()
+
+    /**
+     * Set indicatieGebruiksrecht on all linked IOs and then verify none remain
+     * null before allowing an eindstatus (zrc-007b + zrc-007q).
+     *
+     * First attempts to set indicatieGebruiksrecht on all linked IOs (zrc-007b).
+     * Then checks that all linked IOs have indicatieGebruiksrecht set. If any
+     * still have null after setting, returns 400 (zrc-007q).
+     *
+     * @param array $body The original request body
+     *
+     * @return JSONResponse|null A 400 response if any IO has null indicatieGebruiksrecht, null otherwise
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     */
+    private function checkIndicatieGebruiksrechtBeforeClose(array $body): ?JSONResponse
+    {
+        try {
+            $zaakUrl       = $body['zaak'] ?? '';
+            $statustypeUrl = $body['statustype'] ?? '';
+            if ($zaakUrl === '' || $statustypeUrl === '') {
+                return null;
+            }
+
+            $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+
+            // Check if this is an eindstatus.
+            if (preg_match($uuidPattern, $statustypeUrl, $stMatches) !== 1) {
+                return null;
+            }
+
+            $stConfig = $this->zgwService->getZgwMappingService()->getMapping('statustype');
+            if ($stConfig === null) {
+                return null;
+            }
+
+            $statustype = $this->zgwService->getObjectService()->find(
+                $stMatches[1],
+                register: $stConfig['sourceRegister'],
+                schema: $stConfig['sourceSchema']
+            );
+            if ($statustype === null) {
+                return null;
+            }
+
+            $stData       = is_array($statustype) ? $statustype : $statustype->jsonSerialize();
+            $isEindstatus = $stData['isFinal'] ?? ($stData['isFinalStatus'] ?? ($stData['isEindstatus'] ?? false));
+
+            // Normalize boolean.
+            if ($isEindstatus === 'true' || $isEindstatus === '1' || $isEindstatus === 1 || $isEindstatus === true) {
+                $isEindstatus = true;
+            }
+
+            // Also check by highest volgnummer if not explicitly set.
+            if ($isEindstatus !== true) {
+                $isEindstatus = $this->isEindstatusByVolgnummer($stData, $stConfig, $uuidPattern);
+            }
+
+            if ($isEindstatus !== true) {
+                return null;
+            }
+
+            // This is an eindstatus — check indicatieGebruiksrecht (zrc-007q).
+            // Only derive values (zrc-007b) on the FIRST close (no endDate yet).
+            // If zaak is already closed, just check raw values without deriving.
+            if (preg_match($uuidPattern, $zaakUrl, $zaakMatches) !== 1) {
+                return null;
+            }
+
+            // Check if zaak is already closed (has endDate).
+            $zaakConfig = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+            $zaakAlreadyClosed = false;
+            if ($zaakConfig !== null) {
+                $zaakObj = $this->zgwService->getObjectService()->find(
+                    $zaakMatches[1],
+                    register: $zaakConfig['sourceRegister'],
+                    schema: $zaakConfig['sourceSchema']
+                );
+                if ($zaakObj !== null) {
+                    $zaakData = is_array($zaakObj) ? $zaakObj : $zaakObj->jsonSerialize();
+                    $endDate  = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
+                    $zaakAlreadyClosed = ($endDate !== null && $endDate !== '');
+                }
+            }
+
+            // zrc-007b: Only derive indicatieGebruiksrecht on first close.
+            if ($zaakAlreadyClosed === false) {
+                $this->setIndicatieGebruiksrechtOnClose($zaakMatches[1]);
+            }
+
+            // zrc-007q: Now verify all linked IOs have indicatieGebruiksrecht set.
+            $zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
+            $docConfig = $this->zgwService->getZgwMappingService()->getMapping('enkelvoudiginformatieobject');
+            if ($zioConfig === null || $docConfig === null) {
+                return null;
+            }
+
+            $query  = $this->zgwService->getObjectService()->buildSearchQuery(
+                requestParams: ['case' => $zaakMatches[1], '_limit' => 100],
+                register: $zioConfig['sourceRegister'],
+                schema: $zioConfig['sourceSchema']
+            );
+            $zioResult = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+
+            foreach (($zioResult['results'] ?? []) as $zioObj) {
+                $zioData = is_array($zioObj) ? $zioObj : $zioObj->jsonSerialize();
+                $docUuid = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
+
+                if (preg_match($uuidPattern, (string) $docUuid, $docMatches) !== 1) {
+                    continue;
+                }
+
+                $docObj  = $this->zgwService->getObjectService()->find(
+                    $docMatches[1],
+                    register: $docConfig['sourceRegister'],
+                    schema: $docConfig['sourceSchema']
+                );
+                $docData = is_array($docObj) ? $docObj : $docObj->jsonSerialize();
+                $indGr   = $docData['usageRightsIndication']
+                    ?? ($docData['usageRightsIndicator']
+                    ?? ($docData['indicatieGebruiksrecht'] ?? null));
+
+                if ($indGr === null || $indGr === '') {
+                    $detail = 'Zaak kan niet afgesloten worden: niet alle informatieobjecten '
+                        .'hebben indicatieGebruiksrecht gezet.';
+                    return new JSONResponse(
+                        data: [
+                            'detail'        => $detail,
+                            'code'          => 'indicatiegebruiksrecht-unset',
+                            'invalidParams' => [
+                                [
+                                    'name'   => 'nonFieldErrors',
+                                    'code'   => 'indicatiegebruiksrecht-unset',
+                                    'reason' => $detail,
+                                ],
+                            ],
+                        ],
+                        statusCode: Http::STATUS_BAD_REQUEST
+                    );
+                }
+            }//end foreach
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->debug(
+                'zrc-007q: Could not check indicatieGebruiksrecht: '.$e->getMessage()
+            );
+        }//end try
+
+        return null;
+    }//end checkIndicatieGebruiksrechtBeforeClose()
+
+    /**
+     * Check if a statustype is the eindstatus by having the highest volgnummer.
+     *
+     * @param array  $stData      The statustype data
+     * @param array  $stConfig    The statustype mapping config
+     * @param string $uuidPattern The UUID regex pattern
+     *
+     * @return bool True if this statustype has the highest volgnummer
+     */
+    private function isEindstatusByVolgnummer(array $stData, array $stConfig, string $uuidPattern): bool
+    {
+        $caseTypeUuid = (string) ($stData['caseType'] ?? '');
+        if (preg_match($uuidPattern, $caseTypeUuid, $ctMatches) === 1) {
+            $caseTypeUuid = $ctMatches[1];
+        }
+
+        $thisOrder = (int) ($stData['order'] ?? ($stData['volgnummer'] ?? 0));
+        if ($caseTypeUuid === '' || $thisOrder <= 0) {
+            return false;
+        }
+
+        try {
+            $query  = $this->zgwService->getObjectService()->buildSearchQuery(
+                requestParams: ['caseType' => $caseTypeUuid, '_limit' => 100],
+                register: $stConfig['sourceRegister'],
+                schema: $stConfig['sourceSchema']
+            );
+            $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+        } catch (\Throwable $e) {
+            $result = $this->zgwService->getObjectService()->searchObjectsPaginated(
+                query: [
+                    '@self'    => ['register' => (int) $stConfig['sourceRegister'], 'schema' => (int) $stConfig['sourceSchema']],
+                    'caseType' => $caseTypeUuid,
+                ]
+            );
+        }
+
+        $maxOrder = 0;
+        foreach (($result['results'] ?? []) as $st) {
+            $stObj = is_array($st) ? $st : $st->jsonSerialize();
+            $order = (int) ($stObj['order'] ?? ($stObj['volgnummer'] ?? 0));
+            if ($order > $maxOrder) {
+                $maxOrder = $order;
+            }
+        }
+
+        return $thisOrder >= $maxOrder && $maxOrder > 0;
+    }//end isEindstatusByVolgnummer()
 
     /**
      * Handle eindstatus side effect when creating a status.
@@ -1279,8 +1666,9 @@ class ZrcController extends Controller
                     $docData = is_array($docObj) ? $docObj : $docObj->jsonSerialize();
 
                     // Check if indicatieGebruiksrecht is already set.
-                    $indGr = $docData['usageRightsIndicator']
-                        ?? ($docData['indicatieGebruiksrecht'] ?? null);
+                    $indGr = $docData['usageRightsIndication']
+                        ?? ($docData['usageRightsIndicator']
+                        ?? ($docData['indicatieGebruiksrecht'] ?? null));
 
                     if ($indGr === null || $indGr === '') {
                         // Check if gebruiksrechten exist for this document.
@@ -1302,7 +1690,7 @@ class ZrcController extends Controller
 
                         // Set indicatieGebruiksrecht based on whether gebruiksrechten exist.
                         unset($docData['@self'], $docData['organisation']);
-                        $docData['usageRightsIndicator'] = $hasGr;
+                        $docData['usageRightsIndication'] = $hasGr;
                         $docData['id'] = $docMatches[1];
                         $this->zgwService->getObjectService()->saveObject(
                             register: $docConfig['sourceRegister'],
@@ -1686,21 +2074,31 @@ class ZrcController extends Controller
 
         try {
             $query  = $this->zgwService->getObjectService()->buildSearchQuery(
-                requestParams: ['case' => $zaakUuid, '_limit' => 1],
+                requestParams: ['case' => $zaakUuid, '_limit' => 100],
                 register: $besluitConfig['sourceRegister'],
                 schema: $besluitConfig['sourceSchema']
             );
             $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
 
             $results = $result['results'] ?? [];
-            if (empty($results) === false) {
-                $besluitObj  = $results[0];
+            if (empty($results) === true) {
+                return null;
+            }
+
+            // Find the latest (maximum) date among all besluiten for this zaak.
+            $latestDate = null;
+            foreach ($results as $besluitObj) {
                 $besluitData = is_array($besluitObj) ? $besluitObj : $besluitObj->jsonSerialize();
                 $dateVal     = $besluitData[$englishField] ?? ($besluitData[$dutchField] ?? '');
                 if ($dateVal !== '' && strtotime($dateVal) !== false) {
-                    return substr($dateVal, 0, 10);
+                    $dateStr = substr($dateVal, 0, 10);
+                    if ($latestDate === null || $dateStr > $latestDate) {
+                        $latestDate = $dateStr;
+                    }
                 }
             }
+
+            return $latestDate;
         } catch (\Throwable $e) {
             // Not found — return null.
         }
@@ -1829,21 +2227,22 @@ class ZrcController extends Controller
             );
             $zioData = is_array($zioObj) ? $zioObj : $zioObj->jsonSerialize();
 
-            // Build the zaak URL from the case UUID.
+            // The ZIO stores 'case' as a UUID (format: uuid with $ref) and
+            // 'document' as a full URL (format: uri). Build the zaak URL from
+            // the case UUID, and use the document URL directly.
             $zaakUuid = $zioData['case'] ?? ($zioData['zaak'] ?? '');
-            $ioUuid   = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
+            $ioUrl    = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
 
-            if ($zaakUuid === '' || $ioUuid === '') {
+            if ($zaakUuid === '' || $ioUrl === '') {
                 return null;
             }
 
-            // Build full URLs from UUIDs.
+            // Build zaak URL from the UUID (case field stores UUID).
             $zaakBaseUrl = $this->zgwService->buildBaseUrl($this->request, 'zaken', 'zaken');
-            $ioBaseUrl   = $this->zgwService->buildBaseUrl($this->request, 'documenten', 'enkelvoudiginformatieobjecten');
 
             return [
                 'zaakUrl' => $zaakBaseUrl.'/'.$zaakUuid,
-                'ioUrl'   => $ioBaseUrl.'/'.$ioUuid,
+                'ioUrl'   => $ioUrl,
             ];
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->debug(
@@ -1869,26 +2268,14 @@ class ZrcController extends Controller
                 return;
             }
 
-            // Search for matching OIOs by object (zaak) and informatieobject.
-            $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-
-            // Extract UUIDs for searching in OpenRegister.
-            $zaakUuid = '';
-            if (preg_match($uuidPattern, $zaakUrl, $zaakM) === 1) {
-                $zaakUuid = $zaakM[1];
-            }
-
-            $ioUuid = '';
-            if (preg_match($uuidPattern, $ioUrl, $ioM) === 1) {
-                $ioUuid = $ioM[1];
-            }
-
-            if ($zaakUuid === '' || $ioUuid === '') {
+            // The OIO schema (documentLink) stores 'object' and 'document' as
+            // full URLs (format: uri). Search by the full URL values directly.
+            if ($zaakUrl === '' || $ioUrl === '') {
                 return;
             }
 
             $query  = $this->zgwService->getObjectService()->buildSearchQuery(
-                requestParams: ['relatedObject' => $zaakUuid, 'document' => $ioUuid],
+                requestParams: ['object' => $zaakUrl, 'document' => $ioUrl],
                 register: $oioConfig['sourceRegister'],
                 schema: $oioConfig['sourceSchema']
             );

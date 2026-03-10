@@ -135,6 +135,24 @@ class ZgwZrcRulesService extends ZgwRulesBase
      */
     public function rulesZakenUpdate(array $body, ?array $existingObject=null): array
     {
+        // zrc-002: Preserve immutable identificatie on PUT if not provided.
+        // If the PUT body omits identificatie, carry it forward from the existing object
+        // to prevent the stored identifier from being erased.
+        if (isset($body['identificatie']) === false && $existingObject !== null) {
+            $existingId = $existingObject['identifier'] ?? ($existingObject['identificatie'] ?? '');
+            if ($existingId !== '') {
+                $body['identificatie'] = $existingId;
+            }
+        }
+
+        // zrc-002: Preserve immutable bronorganisatie on PUT if not provided.
+        if (isset($body['bronorganisatie']) === false && $existingObject !== null) {
+            $existingOrg = $existingObject['sourceOrganisation'] ?? ($existingObject['bronorganisatie'] ?? '');
+            if ($existingOrg !== '') {
+                $body['bronorganisatie'] = $existingOrg;
+            }
+        }
+
         // zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype if not set.
         $zaaktypeUrl = $body['zaaktype'] ?? '';
         if (empty($body['vertrouwelijkheidaanduiding']) === true && empty($zaaktypeUrl) === false) {
@@ -162,6 +180,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
             if ($caseType !== '') {
                 $zaaktypeUrl = $caseType;
             }
+        }
+
+        // Ensure zaaktype is available in body for downstream validations
+        // (zrc-010, zrc-015) that need the zaaktype URL from the existing object.
+        if (($body['zaaktype'] ?? '') === '' && $zaaktypeUrl !== '') {
+            $body['zaaktype'] = $zaaktypeUrl;
         }
 
         if (empty($body['vertrouwelijkheidaanduiding']) === true && empty($zaaktypeUrl) === false) {

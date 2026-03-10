@@ -278,6 +278,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'url'                          => '{{ _baseUrl }}/{{ _uuid }}',
                 'uuid'                         => '{{ _uuid }}',
                 'identificatie'                => '{{ identifier }}',
+                'bronorganisatie'              => '{{ sourceOrganisation }}',
                 'omschrijving'                 => '{{ title }}',
                 'toelichting'                  => '{{ description }}',
                 'zaaktype'                     => $this->tplUrl(
@@ -303,6 +304,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'title'              => '{{ omschrijving }}',
                 'description'        => '{{ toelichting }}',
                 'identifier'         => '{{ identificatie }}',
+                'sourceOrganisation' => '{{ bronorganisatie }}',
                 'caseType'           => '{{ zaaktype | zgw_extract_uuid }}',
                 'startDate'          => '{{ startdatum }}',
                 'endDate'            => '{{ einddatum }}',
@@ -958,13 +960,16 @@ class LoadDefaultZgwMappings implements IRepairStep
             ],
             'valueMapping'          => [],
             'queryParameterMapping' => [
-                'zaaktypen' => [
+                'zaaktypen'    => [
                     'field'       => 'caseType',
                     'extractUuid' => true,
                 ],
-                'catalogus' => [
+                'catalogus'    => [
                     'field'       => 'catalogus',
                     'extractUuid' => true,
+                ],
+                'omschrijving' => [
+                    'field' => 'name',
                 ],
             ],
         ];
@@ -1455,9 +1460,19 @@ class LoadDefaultZgwMappings implements IRepairStep
         $defaults = $this->getDefaultApplicaties();
         $created  = 0;
 
+        $updated = 0;
+
         foreach ($defaults as $applicatie) {
             $existing = $consumerMapper->findAll(filters: ['name' => $applicatie['name']]);
             if (count(value: $existing) > 0) {
+                // Update existing consumer's authorization configuration
+                // to ensure new scopes are applied.
+                $consumer   = $existing[0];
+                $newConfig  = $applicatie['authorizationConfiguration'] ?? [];
+                $consumer->setAuthorizationConfiguration($newConfig);
+                $consumer->setUpdated(new DateTime());
+                $consumerMapper->update($consumer);
+                $updated++;
                 continue;
             }
 
@@ -1467,7 +1482,7 @@ class LoadDefaultZgwMappings implements IRepairStep
             $created++;
         }
 
-        $output->info("Created {$created} default test applicaties.");
+        $output->info("Created {$created}, updated {$updated} default test applicaties.");
     }//end createDefaultApplicaties()
 
     /**
@@ -1505,6 +1520,13 @@ class LoadDefaultZgwMappings implements IRepairStep
                             'scopes'    => [
                                 'zaaktypen.lezen',
                             ],
+                        ],
+                        [
+                            'component'                      => 'zrc',
+                            'scopes'                         => [
+                                'zaken.lezen',
+                            ],
+                            'maxVertrouwelijkheidaanduiding' => 'openbaar',
                         ],
                     ],
                 ],

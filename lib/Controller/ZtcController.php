@@ -128,22 +128,31 @@ class ZtcController extends Controller
 
         $response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
-        // ztc-0xx: Enrich cross-references and filter invalid URLs from paginated results.
-        if (isset(self::URL_FILTER_FIELDS[$resource]) === true
-            && $response->getStatus() === Http::STATUS_OK
-        ) {
-            $data = $response->getData();
-            if (isset($data['results']) === true && is_array($data['results']) === true) {
-                foreach ($data['results'] as $idx => $item) {
-                    $item = $this->enrichCrossReferences($resource, $item);
-                    $data['results'][$idx] = $this->filterValidUrls($resource, $item);
-                }
+        if ($response->getStatus() !== Http::STATUS_OK) {
+            return $response;
+        }
 
-                return new JSONResponse(data: $data, statusCode: Http::STATUS_OK);
+        $data = $response->getData();
+        if (isset($data['results']) === false || is_array($data['results']) === false) {
+            return $response;
+        }
+
+        // ZTC datumGeldigheid: post-filter results by date validity.
+        $datumGeldigheid = $this->request->getParam('datumGeldigheid');
+        if ($datumGeldigheid !== null && $datumGeldigheid !== '') {
+            $data['results'] = $this->filterByDatumGeldigheid($data['results'], $datumGeldigheid);
+            $data['count']   = count($data['results']);
+        }
+
+        // Enrich cross-references and filter invalid URLs from paginated results.
+        if (isset(self::URL_FILTER_FIELDS[$resource]) === true) {
+            foreach ($data['results'] as $idx => $item) {
+                $item = $this->enrichCrossReferences($resource, $item);
+                $data['results'][$idx] = $this->filterValidUrls($resource, $item);
             }
         }
 
-        return $response;
+        return new JSONResponse(data: $data, statusCode: Http::STATUS_OK);
     }//end index()
 
     /**
@@ -212,7 +221,7 @@ class ZtcController extends Controller
 
         $response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 
-        // ztc-0xx: Enrich cross-references and filter invalid URLs.
+        // Enrich cross-references and filter invalid URLs.
         if (isset(self::URL_FILTER_FIELDS[$resource]) === true
             && $response->getStatus() === Http::STATUS_OK
         ) {
@@ -280,7 +289,7 @@ class ZtcController extends Controller
 
         $parentZtDraft = $this->resolveParentDraft($resource, $uuid);
 
-        return $this->zgwService->handleUpdate(
+        $response = $this->zgwService->handleUpdate(
             $this->request,
             self::ZGW_API,
             $resource,
@@ -288,6 +297,19 @@ class ZtcController extends Controller
             false,
             $parentZtDraft
         );
+
+        // Enrich cross-references and filter invalid URLs.
+        if (isset(self::URL_FILTER_FIELDS[$resource]) === true
+            && $response->getStatus() === Http::STATUS_OK
+        ) {
+            $data     = $response->getData();
+            $data     = $this->enrichCrossReferences($resource, $data);
+            $filtered = $this->filterValidUrls($resource, $data);
+
+            return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
+        }
+
+        return $response;
     }//end update()
 
     /**
@@ -314,7 +336,7 @@ class ZtcController extends Controller
 
         $parentZtDraft = $this->resolveParentDraft($resource, $uuid);
 
-        return $this->zgwService->handleUpdate(
+        $response = $this->zgwService->handleUpdate(
             $this->request,
             self::ZGW_API,
             $resource,
@@ -322,6 +344,19 @@ class ZtcController extends Controller
             true,
             $parentZtDraft
         );
+
+        // Enrich cross-references and filter invalid URLs.
+        if (isset(self::URL_FILTER_FIELDS[$resource]) === true
+            && $response->getStatus() === Http::STATUS_OK
+        ) {
+            $data     = $response->getData();
+            $data     = $this->enrichCrossReferences($resource, $data);
+            $filtered = $this->filterValidUrls($resource, $data);
+
+            return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
+        }
+
+        return $response;
     }//end patch()
 
     /**
@@ -762,7 +797,18 @@ class ZtcController extends Controller
                 }//end try
             }//end foreach
 
-            $data['gerelateerdeZaaktypen'] = $expanded;
+            // Deduplicate by zaaktype URL.
+            $seen   = [];
+            $unique = [];
+            foreach ($expanded as $entry) {
+                $ztUrl = $entry['zaaktype'] ?? '';
+                if (isset($seen[$ztUrl]) === false) {
+                    $seen[$ztUrl] = true;
+                    $unique[]     = $entry;
+                }
+            }
+
+            $data['gerelateerdeZaaktypen'] = $unique;
         }//end if
 
         // Populate informatieobjecttypen from ZIOT records.
@@ -901,6 +947,40 @@ class ZtcController extends Controller
 
         return $data;
     }//end enrichZaaktype()
+
+    /**
+     * Filter a list of ZTC results by datumGeldigheid (date validity).
+     *
+     * Returns only items where beginGeldigheid <= datumGeldigheid and
+     * (eindeGeldigheid >= datumGeldigheid or eindeGeldigheid is absent).
+     *
+     * @param array  $results         The array of outbound-mapped result items.
+     * @param string $datumGeldigheid The validity date in Y-m-d format.
+     *
+     * @return array The filtered results (re-indexed).
+     */
+    private function filterByDatumGeldigheid(array $results, string $datumGeldigheid): array
+    {
+        $filtered = [];
+        foreach ($results as $item) {
+            $begin = $item['beginGeldigheid'] ?? null;
+            $end   = $item['eindeGeldigheid'] ?? null;
+
+            // BeginGeldigheid must be present and <= datumGeldigheid.
+            if ($begin !== null && $begin !== '' && $begin > $datumGeldigheid) {
+                continue;
+            }
+
+            // EindeGeldigheid, if present, must be >= datumGeldigheid.
+            if ($end !== null && $end !== '' && $end < $datumGeldigheid) {
+                continue;
+            }
+
+            $filtered[] = $item;
+        }
+
+        return $filtered;
+    }//end filterByDatumGeldigheid()
 
     /**
      * For zaaktypen and besluittypen, removes URLs from array fields that point to

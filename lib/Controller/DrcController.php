@@ -95,27 +95,31 @@ class DrcController extends Controller
             return $authError;
         }
 
-        // ObjectInformatieObjecten returns a plain array per ZGW spec.
-        if ($resource === 'objectinformatieobjecten') {
-            return $this->indexObjectInformatieObjecten();
+        // ObjectInformatieObjecten and Gebruiksrechten return a plain array per ZGW spec.
+        if ($resource === 'objectinformatieobjecten' || $resource === 'gebruiksrechten') {
+            return $this->indexFlatArray($resource);
         }
 
         return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
     }//end index()
 
     /**
-     * List ObjectInformatieObjecten as a plain array (per ZGW spec).
+     * List DRC resources as a plain array (per ZGW spec).
+     *
+     * Used for objectinformatieobjecten and gebruiksrechten which return
+     * flat arrays instead of paginated results.
+     *
+     * @param string $resource The ZGW resource name
      *
      * @return JSONResponse
      */
-    private function indexObjectInformatieObjecten(): JSONResponse
+    private function indexFlatArray(string $resource): JSONResponse
     {
         $objectService = $this->zgwService->getObjectService();
         if ($objectService === null) {
             return $this->zgwService->unavailableResponse();
         }
 
-        $resource      = 'objectinformatieobjecten';
         $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
         if ($mappingConfig === null) {
             return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
@@ -154,7 +158,7 @@ class DrcController extends Controller
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'DRC list OIO error: '.$e->getMessage(),
+                'DRC list ' . $resource . ' error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
@@ -162,7 +166,7 @@ class DrcController extends Controller
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }//end try
-    }//end indexObjectInformatieObjecten()
+    }//end indexFlatArray()
 
     /**
      * Create a new resource of the given type.
@@ -728,7 +732,7 @@ class DrcController extends Controller
                 uuid: $uuid
             );
 
-            return new JSONResponse(data: '', statusCode: Http::STATUS_NO_CONTENT);
+            return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
                 'DRC unlock error: '.$e->getMessage(),
@@ -760,6 +764,25 @@ class DrcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // drc-008c (VNG): Return 404 if the parent resource no longer exists.
+        if ($this->zgwService->getObjectService() !== null) {
+            $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
+            if ($mappingConfig !== null) {
+                try {
+                    $this->zgwService->getObjectService()->find(
+                        $uuid,
+                        register: $mappingConfig['sourceRegister'],
+                        schema: $mappingConfig['sourceSchema']
+                    );
+                } catch (\Throwable $e) {
+                    return new JSONResponse(
+                        data: ['detail' => 'Niet gevonden.'],
+                        statusCode: Http::STATUS_NOT_FOUND
+                    );
+                }
+            }
         }
 
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
@@ -809,7 +832,7 @@ class DrcController extends Controller
             return [];
         }
 
-        $oioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'objectinformatieobject');
+        $oioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'objectinformatieobjecten');
         if ($oioConfig === null) {
             return [];
         }
@@ -863,7 +886,7 @@ class DrcController extends Controller
 
         try {
             $query  = $objectService->buildSearchQuery(
-                requestParams: ['document' => $eioUuid, '_limit' => 100],
+                requestParams: ['document' => '%'.$eioUuid.'%', '_limit' => 100],
                 register: $grConfig['sourceRegister'],
                 schema: $grConfig['sourceSchema']
             );

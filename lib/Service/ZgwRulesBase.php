@@ -582,6 +582,9 @@ abstract class ZgwRulesBase
         try {
             // Build query directly to avoid buildSearchQuery's underscore-splitting
             // which breaks camelCase field names like sourceOrganisation.
+            // Search only by field1 (identifier) because OpenRegister may store
+            // numeric strings (e.g. "000000000") as integers, which breaks
+            // exact-match search for field2 (sourceOrganisation).
             $query = [
                 '@self' => [
                     'register' => (int) $register,
@@ -589,17 +592,39 @@ abstract class ZgwRulesBase
                 ],
                 $field1Search => $field1Value,
             ];
-            if ($field2Value !== '') {
-                $query[$field2Search] = $field2Value;
-            }
 
             $result = $this->objectService->searchObjectsPaginated(
                 query: $query,
+                _rbac: false,
                 _multitenancy: false
             );
-            $total  = $result['total'] ?? count($result['results'] ?? []);
 
-            if ($total > 0) {
+            // Post-filter results by field2 value in memory, comparing both
+            // string and numeric forms to handle integer coercion by OpenRegister.
+            // OpenRegister may store numeric-looking strings (e.g. "000000000")
+            // as integer 0, which the magic mapper may serialize to empty string.
+            // When the stored value is empty but field2 was provided, we still
+            // count it as a match (conservative: assume coercion happened).
+            $matchCount = 0;
+            foreach (($result['results'] ?? []) as $obj) {
+                $data       = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+                $storedVal  = $data[$field2Search] ?? null;
+                $storedStr  = (string) $storedVal;
+                $compareStr = (string) $field2Value;
+
+                // Match when: no field2 filter, or values match directly,
+                // or stored is empty/0 (likely coerced from numeric string).
+                $isMatch = ($field2Value === '')
+                    || ($storedStr === $compareStr)
+                    || ($storedStr === '' && $field2Value !== '')
+                    || ($storedStr === '0' && preg_match('/^0+$/', $field2Value) === 1);
+
+                if ($isMatch === true) {
+                    $matchCount++;
+                }
+            }
+
+            if ($matchCount > 0) {
                 return $this->error(
                     400,
                     'De combinatie is niet uniek.',

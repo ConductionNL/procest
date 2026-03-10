@@ -786,7 +786,8 @@ class ZgwService
                 schema: $mappingConfig['sourceSchema']
             );
             $result = $this->openRegisterObjectService->searchObjectsPaginated(
-                query: $query
+                query: $query,
+                _multitenancy: false
             );
 
             $objects    = $result['results'] ?? [];

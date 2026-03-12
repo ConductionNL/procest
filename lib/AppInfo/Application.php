@@ -44,7 +44,7 @@ class Application extends App implements IBootstrap
     public function __construct()
     {
         parent::__construct(appName: self::APP_ID);
-    }//end __construct()
+    }
 
     /**
      * Register event listeners and services.
@@ -61,7 +61,7 @@ class Application extends App implements IBootstrap
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
-    }//end register()
+    }
 
     /**
      * Boot the application.
@@ -74,5 +74,5 @@ class Application extends App implements IBootstrap
      */
     public function boot(IBootContext $context): void
     {
-    }//end boot()
-}//end class
+    }
+}

@@ -75,18 +75,18 @@ class ZgwPaginationHelper
 
         $separator = '?';
         if ($queryString !== '') {
-            $separator = '?'.$queryString.'&';
+            $separator = '?' . $queryString . '&';
         }
 
         $next     = null;
         $previous = null;
 
         if ($page < $totalPages) {
-            $next = $baseUrl.$separator.'page='.($page + 1);
+            $next = $baseUrl . $separator . 'page=' . ($page + 1);
         }
 
         if ($page > 1) {
-            $previous = $baseUrl.$separator.'page='.($page - 1);
+            $previous = $baseUrl . $separator . 'page=' . ($page - 1);
         }
 
         return [
@@ -95,5 +95,5 @@ class ZgwPaginationHelper
             'previous' => $previous,
             'results'  => $mappedObjects,
         ];
-    }//end wrapResults()
-}//end class
+    }
+}

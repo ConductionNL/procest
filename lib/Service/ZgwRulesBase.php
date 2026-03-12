@@ -37,7 +37,6 @@ use Psr\Log\LoggerInterface;
  */
 abstract class ZgwRulesBase
 {
-
     /**
      * The OpenRegister ObjectService (set per-request).
      *
@@ -64,7 +63,7 @@ abstract class ZgwRulesBase
         protected readonly LoggerInterface $logger,
         protected readonly SettingsService $settingsService,
     ) {
-    }//end __construct()
+    }
 
     /**
      * Set the per-request services for cross-resource lookups.
@@ -78,7 +77,7 @@ abstract class ZgwRulesBase
     {
         $this->objectService = $objectService;
         $this->mappingConfig = $mappingConfig;
-    }//end setContext()
+    }
 
     /**
      * Build a successful validation result (pass-through).
@@ -95,7 +94,7 @@ abstract class ZgwRulesBase
             'detail'       => '',
             'enrichedBody' => $body,
         ];
-    }//end ok()
+    }
 
     /**
      * Build a validation error result.
@@ -110,8 +109,8 @@ abstract class ZgwRulesBase
     protected function error(
         int $status,
         string $detail,
-        array $invalidParams=[],
-        string $code=''
+        array $invalidParams = [],
+        string $code = ''
     ): array {
         $result = [
             'valid'         => false,
@@ -125,7 +124,7 @@ abstract class ZgwRulesBase
         }
 
         return $result;
-    }//end error()
+    }
 
     /**
      * Build a field-level validation error.
@@ -143,7 +142,7 @@ abstract class ZgwRulesBase
             'code'   => $code,
             'reason' => $reason,
         ];
-    }//end fieldError()
+    }
 
     /**
      * Build a field immutability error response.
@@ -166,7 +165,7 @@ abstract class ZgwRulesBase
                 ),
             ]
         );
-    }//end fieldImmutableError()
+    }
 
     /**
      * Extract a UUID from a URL or plain UUID string.
@@ -177,25 +176,27 @@ abstract class ZgwRulesBase
      */
     protected function extractUuid(string $value): ?string
     {
-        if (preg_match(
-            '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
-            $value
-        ) === 1
+        if (
+            preg_match(
+                '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
+                $value
+            ) === 1
         ) {
             return $value;
         }
 
-        if (preg_match(
-            '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-            $value,
-            $matches
-        ) === 1
+        if (
+            preg_match(
+                '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
+                $value,
+                $matches
+            ) === 1
         ) {
             return $matches[1];
         }
 
         return null;
-    }//end extractUuid()
+    }
 
     /**
      * Check if a URL is syntactically valid.
@@ -219,7 +220,7 @@ abstract class ZgwRulesBase
             '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i',
             $path
         ) === 1;
-    }//end isValidUrl()
+    }
 
     /**
      * Validate a type URL (zaaktype, besluittype, informatieobjecttype).
@@ -287,19 +288,19 @@ abstract class ZgwRulesBase
         if ($isDraft === true) {
             return $this->error(
                 status: 400,
-                detail: ucfirst($fieldName).' is nog in concept.',
+                detail: ucfirst($fieldName) . ' is nog in concept.',
                 invalidParams: [
                     $this->fieldError(
                         fieldName: $fieldName,
                         code: 'not-published',
-                        reason: ucfirst($fieldName).' is nog in concept.'
+                        reason: ucfirst($fieldName) . ' is nog in concept.'
                     ),
                 ]
             );
         }
 
         return null;
-    }//end validateTypeUrl()
+    }
 
     /**
      * Validate an informatieobject URL resolves to an existing document.
@@ -358,14 +359,14 @@ abstract class ZgwRulesBase
                 } catch (\Throwable $e) {
                     // Document not found locally — acceptable for external DRC URLs.
                     $this->logger->debug(
-                        'Informatieobject UUID not found locally, assuming external: '.$ioUuid
+                        'Informatieobject UUID not found locally, assuming external: ' . $ioUuid
                     );
                 }
             }
-        }//end if
+        }
 
         return null;
-    }//end validateInformatieobjectUrl()
+    }
 
     /**
      * Validate an external URL is reachable (basic URL + UUID format check).
@@ -415,7 +416,7 @@ abstract class ZgwRulesBase
         }
 
         return null;
-    }//end validateExternalUrl()
+    }
 
     /**
      * Fetch data from an external URL (selectielijst, resultaattypeomschrijving).
@@ -437,12 +438,12 @@ abstract class ZgwRulesBase
             return $data;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Failed to fetch external URL: '.$e->getMessage(),
+                'Failed to fetch external URL: ' . $e->getMessage(),
                 ['url' => $url]
             );
             return null;
         }
-    }//end fetchExternalUrl()
+    }
 
     /**
      * Generate a unique identificatie string.
@@ -456,8 +457,8 @@ abstract class ZgwRulesBase
         $timestamp = strtoupper(base_convert((string) time(), 10, 36));
         $random    = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
 
-        return $prefix.'-'.$timestamp.'-'.$random;
-    }//end generateIdentificatie()
+        return $prefix . '-' . $timestamp . '-' . $random;
+    }
 
     /**
      * Find an object UUID by a field value (omschrijving/identificatie).
@@ -498,12 +499,12 @@ abstract class ZgwRulesBase
             return $data['id'] ?? ($data['@self']['id'] ?? null);
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Reference resolution failed: '.$e->getMessage(),
+                'Reference resolution failed: ' . $e->getMessage(),
                 ['field' => $field, 'value' => $value]
             );
             return null;
-        }//end try
-    }//end findObjectByField()
+        }
+    }
 
     /**
      * Find all objects matching a field value.
@@ -546,12 +547,12 @@ abstract class ZgwRulesBase
             return $ids;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Reference resolution failed: '.$e->getMessage(),
+                'Reference resolution failed: ' . $e->getMessage(),
                 ['field' => $field, 'value' => $value]
             );
             return [];
-        }//end try
-    }//end findAllObjectsByField()
+        }
+    }
 
     /**
      * Look up an object in OpenRegister by UUID and schema key.
@@ -588,7 +589,7 @@ abstract class ZgwRulesBase
         } catch (\Throwable $e) {
             return null;
         }
-    }//end findBySchemaKey()
+    }
 
     /**
      * Check unique combination of two fields (identificatie + organisatie).
@@ -666,7 +667,7 @@ abstract class ZgwRulesBase
                 if ($isMatch === true) {
                     $matchCount++;
                 }
-            }//end foreach
+            }
 
             if ($matchCount > 0) {
                 return $this->error(
@@ -683,10 +684,10 @@ abstract class ZgwRulesBase
             }
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Uniqueness check failed: '.$e->getMessage()
+                'Uniqueness check failed: ' . $e->getMessage()
             );
-        }//end try
+        }
 
         return null;
-    }//end checkFieldUniqueness()
-}//end class
+    }
+}

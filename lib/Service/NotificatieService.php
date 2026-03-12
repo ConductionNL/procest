@@ -34,7 +34,6 @@ use Psr\Log\LoggerInterface;
  */
 class NotificatieService
 {
-
     /**
      * The OpenRegister ObjectService (loaded dynamically).
      *
@@ -55,7 +54,7 @@ class NotificatieService
         private readonly LoggerInterface $logger,
     ) {
         $this->loadOpenRegisterServices();
-    }//end __construct()
+    }
 
     /**
      * Load OpenRegister services dynamically.
@@ -75,7 +74,7 @@ class NotificatieService
                 ['exception' => $e->getMessage()]
             );
         }
-    }//end loadOpenRegisterServices()
+    }
 
     /**
      * Publish a notification for a ZGW resource change.
@@ -98,7 +97,7 @@ class NotificatieService
         string $resource,
         string $resourceUrl,
         string $actie,
-        array $kenmerken=[]
+        array $kenmerken = []
     ): void {
         $notification = [
             'kanaal'       => $kanaal,
@@ -122,7 +121,7 @@ class NotificatieService
                 ]
             );
         }
-    }//end publish()
+    }
 
     /**
      * Find matching subscriptions and deliver the notification.
@@ -167,7 +166,7 @@ class NotificatieService
                 notification: $notification
             );
         }
-    }//end deliver()
+    }
 
     /**
      * Deliver notification to a single subscription if it matches.
@@ -212,12 +211,12 @@ class NotificatieService
             }
 
             $client->post(
-                    $callbackUrl,
-                    [
+                $callbackUrl,
+                [
                         'json'    => $notification,
                         'headers' => $headers,
                     ]
-                    );
+            );
 
             $this->logger->info(
                 'Notification delivered',
@@ -234,6 +233,6 @@ class NotificatieService
                     'exception'   => $e->getMessage(),
                 ]
             );
-        }//end try
-    }//end deliverToSubscription()
-}//end class
+        }
+    }
+}

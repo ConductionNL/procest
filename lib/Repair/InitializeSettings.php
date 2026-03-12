@@ -43,7 +43,7 @@ class InitializeSettings implements IRepairStep
         private SettingsService $settingsService,
         private LoggerInterface $logger,
     ) {
-    }//end __construct()
+    }
 
     /**
      * Get the name of this repair step.
@@ -53,7 +53,7 @@ class InitializeSettings implements IRepairStep
     public function getName(): string
     {
         return 'Initialize Procest register and schemas via ConfigurationService';
-    }//end getName()
+    }
 
     /**
      * Run the repair step to initialize Procest configuration.
@@ -82,20 +82,20 @@ class InitializeSettings implements IRepairStep
             if ($result['success'] === true) {
                 $version = ($result['version'] ?? 'unknown');
                 $output->info(
-                    'Procest configuration imported successfully (version: '.$version.')'
+                    'Procest configuration imported successfully (version: ' . $version . ')'
                 );
             } else {
                 $message = ($result['message'] ?? 'unknown error');
                 $output->warning(
-                    'Procest configuration import issue: '.$message
+                    'Procest configuration import issue: ' . $message
                 );
             }
         } catch (\Throwable $e) {
-            $output->warning('Could not auto-configure Procest: '.$e->getMessage());
+            $output->warning('Could not auto-configure Procest: ' . $e->getMessage());
             $this->logger->error(
                 'Procest initialization failed',
                 ['exception' => $e->getMessage()]
             );
-        }//end try
-    }//end run()
-}//end class
+        }
+    }
+}

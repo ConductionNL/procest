@@ -45,7 +45,6 @@ use OCP\IRequest;
  */
 class ZtcController extends Controller
 {
-
     /**
      * The ZGW API identifier for the Catalogi register.
      *
@@ -105,7 +104,7 @@ class ZtcController extends Controller
         private readonly ZgwService $zgwService,
     ) {
         parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+    }
 
     /**
      * List resources of the given type.
@@ -140,7 +139,10 @@ class ZtcController extends Controller
         // ZTC datumGeldigheid: post-filter results by date validity.
         $datumGeldigheid = $this->request->getParam('datumGeldigheid');
         if ($datumGeldigheid !== null && $datumGeldigheid !== '') {
-            $data['results'] = $this->filterByDatumGeldigheid(results: $data['results'], datumGeldigheid: $datumGeldigheid);
+            $data['results'] = $this->filterByDatumGeldigheid(
+                results: $data['results'],
+                datumGeldigheid: $datumGeldigheid
+            );
             $data['count']   = count($data['results']);
         }
 
@@ -153,7 +155,7 @@ class ZtcController extends Controller
         }
 
         return new JSONResponse(data: $data, statusCode: Http::STATUS_OK);
-    }//end index()
+    }
 
     /**
      * Create a new resource of the given type.
@@ -192,7 +194,8 @@ class ZtcController extends Controller
 
         // Enrich cross-references on create response (without validity filtering
         // since referenced types may not yet be published at creation time).
-        if (isset(self::URL_FILTER_FIELDS[$resource]) === true
+        if (
+            isset(self::URL_FILTER_FIELDS[$resource]) === true
             && $response->getStatus() === Http::STATUS_CREATED
         ) {
             $data = $response->getData();
@@ -202,7 +205,7 @@ class ZtcController extends Controller
         }
 
         return $response;
-    }//end create()
+    }
 
     /**
      * Retrieve a single resource by UUID.
@@ -227,7 +230,8 @@ class ZtcController extends Controller
         $response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 
         // Enrich cross-references and filter invalid URLs.
-        if (isset(self::URL_FILTER_FIELDS[$resource]) === true
+        if (
+            isset(self::URL_FILTER_FIELDS[$resource]) === true
             && $response->getStatus() === Http::STATUS_OK
         ) {
             $data     = $response->getData();
@@ -238,7 +242,7 @@ class ZtcController extends Controller
         }
 
         return $response;
-    }//end show()
+    }
 
     /**
      * Resolve the parent zaaktype draft status for a sub-resource.
@@ -272,7 +276,7 @@ class ZtcController extends Controller
             // Proceed without parent zaaktype info.
             return null;
         }
-    }//end resolveParentDraft()
+    }
 
     /**
      * Full update (PUT) a resource by UUID.
@@ -308,7 +312,8 @@ class ZtcController extends Controller
         );
 
         // Enrich cross-references and filter invalid URLs.
-        if (isset(self::URL_FILTER_FIELDS[$resource]) === true
+        if (
+            isset(self::URL_FILTER_FIELDS[$resource]) === true
             && $response->getStatus() === Http::STATUS_OK
         ) {
             $data     = $response->getData();
@@ -319,7 +324,7 @@ class ZtcController extends Controller
         }
 
         return $response;
-    }//end update()
+    }
 
     /**
      * Partial update (PATCH) a resource by UUID.
@@ -355,7 +360,8 @@ class ZtcController extends Controller
         );
 
         // Enrich cross-references and filter invalid URLs.
-        if (isset(self::URL_FILTER_FIELDS[$resource]) === true
+        if (
+            isset(self::URL_FILTER_FIELDS[$resource]) === true
             && $response->getStatus() === Http::STATUS_OK
         ) {
             $data     = $response->getData();
@@ -366,7 +372,7 @@ class ZtcController extends Controller
         }
 
         return $response;
-    }//end patch()
+    }
 
     /**
      * Delete a resource by UUID.
@@ -399,7 +405,7 @@ class ZtcController extends Controller
             $uuid,
             $parentZtDraft
         );
-    }//end destroy()
+    }
 
     /**
      * Publish a ZTC resource by setting isDraft to false.
@@ -475,13 +481,13 @@ class ZtcController extends Controller
             return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'ZTC publish error: '.$e->getMessage(),
+                'ZTC publish error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
 
             return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
-        }//end try
-    }//end handlePublish()
+        }
+    }
 
     /**
      * Publish a zaaktype (set isDraft to false).
@@ -498,7 +504,7 @@ class ZtcController extends Controller
     public function publishZaaktype(string $uuid): JSONResponse
     {
         return $this->handlePublish(resource: 'zaaktypen', uuid: $uuid);
-    }//end publishZaaktype()
+    }
 
     /**
      * Publish a besluittype (set isDraft to false).
@@ -515,7 +521,7 @@ class ZtcController extends Controller
     public function publishBesluittype(string $uuid): JSONResponse
     {
         return $this->handlePublish(resource: 'besluittypen', uuid: $uuid);
-    }//end publishBesluittype()
+    }
 
     /**
      * Publish an informatieobjecttype (set isDraft to false).
@@ -532,7 +538,7 @@ class ZtcController extends Controller
     public function publishInformatieobjecttype(string $uuid): JSONResponse
     {
         return $this->handlePublish(resource: 'informatieobjecttypen', uuid: $uuid);
-    }//end publishInformatieobjecttype()
+    }
 
     /**
      * Filter URL arrays in a ZTC response to only include valid/existing references.
@@ -559,11 +565,18 @@ class ZtcController extends Controller
             return $data;
         }
 
-        $baseUrl = $this->request->getServerProtocol().'://'.$this->request->getServerHost().'/index.php/apps/procest/api/zgw/catalogi/v1';
+        $baseUrl = $this->request->getServerProtocol()
+            . '://' . $this->request->getServerHost()
+            . '/index.php/apps/procest/api/zgw/catalogi/v1';
         $uuid    = $data['uuid'] ?? '';
 
         if ($resource === 'besluittypen' && $uuid !== '') {
-            $data = $this->enrichBesluittype(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
+            $data = $this->enrichBesluittype(
+                data: $data,
+                baseUrl: $baseUrl,
+                objectService: $objectService,
+                uuid: $uuid
+            );
         }
 
         if ($resource === 'zaaktypen' && $uuid !== '') {
@@ -588,7 +601,7 @@ class ZtcController extends Controller
         }
 
         return $data;
-    }//end enrichCrossReferences()
+    }
 
     /**
      * Enrich besluittype with informatieobjecttypen and zaaktypen URLs.
@@ -630,7 +643,7 @@ class ZtcController extends Controller
             $docTypes = $objectData['documentTypes'] ?? '';
             if (is_string($docTypes) === true && $docTypes !== '') {
                 $docTypeIds = json_decode($docTypes, true);
-            } else if (is_array($docTypes) === true) {
+            } elseif (is_array($docTypes) === true) {
                 $docTypeIds = $docTypes;
             } else {
                 $docTypeIds = [];
@@ -640,7 +653,7 @@ class ZtcController extends Controller
                 $urls = [];
                 foreach ($docTypeIds as $iotUuid) {
                     if (is_string($iotUuid) === true && $iotUuid !== '') {
-                        $urls[] = $baseUrl.'/informatieobjecttypen/'.$iotUuid;
+                        $urls[] = $baseUrl . '/informatieobjecttypen/' . $iotUuid;
                     }
                 }
 
@@ -651,7 +664,7 @@ class ZtcController extends Controller
             $caseTypes = $objectData['caseTypes'] ?? '';
             if (is_string($caseTypes) === true && $caseTypes !== '') {
                 $caseTypeIds = json_decode($caseTypes, true);
-            } else if (is_array($caseTypes) === true) {
+            } elseif (is_array($caseTypes) === true) {
                 $caseTypeIds = $caseTypes;
             } else {
                 $caseTypeIds = [];
@@ -661,7 +674,7 @@ class ZtcController extends Controller
                 $urls = [];
                 foreach ($caseTypeIds as $ztUuid) {
                     if (is_string($ztUuid) === true && $ztUuid !== '') {
-                        $urls[] = $baseUrl.'/zaaktypen/'.$ztUuid;
+                        $urls[] = $baseUrl . '/zaaktypen/' . $ztUuid;
                     }
                 }
 
@@ -669,10 +682,10 @@ class ZtcController extends Controller
             }
         } catch (\Throwable $e) {
             // Proceed without enrichment.
-        }//end try
+        }
 
         return $data;
-    }//end enrichBesluittype()
+    }
 
     /**
      * Enrich zaaktype with informatieobjecttypen and besluittypen URLs.
@@ -747,18 +760,18 @@ class ZtcController extends Controller
 
                                     $mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
                                     if ($mId !== '') {
-                                        $urls[] = $baseUrl.'/zaaktypen/'.$mId;
+                                        $urls[] = $baseUrl . '/zaaktypen/' . $mId;
                                     }
                                 }
                             }
                         } catch (\Throwable $e) {
-                            $urls[] = $baseUrl.'/zaaktypen/'.$ztUuid;
-                        }//end try
-                    }//end foreach
+                            $urls[] = $baseUrl . '/zaaktypen/' . $ztUuid;
+                        }
+                    }
 
                     $urls = array_values(array_unique($urls));
                     $data['deelzaaktypen'] = $urls;
-                }//end if
+                }
 
                 // Populate besluittypen from stored decisionTypes UUIDs.
                 $decTypes = $objectData['decisionTypes'] ?? [];
@@ -766,7 +779,7 @@ class ZtcController extends Controller
                     $urls = [];
                     foreach ($decTypes as $btUuid) {
                         if (is_string($btUuid) === true && $btUuid !== '') {
-                            $urls[] = $baseUrl.'/besluittypen/'.$btUuid;
+                            $urls[] = $baseUrl . '/besluittypen/' . $btUuid;
                         }
                     }
 
@@ -774,8 +787,8 @@ class ZtcController extends Controller
                 }
             } catch (\Throwable $e) {
                 // Proceed without deelzaaktypen enrichment.
-            }//end try
-        }//end if
+            }
+        }
 
         // Expand UUIDs in gerelateerdeZaaktypen to all ZTs with same identifier.
         // Read from raw object's relatedCaseTypes (JSON-encoded string) since Twig
@@ -794,7 +807,8 @@ class ZtcController extends Controller
             $relatedRaw = json_decode($relatedRaw, true);
         }
 
-        if (is_array($relatedRaw) === true
+        if (
+            is_array($relatedRaw) === true
             && empty($relatedRaw) === false
             && $ztMapping !== null
         ) {
@@ -843,16 +857,16 @@ class ZtcController extends Controller
                             $mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
                             if ($mId !== '') {
                                 $entry = $rel;
-                                $entry['zaaktype'] = $baseUrl.'/zaaktypen/'.$mId;
+                                $entry['zaaktype'] = $baseUrl . '/zaaktypen/' . $mId;
                                 $expanded[]        = $entry;
                             }
                         }
-                    }//end if
+                    }
                 } catch (\Throwable $e) {
-                    $rel['zaaktype'] = $baseUrl.'/zaaktypen/'.$ztRef;
+                    $rel['zaaktype'] = $baseUrl . '/zaaktypen/' . $ztRef;
                     $expanded[]      = $rel;
-                }//end try
-            }//end foreach
+                }
+            }
 
             // Deduplicate by zaaktype URL.
             $seen   = [];
@@ -866,7 +880,7 @@ class ZtcController extends Controller
             }
 
             $data['gerelateerdeZaaktypen'] = $unique;
-        }//end if
+        }
 
         // Populate informatieobjecttypen from ZIOT records.
         // For each ZIOT, find the referenced IOT, then find ALL IOTs with the
@@ -927,15 +941,15 @@ class ZtcController extends Controller
 
                                 $mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
                                 if ($mId !== '') {
-                                    $iotUrls[] = $baseUrl.'/informatieobjecttypen/'.$mId;
+                                    $iotUrls[] = $baseUrl . '/informatieobjecttypen/' . $mId;
                                 }
                             }
-                        }//end if
+                        }
                     } catch (\Throwable $e) {
                         // If IOT lookup fails, fall back to direct UUID.
-                        $iotUrls[] = $baseUrl.'/informatieobjecttypen/'.$iotRef;
-                    }//end try
-                }//end foreach
+                        $iotUrls[] = $baseUrl . '/informatieobjecttypen/' . $iotRef;
+                    }
+                }
 
                 // Deduplicate URLs.
                 $iotUrls = array_values(array_unique($iotUrls));
@@ -944,13 +958,14 @@ class ZtcController extends Controller
                 }
             } catch (\Throwable $e) {
                 // Proceed without ZIOT enrichment.
-            }//end try
-        }//end if
+            }
+        }
 
         // Fallback: populate besluittypen from BT records with caseType = this UUID.
         // Only if not already populated from stored decisionTypes.
         $btMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'besluittypen');
-        if ($btMapping !== null
+        if (
+            $btMapping !== null
             && (isset($data['besluittypen']) === false || empty($data['besluittypen']) === true)
         ) {
             try {
@@ -971,7 +986,7 @@ class ZtcController extends Controller
 
                     $btUuid = $btData['id'] ?? ($btData['@self']['id'] ?? '');
                     if ($btUuid !== '') {
-                        $btUrls[] = $baseUrl.'/besluittypen/'.$btUuid;
+                        $btUrls[] = $baseUrl . '/besluittypen/' . $btUuid;
                     }
                 }
 
@@ -980,8 +995,8 @@ class ZtcController extends Controller
                 }
             } catch (\Throwable $e) {
                 // Proceed without BT enrichment.
-            }//end try
-        }//end if
+            }
+        }
 
         // Populate eigenschappen, statustypen, resultaattypen, roltypen
         // by searching for sub-resources with caseType = this zaaktype UUID.
@@ -1015,7 +1030,7 @@ class ZtcController extends Controller
 
                     $subUuid = $subData['id'] ?? ($subData['@self']['id'] ?? '');
                     if ($subUuid !== '') {
-                        $urls[] = $baseUrl.'/'.$resourceName.'/'.$subUuid;
+                        $urls[] = $baseUrl . '/' . $resourceName . '/' . $subUuid;
                     }
                 }
 
@@ -1024,11 +1039,11 @@ class ZtcController extends Controller
                 }
             } catch (\Throwable $e) {
                 // Proceed without sub-resource enrichment.
-            }//end try
-        }//end foreach
+            }
+        }
 
         return $data;
-    }//end enrichZaaktype()
+    }
 
     /**
      * Filter a list of ZTC results by datumGeldigheid (date validity).
@@ -1062,7 +1077,7 @@ class ZtcController extends Controller
         }
 
         return $filtered;
-    }//end filterByDatumGeldigheid()
+    }
 
     /**
      * For zaaktypen and besluittypen, removes URLs from array fields that point to
@@ -1103,7 +1118,8 @@ class ZtcController extends Controller
                     }
                 } else {
                     // Simple URL string array.
-                    if (is_string($item) === true
+                    if (
+                        is_string($item) === true
                         && $this->isUrlValid(url: $item, schemaKey: $schemaKey, today: $today) === true
                     ) {
                         $filtered[] = $item;
@@ -1112,10 +1128,10 @@ class ZtcController extends Controller
             }
 
             $data[$field] = $filtered;
-        }//end foreach
+        }
 
         return $data;
-    }//end filterValidUrls()
+    }
 
     /**
      * Check if a ZGW URL points to a valid, published, and currently active object.
@@ -1139,11 +1155,12 @@ class ZtcController extends Controller
         }
 
         // Extract UUID from URL.
-        if (preg_match(
-            '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-            $url,
-            $matches
-        ) !== 1
+        if (
+            preg_match(
+                '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
+                $url,
+                $matches
+            ) !== 1
         ) {
             return false;
         }
@@ -1202,8 +1219,8 @@ class ZtcController extends Controller
         } catch (\Throwable $e) {
             // If we can't look up the object, exclude the URL.
             return false;
-        }//end try
-    }//end isUrlValid()
+        }
+    }
 
     /**
      * List audit trail entries for a resource.
@@ -1226,7 +1243,7 @@ class ZtcController extends Controller
         }
 
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
-    }//end audittrailIndex()
+    }
 
     /**
      * Retrieve a single audit trail entry for a resource.
@@ -1256,7 +1273,7 @@ class ZtcController extends Controller
             $uuid,
             $auditUuid
         );
-    }//end audittrailShow()
+    }
 
     /**
      * Resolve informatieobjecttype by omschrijving when not a UUID/URL (ztc-010m).
@@ -1336,8 +1353,8 @@ class ZtcController extends Controller
             }
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->debug(
-                'ztc-010m: Failed to resolve IOT by omschrijving: '.$e->getMessage()
+                'ztc-010m: Failed to resolve IOT by omschrijving: ' . $e->getMessage()
             );
-        }//end try
-    }//end resolveIotByOmschrijving()
-}//end class
+        }
+    }
+}

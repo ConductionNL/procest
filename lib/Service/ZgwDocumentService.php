@@ -38,7 +38,6 @@ use Psr\Log\LoggerInterface;
  */
 class ZgwDocumentService
 {
-
     /**
      * Base folder path for document storage.
      */
@@ -56,7 +55,7 @@ class ZgwDocumentService
         private readonly IRootFolder $rootFolder,
         private readonly LoggerInterface $logger,
     ) {
-    }//end __construct()
+    }
 
     /**
      * Store a document file from base64 content.
@@ -79,7 +78,7 @@ class ZgwDocumentService
         $file->putContent(data: $decoded);
 
         return strlen(string: $decoded);
-    }//end storeBase64()
+    }
 
     /**
      * Store a document file from raw binary content.
@@ -97,7 +96,7 @@ class ZgwDocumentService
         $file->putContent(data: $content);
 
         return strlen(string: $content);
-    }//end storeRaw()
+    }
 
     /**
      * Get the binary content of a stored document.
@@ -114,7 +113,7 @@ class ZgwDocumentService
         $folder = $this->getDocumentFolder(uuid: $uuid);
 
         return $folder->get(path: $fileName)->getContent();
-    }//end getContent()
+    }
 
     /**
      * Check whether a document file exists.
@@ -133,7 +132,7 @@ class ZgwDocumentService
         } catch (NotFoundException $e) {
             return false;
         }
-    }//end fileExists()
+    }
 
     /**
      * Delete all files for a document.
@@ -146,17 +145,17 @@ class ZgwDocumentService
     {
         try {
             $userFolder = $this->getUserFolder();
-            $path       = self::STORAGE_BASE.'/'.$uuid;
+            $path       = self::STORAGE_BASE . '/' . $uuid;
             if ($userFolder->nodeExists(path: $path) === true) {
                 $userFolder->get(path: $path)->delete();
             }
         } catch (\Exception $e) {
             $this->logger->warning(
-                'Failed to delete document files for '.$uuid,
+                'Failed to delete document files for ' . $uuid,
                 ['exception' => $e->getMessage()]
             );
         }
-    }//end deleteFiles()
+    }
 
     /**
      * Get the MIME type of a stored file.
@@ -174,7 +173,7 @@ class ZgwDocumentService
         $file   = $folder->get(path: $fileName);
 
         return $file->getMimeType();
-    }//end getMimeType()
+    }
 
     /**
      * Get or create the document storage folder for a UUID.
@@ -186,14 +185,14 @@ class ZgwDocumentService
     private function getDocumentFolder(string $uuid): Folder
     {
         $userFolder = $this->getUserFolder();
-        $path       = self::STORAGE_BASE.'/'.$uuid;
+        $path       = self::STORAGE_BASE . '/' . $uuid;
 
         if ($userFolder->nodeExists(path: $path) === false) {
             $userFolder->newFolder(path: $path);
         }
 
         return $userFolder->get(path: $path);
-    }//end getDocumentFolder()
+    }
 
     /**
      * Get the admin user's root folder.
@@ -203,5 +202,5 @@ class ZgwDocumentService
     private function getUserFolder(): Folder
     {
         return $this->rootFolder->getUserFolder(userId: 'admin');
-    }//end getUserFolder()
-}//end class
+    }
+}

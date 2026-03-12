@@ -26,7 +26,6 @@ namespace OCA\Procest\Middleware;
  */
 class ZgwAuthException extends \Exception
 {
-
     /**
      * The HTTP status code for this auth failure.
      *
@@ -40,11 +39,11 @@ class ZgwAuthException extends \Exception
      * @param string $message    The error message
      * @param int    $statusCode The HTTP status code
      */
-    public function __construct(string $message, int $statusCode=403)
+    public function __construct(string $message, int $statusCode = 403)
     {
         parent::__construct(message: $message);
         $this->statusCode = $statusCode;
-    }//end __construct()
+    }
 
     /**
      * Get the HTTP status code.
@@ -54,5 +53,5 @@ class ZgwAuthException extends \Exception
     public function getStatusCode(): int
     {
         return $this->statusCode;
-    }//end getStatusCode()
-}//end class
+    }
+}

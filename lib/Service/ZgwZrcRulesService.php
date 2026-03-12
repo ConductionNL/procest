@@ -82,7 +82,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-001: Validate zaaktype URL.
         $zaaktypeUrl = $body['zaaktype'] ?? '';
         if (empty($zaaktypeUrl) === false && $this->objectService !== null) {
-            $error = $this->validateTypeUrl(typeUrl: $zaaktypeUrl, fieldName: 'zaaktype', schemaKey: 'case_type_schema');
+            $error = $this->validateTypeUrl(
+                typeUrl: $zaaktypeUrl,
+                fieldName: 'zaaktype',
+                schemaKey: 'case_type_schema'
+            );
             if ($error !== null) {
                 return $error;
             }
@@ -118,7 +122,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->validateZaakFields(result: $this->ok(body: $body), existingObject: null, isPatch: false);
-    }//end rulesZakenCreate()
+    }
 
     /**
      * Rules for updating a zaak (PUT /zaken/v1/zaken/{uuid}).
@@ -130,7 +134,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @return array The validation result
      */
-    public function rulesZakenUpdate(array $body, ?array $existingObject=null): array
+    public function rulesZakenUpdate(array $body, ?array $existingObject = null): array
     {
         // Zrc-002: Preserve immutable identificatie on PUT if not provided.
         // If the PUT body omits identificatie, carry it forward from the existing object
@@ -156,8 +160,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
         }
 
-        return $this->validateZaakFields(result: $this->ok(body: $body), existingObject: $existingObject, isPatch: false);
-    }//end rulesZakenUpdate()
+        return $this->validateZaakFields(
+            result: $this->ok(body: $body),
+            existingObject: $existingObject,
+            isPatch: false
+        );
+    }
 
     /**
      * Rules for patching a zaak (PATCH /zaken/v1/zaken/{uuid}).
@@ -167,7 +175,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @return array The validation result
      */
-    public function rulesZakenPatch(array $body, ?array $existingObject=null): array
+    public function rulesZakenPatch(array $body, ?array $existingObject = null): array
     {
         // Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype if not set.
         // For PATCH, the zaaktype might not be in the body — check existing object.
@@ -189,8 +197,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
         }
 
-        return $this->validateZaakFields(result: $this->ok(body: $body), existingObject: $existingObject, isPatch: true);
-    }//end rulesZakenPatch()
+        return $this->validateZaakFields(
+            result: $this->ok(body: $body),
+            existingObject: $existingObject,
+            isPatch: true
+        );
+    }
 
     /**
      * Rules for creating a status (POST /zaken/v1/statussen).
@@ -223,7 +235,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }//end rulesStatussenCreate()
+    }
 
     /**
      * Rules for creating a resultaat (POST /zaken/v1/resultaten).
@@ -256,7 +268,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }//end rulesResultatenCreate()
+    }
 
     /**
      * Rules for creating a rol (POST /zaken/v1/rollen).
@@ -289,7 +301,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }//end rulesRollenCreate()
+    }
 
     /**
      * Rules for creating a ZaakInformatieObject (POST /zaken/v1/zaakinformatieobjecten).
@@ -330,7 +342,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $body['registratiedatum']    = date('Y-m-d');
 
         return $this->ok(body: $body);
-    }//end rulesZaakinformatieobjectenCreate()
+    }
 
     /**
      * Rules for updating a ZaakInformatieObject (PUT).
@@ -345,7 +357,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      */
-    public function rulesZaakinformatieobjectenUpdate(array $body, ?array $existingObject=null): array
+    public function rulesZaakinformatieobjectenUpdate(array $body, ?array $existingObject = null): array
     {
         $result = $this->checkZioImmutability(result: $this->ok(body: $body), existingObject: $existingObject);
         if ($result['valid'] === false) {
@@ -356,7 +368,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
 
         return $this->ok(body: $body);
-    }//end rulesZaakinformatieobjectenUpdate()
+    }
 
     /**
      * Rules for patching a ZaakInformatieObject (PATCH).
@@ -368,10 +380,10 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @see rulesZaakinformatieobjectenUpdate() Same immutability rules apply.
      */
-    public function rulesZaakinformatieobjectenPatch(array $body, ?array $existingObject=null): array
+    public function rulesZaakinformatieobjectenPatch(array $body, ?array $existingObject = null): array
     {
         return $this->rulesZaakinformatieobjectenUpdate(body: $body, existingObject: $existingObject);
-    }//end rulesZaakinformatieobjectenPatch()
+    }
 
     /**
      * Rules for creating a zaakeigenschap (POST /zaken/{zaakUuid}/zaakeigenschappen).
@@ -404,7 +416,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }//end rulesZaakeigenschappenCreate()
+    }
 
     /**
      * Derive vertrouwelijkheidaanduiding from zaaktype (zrc-009).
@@ -431,13 +443,15 @@ class ZgwZrcRulesService extends ZgwRulesBase
             return $body;
         }
 
-        $va = $ztData['confidentiality'] ?? ($ztData['confidentialityDesignation'] ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
+        $va = $ztData['confidentiality']
+            ?? ($ztData['confidentialityDesignation']
+            ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
         if ($va !== '') {
             $body['vertrouwelijkheidaanduiding'] = $va;
         }
 
         return $body;
-    }//end deriveVertrouwelijkheidaanduiding()
+    }
 
     /**
      * Validate a sub-resource type belongs to the zaak's zaaktype (zrc-016..020).
@@ -515,7 +529,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }//end validateSubResourceType()
+    }
 
     /**
      * Validate ZIO informatieobjecttype belongs to zaak's zaaktype (zrc-017).
@@ -605,7 +619,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }//end validateZioInformatieobjecttype()
+    }
 
     /**
      * Common zaak field validation for create/update/patch.
@@ -686,8 +700,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
                         ),
                     ]
                 );
-            }//end if
-        }//end if
+            }
+        }
 
         // Zrc-011: Validate relevanteAndereZaken URLs.
         $relevanteZaken = $body['relevanteAndereZaken'] ?? null;
@@ -730,9 +744,13 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
 
             if (empty($errors) === false) {
-                return $this->error(statusCode: 400, detail: 'Opschorting vereist indicatie en reden.', invalidParams: $errors);
+                return $this->error(
+                    statusCode: 400,
+                    detail: 'Opschorting vereist indicatie en reden.',
+                    invalidParams: $errors
+                );
             }
-        }//end if
+        }
 
         // Zrc-012: Validate verlenging.
         $verlenging = $body['verlenging'] ?? null;
@@ -755,21 +773,25 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
 
             if (empty($errors) === false) {
-                return $this->error(statusCode: 400, detail: 'Verlenging vereist reden en duur.', invalidParams: $errors);
+                return $this->error(
+                    statusCode: 400,
+                    detail: 'Verlenging vereist reden en duur.',
+                    invalidParams: $errors
+                );
             }
-        }//end if
+        }
 
         // Zrc-013: Validate hoofdzaak URL.
         $hoofdzaak = $body['hoofdzaak'] ?? null;
         if ($hoofdzaak !== null && $hoofdzaak !== '') {
             if ($this->isValidUrl(url: $hoofdzaak) === false) {
                 return $this->error(
-                        statusCode: 400,
-                        detail: 'De hoofdzaak URL is ongeldig.',
-                        invalidParams: [
+                    statusCode: 400,
+                    detail: 'De hoofdzaak URL is ongeldig.',
+                    invalidParams: [
                             $this->fieldError(field: 'hoofdzaak', code: 'bad-url', reason: 'De URL is ongeldig.'),
                         ]
-                        );
+                );
             }
 
             // Zrc-013d: A zaak cannot be a deelzaak of itself.
@@ -795,7 +817,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             if ($error !== null) {
                 return $error;
             }
-        }//end if
+        }
 
         // Zrc-014: Validate betalingsindicatie + laatsteBetaaldatum.
         $betalingsindicatie = $body['betalingsindicatie'] ?? null;
@@ -803,7 +825,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
         // On update/patch, also consider existing values when not explicitly sent.
         if ($betalingsindicatie === null && $existingObject !== null) {
-            $betalingsindicatie = $existingObject['paymentIndication'] ?? ($existingObject['betalingsindicatie'] ?? null);
+            $betalingsindicatie = $existingObject['paymentIndication']
+                ?? ($existingObject['betalingsindicatie'] ?? null);
         }
 
         if ($laatsteBetaald === null && $existingObject !== null) {
@@ -866,12 +889,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     ]
                 );
             }
-        }//end if
+        }
 
         $result['enrichedBody'] = $body;
 
         return $result;
-    }//end validateZaakFields()
+    }
 
     /**
      * Validate hoofdzaak is not a deelzaak itself (zrc-013).
@@ -910,7 +933,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         // If the hoofdzaak itself has a hoofdzaak, it's a deelzaak of a deelzaak.
-        $parentHoofdzaak = $hoofdzaakData['parentCase'] ?? ($hoofdzaakData['mainCase'] ?? ($hoofdzaakData['hoofdzaak'] ?? null));
+        $parentHoofdzaak = $hoofdzaakData['parentCase']
+            ?? ($hoofdzaakData['mainCase']
+            ?? ($hoofdzaakData['hoofdzaak'] ?? null));
         if ($parentHoofdzaak !== null && $parentHoofdzaak !== '') {
             return $this->error(
                 statusCode: 400,
@@ -925,7 +950,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }//end validateHoofdzaakNesting()
+    }
 
     /**
      * Validate productenOfDiensten subset of zaaktype (zrc-015).
@@ -960,7 +985,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
             return null;
         }
 
-        $allowedProducts = $ztData['productsOrServices'] ?? ($ztData['productsAndServices'] ?? ($ztData['productenOfDiensten'] ?? []));
+        $allowedProducts = $ztData['productsOrServices']
+            ?? ($ztData['productsAndServices']
+            ?? ($ztData['productenOfDiensten'] ?? []));
         if (is_string($allowedProducts) === true) {
             $allowedProducts = json_decode($allowedProducts, true) ?? [];
         }
@@ -1008,7 +1035,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }//end validateProductenOfDiensten()
+    }
 
     /**
      * Check ZaakInformatieObject field immutability (zrc-004).
@@ -1061,5 +1088,5 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $result;
-    }//end checkZioImmutability()
-}//end class
+    }
+}

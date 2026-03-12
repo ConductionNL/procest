@@ -53,7 +53,6 @@ namespace OCA\Procest\Service;
  */
 class ZgwZtcRulesService extends ZgwRulesBase
 {
-
     /**
      * Afleidingswijze values that REQUIRE datumkenmerk (ztc-004).
      *
@@ -145,11 +144,17 @@ class ZgwZtcRulesService extends ZgwRulesBase
     ): ?array {
         // Ztc-009: Direct concept resources (zaaktypen, besluittypen, informatieobjecttypen).
         if (in_array($resource, self::CONCEPT_RESOURCES, true) === true) {
-            return $this->checkDirectConceptProtection(resource: $resource, action: $action, body: $body, existingObject: $existingObject);
+            return $this->checkDirectConceptProtection(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject
+            );
         }
 
         // Ztc-010: Sub-resources of zaaktypen.
-        if (in_array($resource, self::ZAAKTYPE_SUB_RESOURCES, true) === true
+        if (
+            in_array($resource, self::ZAAKTYPE_SUB_RESOURCES, true) === true
             && $parentZaaktypeDraft === false
         ) {
             // Allow creation of all sub-resources except resultaattypen.
@@ -161,17 +166,17 @@ class ZgwZtcRulesService extends ZgwRulesBase
             if (in_array($action, ['create', 'update', 'patch', 'destroy'], true) === true) {
                 $detail = 'Het is niet toegestaan om typen van een gepubliceerd zaaktype aan te passen.';
                 return $this->error(
-                        status: 400,
-                        detail: $detail,
-                        invalidParams: [
+                    status: 400,
+                    detail: $detail,
+                    invalidParams: [
                             $this->fieldError(name: 'nonFieldErrors', code: 'non-concept-zaaktype', reason: $detail),
                         ]
-                        );
+                );
             }
         }
 
         return null;
-    }//end checkConceptProtection()
+    }
 
     /**
      * Default concept=true for new ZTC concept resources.
@@ -186,14 +191,15 @@ class ZgwZtcRulesService extends ZgwRulesBase
      */
     public function defaultConcept(array $body, string $resource): array
     {
-        if (in_array($resource, self::CONCEPT_RESOURCES, true) === true
+        if (
+            in_array($resource, self::CONCEPT_RESOURCES, true) === true
             && array_key_exists('concept', $body) === false
         ) {
             $body['concept'] = true;
         }
 
         return $body;
-    }//end defaultConcept()
+    }
 
     /**
      * Preserve existing concept value on update/patch.
@@ -208,7 +214,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      */
     public function preserveConcept(array $body, string $resource, ?array $existingObject): array
     {
-        if ($existingObject === null
+        if (
+            $existingObject === null
             || in_array($resource, self::CONCEPT_RESOURCES, true) === false
         ) {
             return $body;
@@ -217,14 +224,14 @@ class ZgwZtcRulesService extends ZgwRulesBase
         $existingDraft = $existingObject['isDraft'] ?? ($existingObject['concept'] ?? true);
         if ($existingDraft === 'true' || $existingDraft === '1' || $existingDraft === 1) {
             $existingDraft = true;
-        } else if ($existingDraft === 'false' || $existingDraft === '0' || $existingDraft === 0) {
+        } elseif ($existingDraft === 'false' || $existingDraft === '0' || $existingDraft === 0) {
             $existingDraft = false;
         }
 
         $body['concept'] = $existingDraft;
 
         return $body;
-    }//end preserveConcept()
+    }
 
     /**
      * Rules for creating a zaaktype (POST /catalogi/v1/zaaktypen).
@@ -262,9 +269,24 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         // Resolve reference arrays by omschrijving/identificatie to UUIDs.
-        $body = $this->resolveTypeReferences(body: $body, field: 'informatieobjecttypen', schemaKey: 'document_type_schema', lookupField: 'name');
-        $body = $this->resolveTypeReferences(body: $body, field: 'besluittypen', schemaKey: 'decision_type_schema', lookupField: 'name');
-        $body = $this->resolveTypeReferences(body: $body, field: 'deelzaaktypen', schemaKey: 'case_type_schema', lookupField: 'identifier');
+        $body = $this->resolveTypeReferences(
+            body: $body,
+            field: 'informatieobjecttypen',
+            schemaKey: 'document_type_schema',
+            lookupField: 'name'
+        );
+        $body = $this->resolveTypeReferences(
+            body: $body,
+            field: 'besluittypen',
+            schemaKey: 'decision_type_schema',
+            lookupField: 'name'
+        );
+        $body = $this->resolveTypeReferences(
+            body: $body,
+            field: 'deelzaaktypen',
+            schemaKey: 'case_type_schema',
+            lookupField: 'identifier'
+        );
         $body = $this->resolveGerelateerdeZaaktypen(body: $body);
 
         // Store resolved array fields via _directFields (bypasses Twig mapping).
@@ -277,7 +299,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $directFields['decisionTypes'] = $body['besluittypen'];
         }
 
-        if (isset($body['gerelateerdeZaaktypen']) === true
+        if (
+            isset($body['gerelateerdeZaaktypen']) === true
             && is_array($body['gerelateerdeZaaktypen']) === true
         ) {
             // JSON-encode since relatedCaseTypes is a string field in the schema.
@@ -289,7 +312,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }//end rulesZaaktypenCreate()
+    }
 
     /**
      * Rules for creating a besluittype (POST /catalogi/v1/besluittypen).
@@ -304,8 +327,18 @@ class ZgwZtcRulesService extends ZgwRulesBase
     public function rulesBesluittypenCreate(array $body): array
     {
         // Resolve reference arrays by omschrijving/identificatie to UUIDs.
-        $body = $this->resolveTypeReferences(body: $body, field: 'informatieobjecttypen', schemaKey: 'document_type_schema', lookupField: 'name');
-        $body = $this->resolveTypeReferences(body: $body, field: 'zaaktypen', schemaKey: 'case_type_schema', lookupField: 'identifier');
+        $body = $this->resolveTypeReferences(
+            body: $body,
+            field: 'informatieobjecttypen',
+            schemaKey: 'document_type_schema',
+            lookupField: 'name'
+        );
+        $body = $this->resolveTypeReferences(
+            body: $body,
+            field: 'zaaktypen',
+            schemaKey: 'case_type_schema',
+            lookupField: 'identifier'
+        );
 
         // Store resolved arrays as _directFields (bypass Twig mapping for array fields).
         $directFields = [];
@@ -322,7 +355,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }//end rulesBesluittypenCreate()
+    }
 
     /**
      * Rules for creating a zaaktype-informatieobjecttype (ZIOT).
@@ -351,27 +384,37 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
                 if ($isUrl === true) {
                     // URL — let reverse mapping handle UUID extraction.
-                } else if ($uuid !== null) {
+                } elseif ($uuid !== null) {
                     // Bare UUID — verify it exists; if not, treat as omschrijving.
                     $existing = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
                     if ($existing === null) {
-                        $found = $this->findObjectByField(register: $register, schema: $schema, field: 'name', value: $iotRef);
+                        $found = $this->findObjectByField(
+                            register: $register,
+                            schema: $schema,
+                            field: 'name',
+                            value: $iotRef
+                        );
                         if ($found !== null) {
                             $body['informatieobjecttype'] = $found;
                         }
                     }
                 } else {
                     // Not a URL or UUID — resolve by name (omschrijving).
-                    $found = $this->findObjectByField(register: $register, schema: $schema, field: 'name', value: $iotRef);
+                    $found = $this->findObjectByField(
+                        register: $register,
+                        schema: $schema,
+                        field: 'name',
+                        value: $iotRef
+                    );
                     if ($found !== null) {
                         $body['informatieobjecttype'] = $found;
                     }
                 }
-            }//end if
-        }//end if
+            }
+        }
 
         return $this->ok(body: $body);
-    }//end rulesZaaktypeinformatieobjecttypenCreate()
+    }
 
     /**
      * Rules for creating a resultaattype (POST /catalogi/v1/resultaattypen).
@@ -456,7 +499,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }//end rulesResultaattypenCreate()
+    }
 
     /**
      * Check if a direct concept resource is published (ztc-009).
@@ -494,18 +537,19 @@ class ZgwZtcRulesService extends ZgwRulesBase
             }
 
             $resourceLabel = rtrim($resource, 'n');
-            $detail        = "Het is niet toegestaan om een {$resourceLabel} met concept=false ".$this->actionLabel(action: $action).'.';
+            $detail        = "Het is niet toegestaan om een {$resourceLabel} met concept=false "
+                . $this->actionLabel(action: $action) . '.';
             return $this->error(
-                    status: 400,
-                    detail: $detail,
-                    invalidParams: [
+                status: 400,
+                detail: $detail,
+                invalidParams: [
                         $this->fieldError(name: 'nonFieldErrors', code: 'non-concept-object', reason: $detail),
                     ]
-                    );
-        }//end if
+            );
+        }
 
         return null;
-    }//end checkDirectConceptProtection()
+    }
 
     /**
      * Get a Dutch action label for error messages.
@@ -522,7 +566,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             'destroy' => 'te verwijderen',
             default   => 'aan te passen',
         };
-    }//end actionLabel()
+    }
 
     /**
      * Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
@@ -552,7 +596,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         // Ztc-005: einddatumBekend must be false for afgehandeld/termijn.
         $einddatumBekend = $archief['einddatumBekend'] ?? false;
-        if (($einddatumBekend === true || $einddatumBekend === 'true')
+        if (
+            ($einddatumBekend === true || $einddatumBekend === 'true')
             && in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true
         ) {
             $errors[] = $this->fieldError(
@@ -605,14 +650,17 @@ class ZgwZtcRulesService extends ZgwRulesBase
         // Ztc-003: Validate afleidingswijze against selectielijstklasse.procestermijn.
         if ($selectielijstData !== null) {
             $slProcestermijn = $selectielijstData['procestermijn'] ?? null;
-            $ptCheck         = $this->checkProcestermijnCompatibility(afleidingswijze: $afleidingswijze, procestermijn: $slProcestermijn);
+            $ptCheck         = $this->checkProcestermijnCompatibility(
+                afleidingswijze: $afleidingswijze,
+                procestermijn: $slProcestermijn
+            );
             if ($ptCheck !== null) {
                 $errors[] = $ptCheck;
             }
         }
 
         return $errors;
-    }//end validateBrondatumArchief()
+    }
 
     /**
      * Enrich a resultaattype body with derived fields from external APIs (ztc-002b/f/g).
@@ -648,7 +696,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         return $body;
-    }//end enrichResultaattype()
+    }
 
     /**
      * Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype (ztc-002e).
@@ -683,18 +731,19 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         if ($zaaktypeProcestype !== $selectieProcestype) {
-            $detail = 'Het procestype van de selectielijstklasse komt niet overeen met het procestype van het zaaktype.';
+            $detail = 'Het procestype van de selectielijstklasse komt niet overeen'
+                . ' met het procestype van het zaaktype.';
             return $this->error(
-                    status: 400,
-                    detail: $detail,
-                    invalidParams: [
+                status: 400,
+                detail: $detail,
+                invalidParams: [
                         $this->fieldError(name: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
                     ]
-                    );
+            );
         }
 
         return null;
-    }//end validateProcestypeMatch()
+    }
 
     /**
      * Validate field presence based on afleidingswijze (required vs forbidden).
@@ -734,10 +783,10 @@ class ZgwZtcRulesService extends ZgwRulesBase
                     ),
                 ];
             }
-        }//end if
+        }
 
         return [];
-    }//end validateFieldPresence()
+    }
 
     /**
      * Check afleidingswijze compatibility with selectielijstklasse.procestermijn (ztc-003).
@@ -755,13 +804,14 @@ class ZgwZtcRulesService extends ZgwRulesBase
             return $this->fieldError(
                 name: 'nonFieldErrors',
                 code: 'invalid-afleidingswijze-for-procestermijn',
-                reason: "Afleidingswijze \"{$afleidingswijze}\" is niet geldig bij selectielijstklasse met procestermijn \"nihil\"."
+                reason: "Afleidingswijze \"{$afleidingswijze}\" is niet geldig"
+                    . ' bij selectielijstklasse met procestermijn "nihil".'
             );
         }
 
         if ($procestermijn === 'bestaansduur_procesobject' && $afleidingswijze !== 'termijn') {
-            // phpcs:ignore Generic.Files.LineLength.MaxExceeded
-            $reason = "Afleidingswijze \"{$afleidingswijze}\" is niet geldig bij selectielijstklasse met procestermijn \"bestaansduur_procesobject\".";
+            $reason = "Afleidingswijze \"{$afleidingswijze}\" is niet geldig"
+                . ' bij selectielijstklasse met procestermijn "bestaansduur_procesobject".';
             return $this->fieldError(
                 name: 'nonFieldErrors',
                 code: 'invalid-afleidingswijze-for-procestermijn',
@@ -770,8 +820,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         if (($procestermijn === '' || $procestermijn === null) && $afleidingswijze === 'termijn') {
-            // phpcs:ignore Generic.Files.LineLength.MaxExceeded
-            $reason = 'brondatumArchiefprocedure.procestermijn is vereist voor afleidingswijze "termijn" maar selectielijstklasse heeft geen procestermijn.';
+            $reason = 'brondatumArchiefprocedure.procestermijn is vereist voor afleidingswijze'
+                . ' "termijn" maar selectielijstklasse heeft geen procestermijn.';
             return $this->fieldError(
                 name: 'brondatumArchiefprocedure.procestermijn',
                 code: 'required',
@@ -780,7 +830,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }//end checkProcestermijnCompatibility()
+    }
 
     /**
      * Resolve non-URL references in a type array field to actual object UUIDs.
@@ -804,7 +854,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
         string $schemaKey,
         string $lookupField
     ): array {
-        if (isset($body[$field]) === false || is_array($body[$field]) === false
+        if (
+            isset($body[$field]) === false || is_array($body[$field]) === false
             || $this->objectService === null
         ) {
             return $body;
@@ -824,7 +875,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
             }
 
             // If it's a URL containing a UUID, extract and store just the UUID.
-            if (str_starts_with($ref, 'http://') === true
+            if (
+                str_starts_with($ref, 'http://') === true
                 || str_starts_with($ref, 'https://') === true
             ) {
                 $urlUuid = $this->extractUuid(url: $ref);
@@ -835,7 +887,12 @@ class ZgwZtcRulesService extends ZgwRulesBase
             }
 
             // Search by omschrijving/identificatie in OpenRegister.
-            $foundIds = $this->findAllObjectsByField(register: $register, schema: $schema, field: $lookupField, value: $ref);
+            $foundIds = $this->findAllObjectsByField(
+                register: $register,
+                schema: $schema,
+                field: $lookupField,
+                value: $ref
+            );
             if (empty($foundIds) === false) {
                 foreach ($foundIds as $id) {
                     $resolved[] = $id;
@@ -849,12 +906,12 @@ class ZgwZtcRulesService extends ZgwRulesBase
             if ($bareUuid !== null) {
                 $resolved[] = $bareUuid;
             }
-        }//end foreach
+        }
 
         $body[$field] = $resolved;
 
         return $body;
-    }//end resolveTypeReferences()
+    }
 
     /**
      * Resolve gerelateerdeZaaktypen references (nested objects with zaaktype field).
@@ -865,7 +922,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      */
     private function resolveGerelateerdeZaaktypen(array $body): array
     {
-        if (isset($body['gerelateerdeZaaktypen']) === false
+        if (
+            isset($body['gerelateerdeZaaktypen']) === false
             || is_array($body['gerelateerdeZaaktypen']) === false
             || $this->objectService === null
         ) {
@@ -886,14 +944,20 @@ class ZgwZtcRulesService extends ZgwRulesBase
                 continue;
             }
 
-            if (str_starts_with($zaaktypeRef, 'http://') === true
+            if (
+                str_starts_with($zaaktypeRef, 'http://') === true
                 || str_starts_with($zaaktypeRef, 'https://') === true
             ) {
                 $resolved[] = $rel;
                 continue;
             }
 
-            $foundIds = $this->findAllObjectsByField(register: $register, schema: $schema, field: 'identifier', value: $zaaktypeRef);
+            $foundIds = $this->findAllObjectsByField(
+                register: $register,
+                schema: $schema,
+                field: 'identifier',
+                value: $zaaktypeRef
+            );
             foreach ($foundIds as $id) {
                 $entry = $rel;
                 $entry['zaaktype'] = $id;
@@ -904,5 +968,5 @@ class ZgwZtcRulesService extends ZgwRulesBase
         $body['gerelateerdeZaaktypen'] = $resolved;
 
         return $body;
-    }//end resolveGerelateerdeZaaktypen()
-}//end class
+    }
+}

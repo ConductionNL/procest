@@ -41,7 +41,6 @@ use OCP\IRequest;
  */
 class NrcController extends Controller
 {
-
     /**
      * The ZGW API identifier for the Notificaties register.
      *
@@ -62,7 +61,7 @@ class NrcController extends Controller
         private readonly ZgwService $zgwService,
     ) {
         parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+    }
 
     /**
      * List resources of the given type.
@@ -84,7 +83,7 @@ class NrcController extends Controller
         }
 
         return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
-    }//end index()
+    }
 
     /**
      * Create a new resource of the given type.
@@ -106,7 +105,7 @@ class NrcController extends Controller
         }
 
         return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
-    }//end create()
+    }
 
     /**
      * Retrieve a single resource by UUID.
@@ -129,7 +128,7 @@ class NrcController extends Controller
         }
 
         return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
-    }//end show()
+    }
 
     /**
      * Full update (PUT) a resource by UUID.
@@ -158,7 +157,7 @@ class NrcController extends Controller
             $uuid,
             false
         );
-    }//end update()
+    }
 
     /**
      * Partial update (PATCH) a resource by UUID.
@@ -187,7 +186,7 @@ class NrcController extends Controller
             $uuid,
             true
         );
-    }//end patch()
+    }
 
     /**
      * Delete a resource by UUID.
@@ -215,7 +214,7 @@ class NrcController extends Controller
             $resource,
             $uuid
         );
-    }//end destroy()
+    }
 
     /**
      * Accept a notificatie (echo back the body with 201).
@@ -240,7 +239,7 @@ class NrcController extends Controller
         unset($body['_route']);
 
         return new JSONResponse(data: $body, statusCode: Http::STATUS_CREATED);
-    }//end notificatieCreate()
+    }
 
     /**
      * List audit trail entries for a resource.
@@ -263,7 +262,7 @@ class NrcController extends Controller
         }
 
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
-    }//end audittrailIndex()
+    }
 
     /**
      * Retrieve a single audit trail entry for a resource.
@@ -293,5 +292,5 @@ class NrcController extends Controller
             $uuid,
             $auditUuid
         );
-    }//end audittrailShow()
-}//end class
+    }
+}

@@ -46,7 +46,6 @@ use OCP\IRequest;
  */
 class DrcController extends Controller
 {
-
     /**
      * The ZGW API identifier for the Documenten register.
      *
@@ -74,7 +73,7 @@ class DrcController extends Controller
         private readonly ZgwService $zgwService,
     ) {
         parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+    }
 
     /**
      * List resources of the given type.
@@ -101,7 +100,7 @@ class DrcController extends Controller
         }
 
         return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
-    }//end index()
+    }
 
     /**
      * List DRC resources as a plain array (per ZGW spec).
@@ -163,15 +162,15 @@ class DrcController extends Controller
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'DRC list '.$resource.' error: '.$e->getMessage(),
+                'DRC list ' . $resource . ' error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => 'Internal server error'],
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }//end try
-    }//end indexFlatArray()
+        }
+    }
 
     /**
      * Create a new resource of the given type.
@@ -295,7 +294,7 @@ class DrcController extends Controller
                         object: $objectData
                     );
                 }
-            }//end if
+            }
 
             $baseUrl         = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
@@ -309,14 +308,14 @@ class DrcController extends Controller
             $this->zgwService->publishNotification(
                 self::ZGW_API,
                 $resource,
-                $baseUrl.'/'.$objectUuid,
+                $baseUrl . '/' . $objectUuid,
                 'create'
             );
 
             return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'DRC create error: '.$e->getMessage(),
+                'DRC create error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
 
@@ -324,8 +323,8 @@ class DrcController extends Controller
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }//end try
-    }//end create()
+        }
+    }
 
     /**
      * Retrieve a single resource by UUID.
@@ -348,7 +347,7 @@ class DrcController extends Controller
         }
 
         return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
-    }//end show()
+    }
 
     /**
      * Full update (PUT) a resource by UUID.
@@ -377,7 +376,7 @@ class DrcController extends Controller
         }
 
         return $this->zgwService->handleUpdate($this->request, self::ZGW_API, $resource, $uuid, false);
-    }//end update()
+    }
 
     /**
      * Partial update (PATCH) a resource by UUID.
@@ -406,7 +405,7 @@ class DrcController extends Controller
         }
 
         return $this->zgwService->handleUpdate($this->request, self::ZGW_API, $resource, $uuid, true);
-    }//end patch()
+    }
 
     /**
      * Delete a resource by UUID.
@@ -463,8 +462,8 @@ class DrcController extends Controller
                 } catch (\Throwable $e) {
                     $fileName = null;
                 }
-            }//end if
-        }//end if
+            }
+        }
 
         // Drc-008a (VNG): Block EIO deletion when OIO relations exist.
         if ($resource === self::EIO_RESOURCE && $this->zgwService->getObjectService() !== null) {
@@ -472,7 +471,8 @@ class DrcController extends Controller
             if (empty($oioRelations) === false) {
                 return new JSONResponse(
                     [
-                        'detail'        => 'Het informatieobject kan niet verwijderd worden: er zijn gerelateerde ObjectInformatieObjecten.',
+                        'detail'        => 'Het informatieobject kan niet verwijderd worden:'
+                            . ' er zijn gerelateerde ObjectInformatieObjecten.',
                         'invalidParams' => [
                             [
                                 'name'   => 'nonFieldErrors',
@@ -489,7 +489,8 @@ class DrcController extends Controller
         $response = $this->zgwService->handleDestroy($this->request, self::ZGW_API, $resource, $uuid);
 
         // Post-delete cleanup (only on successful deletion).
-        if ($resource === self::EIO_RESOURCE
+        if (
+            $resource === self::EIO_RESOURCE
             && $response->getStatus() === Http::STATUS_NO_CONTENT
         ) {
             // Drc-008 (VNG): Cascade delete gebruiksrechten after EIO deletion.
@@ -501,7 +502,7 @@ class DrcController extends Controller
                     $this->zgwService->getDocumentService()->deleteFile(uuid: $uuid, fileName: $fileName);
                 } catch (\Throwable $e) {
                     $this->zgwService->getLogger()->warning(
-                        'DRC file cleanup failed: '.$e->getMessage(),
+                        'DRC file cleanup failed: ' . $e->getMessage(),
                         ['exception' => $e]
                     );
                 }
@@ -509,7 +510,7 @@ class DrcController extends Controller
         }
 
         return $response;
-    }//end destroy()
+    }
 
     /**
      * Download the binary file content for an EIO document.
@@ -573,7 +574,7 @@ class DrcController extends Controller
             return new DataDownloadResponse(data: $content, filename: $fileName, contentType: $format);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'DRC download error: '.$e->getMessage(),
+                'DRC download error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
 
@@ -581,8 +582,8 @@ class DrcController extends Controller
                 data: ['detail' => 'Not found'],
                 statusCode: Http::STATUS_NOT_FOUND
             );
-        }//end try
-    }//end download()
+        }
+    }
 
     /**
      * Lock an EIO document.
@@ -612,8 +613,13 @@ class DrcController extends Controller
 
         // Check if already locked (entity lock or data blob fallback).
         $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
-        if ($mappingConfig !== null
-            && $this->resolveStoredLockId(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid) !== null
+        if (
+            $mappingConfig !== null
+            && $this->resolveStoredLockId(
+                objectService: $objectService,
+                mappingConfig: $mappingConfig,
+                uuid: $uuid
+            ) !== null
         ) {
             return new JSONResponse(
                 data: ['detail' => 'Document is al vergrendeld.'],
@@ -628,7 +634,12 @@ class DrcController extends Controller
             // Generate one and store it in the data blob for verification.
             $lockId = bin2hex(random_bytes(16));
             if ($mappingConfig !== null) {
-                $this->storeLockIdInData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, lockId: $lockId);
+                $this->storeLockIdInData(
+                    objectService: $objectService,
+                    mappingConfig: $mappingConfig,
+                    uuid: $uuid,
+                    lockId: $lockId
+                );
             }
 
             return new JSONResponse(
@@ -644,8 +655,8 @@ class DrcController extends Controller
             // Fallback: OpenRegister lock may fail without a Nextcloud user
             // session (JWT-only context). Use manual lock via saveObject.
             return $this->lockFallback(objectService: $objectService, uuid: $uuid, original: $e);
-        }//end try
-    }//end lock()
+        }
+    }
 
     /**
      * Fallback lock implementation for when OpenRegister's LockHandler
@@ -695,7 +706,7 @@ class DrcController extends Controller
             return new JSONResponse(data: ['lock' => $lockId], statusCode: Http::STATUS_OK);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'DRC lock fallback error: '.$e->getMessage(),
+                'DRC lock fallback error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
 
@@ -703,8 +714,8 @@ class DrcController extends Controller
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }//end try
-    }//end lockFallback()
+        }
+    }
 
     /**
      * Unlock an EIO document.
@@ -736,7 +747,11 @@ class DrcController extends Controller
 
         // Check if the document is actually locked (entity or data blob).
         if ($mappingConfig !== null) {
-            $storedLockId = $this->resolveStoredLockId(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+            $storedLockId = $this->resolveStoredLockId(
+                objectService: $objectService,
+                mappingConfig: $mappingConfig,
+                uuid: $uuid
+            );
         } else {
             $storedLockId = null;
         }
@@ -779,10 +794,10 @@ class DrcController extends Controller
                     ],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
-            }//end if
+            }
 
             $force = true;
-        }//end if
+        }
 
         // Try OpenRegister's LockHandler, fall back to clearing data blob.
         try {
@@ -798,8 +813,8 @@ class DrcController extends Controller
             // Fallback: unlock via saveObject when LockHandler fails
             // (e.g., no Nextcloud user session in JWT-only context).
             return $this->unlockFallback(objectService: $objectService, uuid: $uuid, original: $e);
-        }//end try
-    }//end unlock()
+        }
+    }
 
     /**
      * Fallback unlock for when OpenRegister's LockHandler fails (no NC session).
@@ -852,7 +867,7 @@ class DrcController extends Controller
             return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'DRC unlock fallback error: '.$e->getMessage(),
+                'DRC unlock fallback error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
 
@@ -860,8 +875,8 @@ class DrcController extends Controller
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }//end try
-    }//end unlockFallback()
+        }
+    }
 
     /**
      * List audit trail entries for a resource.
@@ -903,7 +918,7 @@ class DrcController extends Controller
         }
 
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
-    }//end audittrailIndex()
+    }
 
     /**
      * Retrieve a single audit trail entry for a resource.
@@ -933,7 +948,7 @@ class DrcController extends Controller
             $uuid,
             $auditUuid
         );
-    }//end audittrailShow()
+    }
 
     /**
      * Find relations for an EIO by UUID (drc-008a VNG).
@@ -994,7 +1009,7 @@ class DrcController extends Controller
         }
 
         return [];
-    }//end findOioRelationsForEio()
+    }
 
     /**
      * Search for document relations in a specific schema.
@@ -1039,12 +1054,12 @@ class DrcController extends Controller
             }
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'drc-008a: Relation search failed for schema '.$schema.': '.$e->getMessage()
+                'drc-008a: Relation search failed for schema ' . $schema . ': ' . $e->getMessage()
             );
-        }//end try
+        }
 
         return [];
-    }//end searchRelationsInSchema()
+    }
 
     /**
      * Extract IDs from a search result set.
@@ -1070,7 +1085,7 @@ class DrcController extends Controller
         }
 
         return $ids;
-    }//end extractIdsFromResults()
+    }
 
     /**
      * Cascade delete all gebruiksrechten for an EIO (drc-008 VNG).
@@ -1093,7 +1108,7 @@ class DrcController extends Controller
 
         try {
             $query  = $objectService->buildSearchQuery(
-                requestParams: ['document' => '%'.$eioUuid.'%', '_limit' => 100],
+                requestParams: ['document' => '%' . $eioUuid . '%', '_limit' => 100],
                 register: $grConfig['sourceRegister'],
                 schema: $grConfig['sourceSchema']
             );
@@ -1113,10 +1128,10 @@ class DrcController extends Controller
             }
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'drc-008: Failed to cascade delete gebruiksrechten for EIO '.$eioUuid.': '.$e->getMessage()
+                'drc-008: Failed to cascade delete gebruiksrechten for EIO ' . $eioUuid . ': ' . $e->getMessage()
             );
-        }//end try
-    }//end cascadeDeleteGebruiksrechten()
+        }
+    }
 
     /**
      * Update indicatieGebruiksrecht on an EIO after creating a gebruiksrecht (drc-006 VNG).
@@ -1140,7 +1155,7 @@ class DrcController extends Controller
         }
 
         $this->setIndicatieGebruiksrecht(ioUrl: $ioUrl, value: true);
-    }//end updateIndicatieGebruiksrecht()
+    }
 
     /**
      * Get gebruiksrecht data before deletion (drc-006 VNG).
@@ -1183,7 +1198,7 @@ class DrcController extends Controller
         }
 
         return null;
-    }//end getGebruiksrechtData()
+    }
 
     /**
      * Check if EIO still has gebruiksrechten after deletion (drc-006 VNG).
@@ -1242,17 +1257,17 @@ class DrcController extends Controller
                         );
                     } catch (\Throwable $e) {
                         $this->zgwService->getLogger()->warning(
-                            'drc-006: Failed to clear indicatieGebruiksrecht: '.$e->getMessage()
+                            'drc-006: Failed to clear indicatieGebruiksrecht: ' . $e->getMessage()
                         );
-                    }//end try
-                }//end if
-            }//end if
+                    }
+                }
+            }
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'drc-006: Failed to check remaining gebruiksrechten: '.$e->getMessage()
+                'drc-006: Failed to check remaining gebruiksrechten: ' . $e->getMessage()
             );
-        }//end try
-    }//end checkAndClearIndicatieGebruiksrecht()
+        }
+    }
 
     /**
      * Set indicatieGebruiksrecht on an EIO (drc-006 VNG).
@@ -1302,10 +1317,10 @@ class DrcController extends Controller
             );
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'drc-006: Failed to set indicatieGebruiksrecht: '.$e->getMessage()
+                'drc-006: Failed to set indicatieGebruiksrecht: ' . $e->getMessage()
             );
-        }//end try
-    }//end setIndicatieGebruiksrecht()
+        }
+    }
 
     /**
      * Handle EIO-specific update with lock checking and inhoud handling.
@@ -1436,7 +1451,7 @@ class DrcController extends Controller
                         object: $objectData
                     );
                 }
-            }//end if
+            }
 
             $baseUrl         = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
@@ -1450,14 +1465,14 @@ class DrcController extends Controller
             $this->zgwService->publishNotification(
                 self::ZGW_API,
                 $resource,
-                $baseUrl.'/'.$objectUuid,
+                $baseUrl . '/' . $objectUuid,
                 'update'
             );
 
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'DRC update error: '.$e->getMessage(),
+                'DRC update error: ' . $e->getMessage(),
                 ['exception' => $e]
             );
 
@@ -1465,8 +1480,8 @@ class DrcController extends Controller
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }//end try
-    }//end handleEioUpdate()
+        }
+    }
 
     /**
      * Check document lock state before allowing update.
@@ -1487,14 +1502,18 @@ class DrcController extends Controller
         array $mappingConfig,
         string $uuid,
         array $body,
-        bool $partial=false,
+        bool $partial = false,
     ): ?JSONResponse {
         $objectService = $this->zgwService->getObjectService();
 
         // Drc-009a/b: Document must be locked to allow updates.
         // Try OpenRegister's LockHandler first, then check the object data
         // blob (used by lockFallback in JWT-only contexts).
-        $storedLockId = $this->resolveStoredLockId(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+        $storedLockId = $this->resolveStoredLockId(
+            objectService: $objectService,
+            mappingConfig: $mappingConfig,
+            uuid: $uuid
+        );
 
         if ($storedLockId === null) {
             return new JSONResponse(
@@ -1539,7 +1558,7 @@ class DrcController extends Controller
                 ],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }//end if
+        }
 
         // Drc-009h/i: Lock ID must match.
         if ($providedLockId !== $storedLockId) {
@@ -1559,7 +1578,7 @@ class DrcController extends Controller
         }
 
         return null;
-    }//end checkDocumentLock()
+    }
 
     /**
      * Resolve the stored lock ID from either OpenRegister's LockHandler
@@ -1612,17 +1631,18 @@ class DrcController extends Controller
 
             // Fallback: check locked field (boolean or entity lock structure).
             $isLocked = $existingData['locked'] ?? false;
-            if ($isLocked === true || $isLocked === 'true'
+            if (
+                $isLocked === true || $isLocked === 'true'
                 || $isLocked === 1 || is_array($isLocked) === true
             ) {
                 return 'entity-lock';
             }
         } catch (\Throwable $e) {
             // Object not found — treat as not locked.
-        }//end try
+        }
 
         return null;
-    }//end resolveStoredLockId()
+    }
 
     /**
      * Store a ZGW lockId in the object data blob.
@@ -1664,10 +1684,10 @@ class DrcController extends Controller
             );
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'DRC: Failed to store lockId in data blob: '.$e->getMessage()
+                'DRC: Failed to store lockId in data blob: ' . $e->getMessage()
             );
-        }//end try
-    }//end storeLockIdInData()
+        }
+    }
 
     /**
      * Clear the ZGW lockId from the object data blob after unlocking.
@@ -1707,8 +1727,8 @@ class DrcController extends Controller
             );
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'DRC: Failed to clear lockId in data blob: '.$e->getMessage()
+                'DRC: Failed to clear lockId in data blob: ' . $e->getMessage()
             );
-        }//end try
-    }//end clearLockIdInData()
-}//end class
+        }
+    }
+}

@@ -45,7 +45,7 @@ class SettingsController extends Controller
         private SettingsService $settingsService,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }//end __construct()
+    }
 
     /**
      * Retrieve all current settings.
@@ -57,12 +57,12 @@ class SettingsController extends Controller
     public function index(): JSONResponse
     {
         return new JSONResponse(
-                [
+            [
                     'success' => true,
                     'config'  => $this->settingsService->getSettings(),
                 ]
-                );
-    }//end index()
+        );
+    }
 
     /**
      * Update settings with provided data.
@@ -75,12 +75,12 @@ class SettingsController extends Controller
         $config = $this->settingsService->updateSettings($data);
 
         return new JSONResponse(
-                [
+            [
                     'success' => true,
                     'config'  => $config,
                 ]
-                );
-    }//end create()
+        );
+    }
 
     /**
      * Re-import the configuration from procest_register.json.
@@ -95,5 +95,5 @@ class SettingsController extends Controller
         $result = $this->settingsService->loadConfiguration(force: true);
 
         return new JSONResponse($result);
-    }//end load()
-}//end class
+    }
+}

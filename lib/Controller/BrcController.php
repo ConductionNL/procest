@@ -73,7 +73,7 @@ class BrcController extends Controller
         private readonly ZgwService $zgwService,
         private readonly SettingsService $settingsService,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -130,7 +130,7 @@ class BrcController extends Controller
             return $this->createBesluitInformatieObject();
         }
 
-        // brc-006: For besluiten with a zaak, sync zaakbesluit to ZRC after creation.
+        // Brc-006: For besluiten with a zaak, sync zaakbesluit to ZRC after creation.
         if ($resource === 'besluiten') {
             return $this->createBesluitWithZaakSync();
         }
@@ -183,7 +183,7 @@ class BrcController extends Controller
             return $authError;
         }
 
-        // brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
+        // Brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
         if ($resource === 'besluitinformatieobjecten') {
             return new JSONResponse(
                 data: ['detail' => 'Method not allowed'],
@@ -222,7 +222,7 @@ class BrcController extends Controller
             return $authError;
         }
 
-        // brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
+        // Brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
         if ($resource === 'besluitinformatieobjecten') {
             return new JSONResponse(
                 data: ['detail' => 'Method not allowed'],
@@ -263,14 +263,14 @@ class BrcController extends Controller
             return $authError;
         }
 
-        // brc-009: Cascade delete for besluiten.
+        // Brc-009: Cascade delete for besluiten.
         if ($resource === 'besluiten') {
-            return $this->destroyBesluit($uuid);
+            return $this->destroyBesluit(uuid: $uuid);
         }
 
-        // brc-005b: Delete OIO when deleting BIO.
+        // Brc-005b: Delete OIO when deleting BIO.
         if ($resource === 'besluitinformatieobjecten') {
-            return $this->destroyBesluitInformatieObject($uuid);
+            return $this->destroyBesluitInformatieObject(uuid: $uuid);
         }
 
         return $this->zgwService->handleDestroy(
@@ -301,7 +301,7 @@ class BrcController extends Controller
             return $authError;
         }
 
-        // brc-009d: Verify the parent resource exists before returning audit trail.
+        // Brc-009d: Verify the parent resource exists before returning audit trail.
         $objectService = $this->zgwService->getObjectService();
         if ($objectService !== null) {
             $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
@@ -366,7 +366,7 @@ class BrcController extends Controller
     {
         $response = $this->zgwService->handleCreate($this->request, self::ZGW_API, 'besluiten');
 
-        // brc-006: If created successfully and has a zaak, sync to ZRC.
+        // Brc-006: If created successfully and has a zaak, sync to ZRC.
         if ($response->getStatus() === Http::STATUS_CREATED) {
             $data    = $response->getData();
             $zaakUrl = '';
@@ -377,7 +377,7 @@ class BrcController extends Controller
             if ($zaakUrl !== '') {
                 $besluitUrl = $data['url'] ?? '';
                 if ($besluitUrl !== '') {
-                    $this->syncZaakBesluitToZrc($zaakUrl, $besluitUrl);
+                    $this->syncZaakBesluitToZrc(zaakUrl: $zaakUrl, besluitUrl: $besluitUrl);
                 }
             }
         }
@@ -492,8 +492,13 @@ class BrcController extends Controller
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach ($objects as $object) {
-                $objectData = is_array($object) ? $object : $object->jsonSerialize();
-                $mapped[]   = $this->zgwService->applyOutboundMapping(
+                if (is_array($object) === true) {
+                    $objectData = $object;
+                } else {
+                    $objectData = $object->jsonSerialize();
+                }
+
+                $mapped[] = $this->zgwService->applyOutboundMapping(
                     objectData: $objectData,
                     mapping: $outboundMapping,
                     mappingConfig: $mappingConfig,
@@ -575,12 +580,17 @@ class BrcController extends Controller
                 );
             }
 
-            $object     = $objectService->saveObject(
+            $object = $objectService->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
             );
-            $objectData = is_array($object) ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
+
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
             $baseUrl         = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
@@ -592,11 +602,11 @@ class BrcController extends Controller
                 baseUrl: $baseUrl
             );
 
-            // brc-005a: Create OIO in DRC.
+            // Brc-005a: Create OIO in DRC.
             $besluitUrl = $enrichedBody['besluit'] ?? '';
             $ioUrl      = $enrichedBody['informatieobject'] ?? '';
             if ($besluitUrl !== '' && $ioUrl !== '') {
-                $this->createOioInDrc($besluitUrl, $ioUrl);
+                $this->createOioInDrc(besluitUrl: $besluitUrl, ioUrl: $ioUrl);
             }
 
             $this->zgwService->publishNotification(
@@ -686,7 +696,12 @@ class BrcController extends Controller
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oio) {
-                $oioData = is_array($oio) ? $oio : $oio->jsonSerialize();
+                if (is_array($oio) === true) {
+                    $oioData = $oio;
+                } else {
+                    $oioData = $oio->jsonSerialize();
+                }
+
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
                     $objectService->deleteObject(
@@ -700,7 +715,7 @@ class BrcController extends Controller
             $this->zgwService->getLogger()->warning(
                 'BRC: Failed to delete OIOs for besluit: '.$e->getMessage()
             );
-        }
+        }//end try
     }//end deleteOiosForBesluit()
 
     /**
@@ -725,12 +740,16 @@ class BrcController extends Controller
 
         try {
             // Read the BIO to get besluit URL before deletion.
-            $bioObj  = $objectService->find(
+            $bioObj = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $bioData = is_array($bioObj) ? $bioObj : $bioObj->jsonSerialize();
+            if (is_array($bioObj) === true) {
+                $bioData = $bioObj;
+            } else {
+                $bioData = $bioObj->jsonSerialize();
+            }
 
             // Build the besluit URL from the stored decision UUID.
             $decisionUuid = $bioData['decision'] ?? '';
@@ -748,9 +767,9 @@ class BrcController extends Controller
             // Delete the BIO.
             $objectService->deleteObject(uuid: $uuid);
 
-            // brc-005b: Delete matching OIO in DRC.
+            // Brc-005b: Delete matching OIO in DRC.
             if ($besluitUrl !== '' && $ioUrl !== '') {
-                $this->deleteOioByBesluitAndIo($besluitUrl, $ioUrl);
+                $this->deleteOioByBesluitAndIo(besluitUrl: $besluitUrl, ioUrl: $ioUrl);
             }
 
             $baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
@@ -806,7 +825,12 @@ class BrcController extends Controller
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oio) {
-                $oioData = is_array($oio) ? $oio : $oio->jsonSerialize();
+                if (is_array($oio) === true) {
+                    $oioData = $oio;
+                } else {
+                    $oioData = $oio->jsonSerialize();
+                }
+
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
                     $objectService->deleteObject(
@@ -847,12 +871,16 @@ class BrcController extends Controller
 
         try {
             // Validate the besluit exists (will throw if not found).
-            $existingObj  = $objectService->find(
+            $existingObj = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existingObj) ? $existingObj : $existingObj->jsonSerialize();
+            if (is_array($existingObj) === true) {
+                $existingData = $existingObj;
+            } else {
+                $existingData = $existingObj->jsonSerialize();
+            }
 
             // Run destroy business rules.
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(
@@ -876,11 +904,11 @@ class BrcController extends Controller
                 'besluiten'
             ).'/'.$uuid;
 
-            // brc-009: Cascade delete BesluitInformatieObjecten.
-            $this->cascadeDeleteBios($uuid, $besluitUrl);
+            // Brc-009: Cascade delete BesluitInformatieObjecten.
+            $this->cascadeDeleteBios(uuid: $uuid, besluitUrl: $besluitUrl);
 
-            // brc-009: Cascade delete OIOs in DRC.
-            $this->deleteOiosForBesluit($besluitUrl);
+            // Brc-009: Cascade delete OIOs in DRC.
+            $this->deleteOiosForBesluit(besluitUrl: $besluitUrl);
 
             // Delete the besluit itself.
             $objectService->deleteObject(uuid: $uuid);
@@ -935,7 +963,12 @@ class BrcController extends Controller
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $bio) {
-                $bioData = is_array($bio) ? $bio : $bio->jsonSerialize();
+                if (is_array($bio) === true) {
+                    $bioData = $bio;
+                } else {
+                    $bioData = $bio->jsonSerialize();
+                }
+
                 $bioUuid = $bioData['id'] ?? ($bioData['@self']['id'] ?? '');
 
                 if ($bioUuid !== '') {

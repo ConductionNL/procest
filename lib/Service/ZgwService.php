@@ -106,6 +106,13 @@ class ZgwService
     private $openRegisterObjectService = null;
 
     /**
+     * Cached request body to avoid re-reading php://input.
+     *
+     * @var array|null
+     */
+    private ?array $cachedRequestBody = null;
+
+    /**
      * The OpenRegister ConsumerMapper (loaded dynamically).
      *
      * @var object|null
@@ -413,9 +420,16 @@ class ZgwService
         // Remove empty-string values for nullable/date fields to prevent OpenRegister
         // from storing "" in date fields (which converts to today's date).
         $nullableKeys = $mappingConfig['inboundNullable'] ?? [
-            'endDate', 'plannedEndDate', 'deadline', 'archiveNomination',
-            'archiveActionDate', 'paymentIndication', 'lastPaymentDate',
-            'communicationChannel', 'archiveStatus', 'parentCase',
+            'endDate',
+            'plannedEndDate',
+            'deadline',
+            'archiveNomination',
+            'archiveActionDate',
+            'paymentIndication',
+            'lastPaymentDate',
+            'communicationChannel',
+            'archiveStatus',
+            'parentCase',
         ];
         foreach ($nullableKeys as $key) {
             if (isset($mapped[$key]) === true && $mapped[$key] === '') {
@@ -435,38 +449,87 @@ class ZgwService
      */
     public function getRequestBody(IRequest $request): array
     {
-        $body = $request->getParams();
-
-        $filtered = $body;
-        unset($filtered['_route'], $filtered['zgwApi'], $filtered['resource'], $filtered['uuid']);
-
-        if (count($filtered) > 0) {
-            return $body;
+        // Return cached result if already parsed for this request.
+        if ($this->cachedRequestBody !== null) {
+            return $this->cachedRequestBody;
         }
 
+        $routeKeys = ['_route', 'zgwApi', 'resource', 'uuid'];
+
+        // Read php://input directly — Nextcloud's getParams() parser may
+        // flatten/drop JSON array values (e.g. `["uuid"]` → `[]`).
         $rawBody = file_get_contents('php://input');
-        if ($rawBody === false || $rawBody === '') {
-            return $body;
-        }
+        if ($rawBody !== false && $rawBody !== '') {
+            $decoded = json_decode($rawBody, true);
+            if ($decoded === null) {
+                // Attempt to fix malformed JSON (unquoted values).
+                $fixed   = preg_replace(
+                    '/("[\w]+")\s*:\s*(?![\s"{\[\dtfn-])([^\n,}]+)/m',
+                    '$1: "$2"',
+                    $rawBody
+                );
+                $decoded = json_decode($fixed, true);
+            }
 
-        $decoded = json_decode($rawBody, true);
-        if ($decoded !== null) {
-            return array_merge($body, $decoded);
-        }
+            if ($decoded !== null) {
+                // Merge route params so they remain available downstream.
+                $routeParams = $request->getParams();
+                foreach ($routeKeys as $key) {
+                    if (isset($routeParams[$key]) === true) {
+                        $decoded[$key] = $routeParams[$key];
+                    }
+                }
 
-        $fixed = preg_replace(
-            '/("[\w]+")\s*:\s*(?![\s"{\[\dtfn-])([^\n,}]+)/m',
-            '$1: "$2"',
-            $rawBody
-        );
+                $this->cachedRequestBody = $decoded;
 
-        $decoded = json_decode($fixed, true);
-        if ($decoded !== null) {
-            return array_merge($body, $decoded);
-        }
+                return $decoded;
+            }
+        }//end if
 
-        return $body;
+        // Fallback: use getParams() for non-JSON requests (multipart, form-encoded).
+        $this->cachedRequestBody = $request->getParams();
+
+        return $this->cachedRequestBody;
     }//end getRequestBody()
+
+    /**
+     * Extract the UUID from the request URL path.
+     *
+     * Nextcloud's controller argument injection merges JSON body params into
+     * getParam(), so a body "uuid" field overrides the route's {uuid} param.
+     * This method extracts the UUID directly from the URL path to avoid that.
+     *
+     * @param IRequest $request The request object
+     * @param string   $uuid    The controller-injected UUID (potentially wrong)
+     *
+     * @return string The correct UUID from the URL path, or the fallback
+     */
+    public function resolvePathUuid(IRequest $request, string $uuid): string
+    {
+        $uri = $request->getRequestUri();
+        if (preg_match('/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $uri, $matches) === 1) {
+            return $matches[1];
+        }
+
+        return $uuid;
+    }//end resolvePathUuid()
+
+    /**
+     * Update a field in the cached request body.
+     *
+     * Used when pre-processing resolves a value (e.g., IOT omschrijving → UUID).
+     *
+     * @param string $key   The field name
+     * @param mixed  $value The new value
+     *
+     * @return void
+     */
+    public function updateCachedBodyField(string $key, mixed $value): void
+    {
+        if ($this->cachedRequestBody !== null) {
+            $this->cachedRequestBody[$key] = $value;
+        }
+    }//end updateCachedBodyField()
 
     /**
      * Build the base URL for ZGW API responses.
@@ -755,7 +818,7 @@ class ZgwService
 
         $mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
         if ($mappingConfig === null) {
-            return $this->mappingNotFoundResponse($zgwApi, $resource);
+            return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
         }
 
         if (($mappingConfig['enabled'] ?? true) === false) {
@@ -792,7 +855,7 @@ class ZgwService
 
             $objects    = $result['results'] ?? [];
             $totalCount = $result['total'] ?? count($objects);
-            $baseUrl    = $this->buildBaseUrl($request, zgwApi: $zgwApi, resource: $resource);
+            $baseUrl    = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
 
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
@@ -859,11 +922,11 @@ class ZgwService
 
         $mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
         if ($mappingConfig === null) {
-            return $this->mappingNotFoundResponse($zgwApi, $resource);
+            return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
         }
 
         try {
-            $body = $this->getRequestBody($request);
+            $body = $this->getRequestBody(request: $request);
 
             $ruleResult = $this->businessRulesService->validate(
                 zgwApi: $zgwApi,
@@ -878,7 +941,7 @@ class ZgwService
             );
             if ($ruleResult['valid'] === false) {
                 return new JSONResponse(
-                    data: $this->buildValidationError($ruleResult),
+                    data: $this->buildValidationError(ruleResult: $ruleResult),
                     statusCode: $ruleResult['status']
                 );
             }
@@ -923,7 +986,7 @@ class ZgwService
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
-            $baseUrl         = $this->buildBaseUrl($request, zgwApi: $zgwApi, resource: $resource);
+            $baseUrl         = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
 
             $mapped = $this->applyOutboundMapping(
@@ -976,7 +1039,7 @@ class ZgwService
 
         $mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
         if ($mappingConfig === null) {
-            return $this->mappingNotFoundResponse($zgwApi, $resource);
+            return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
         }
 
         try {
@@ -986,7 +1049,7 @@ class ZgwService
                 id: $uuid
             );
 
-            $baseUrl         = $this->buildBaseUrl($request, zgwApi: $zgwApi, resource: $resource);
+            $baseUrl         = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
             if (is_array($object) === true) {
                 $objectData = $object;
@@ -1042,25 +1105,37 @@ class ZgwService
         ?bool $zaakClosed=null,
         bool $hasForceer=true
     ): JSONResponse {
+        // Resolve UUID from URL path — Nextcloud's getParam() merges JSON body
+        // into controller args, so a body "uuid" field can override the route's {uuid}.
+        $uuid = $this->resolvePathUuid(request: $request, uuid: $uuid);
+
         if ($this->openRegisterObjectService === null) {
             return $this->unavailableResponse();
         }
 
         $mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
         if ($mappingConfig === null) {
-            return $this->mappingNotFoundResponse($zgwApi, $resource);
+            return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
         }
 
         try {
-            $body   = $this->getRequestBody($request);
-            $action = $partial === true ? 'patch' : 'update';
+            $body = $this->getRequestBody(request: $request);
+            if ($partial === true) {
+                $action = 'patch';
+            } else {
+                $action = 'update';
+            }
 
-            $existingObj  = $this->openRegisterObjectService->find(
+            $existingObj = $this->openRegisterObjectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existingObj) === true ? $existingObj : $existingObj->jsonSerialize();
+            if (is_array($existingObj) === true) {
+                $existingData = $existingObj;
+            } else {
+                $existingData = $existingObj->jsonSerialize();
+            }
 
             $ruleResult = $this->businessRulesService->validate(
                 zgwApi: $zgwApi,
@@ -1076,7 +1151,7 @@ class ZgwService
             );
             if ($ruleResult['valid'] === false) {
                 return new JSONResponse(
-                    data: $this->buildValidationError($ruleResult),
+                    data: $this->buildValidationError(ruleResult: $ruleResult),
                     statusCode: $ruleResult['status']
                 );
             }
@@ -1149,9 +1224,24 @@ class ZgwService
 
                 $englishData = array_merge($existingData, $patchData);
 
-                // Restore only the fields that were originally arrays.
-                // String fields containing JSON (relatedCaseTypes etc.) stay as strings.
+                // Determine which English fields are stored as JSON strings
+                // (their reverse-mapping template uses json_encode).
+                $jsonStringFields = [];
+                foreach ($reverseMap as $engKey => $twigTpl) {
+                    if (strpos($twigTpl, 'json_encode') !== false) {
+                        $jsonStringFields[] = $engKey;
+                    }
+                }
+
+                // Restore fields that were originally arrays, but skip fields
+                // that are stored as JSON strings in the schema (productsOrServices,
+                // referenceProcess, relatedCaseTypes, etc.). Those must remain as
+                // JSON-encoded strings for OpenRegister validation.
                 foreach ($arrayKeys as $key) {
+                    if (in_array($key, $jsonStringFields, true) === true) {
+                        continue;
+                    }
+
                     if (isset($englishData[$key]) === true && is_string($englishData[$key]) === true) {
                         $decoded = json_decode($englishData[$key], true);
                         if (is_array($decoded) === true) {
@@ -1173,7 +1263,7 @@ class ZgwService
                 uuid: $uuid
             );
 
-            $baseUrl         = $this->buildBaseUrl($request, zgwApi: $zgwApi, resource: $resource);
+            $baseUrl         = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
             if (is_array($object) === true) {
                 $objectData = $object;
@@ -1236,16 +1326,20 @@ class ZgwService
 
         $mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
         if ($mappingConfig === null) {
-            return $this->mappingNotFoundResponse($zgwApi, $resource);
+            return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
         }
 
         try {
-            $existingObj  = $this->openRegisterObjectService->find(
+            $existingObj = $this->openRegisterObjectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existingObj) === true ? $existingObj : $existingObj->jsonSerialize();
+            if (is_array($existingObj) === true) {
+                $existingData = $existingObj;
+            } else {
+                $existingData = $existingObj->jsonSerialize();
+            }
 
             $ruleResult = $this->businessRulesService->validate(
                 zgwApi: $zgwApi,
@@ -1261,14 +1355,14 @@ class ZgwService
             );
             if ($ruleResult['valid'] === false) {
                 return new JSONResponse(
-                    data: $this->buildValidationError($ruleResult),
+                    data: $this->buildValidationError(ruleResult: $ruleResult),
                     statusCode: $ruleResult['status']
                 );
             }
 
             $this->openRegisterObjectService->deleteObject(uuid: $uuid);
 
-            $baseUrl = $this->buildBaseUrl($request, zgwApi: $zgwApi, resource: $resource);
+            $baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $this->publishNotification(
                 zgwApi: $zgwApi,
                 resource: $resource,
@@ -1290,7 +1384,7 @@ class ZgwService
     }//end handleDestroy()
 
     /**
-     * Handle audit trail index (placeholder — shared across registers).
+     * Handle audit trail index — proxies to OpenRegister's audit trail.
      *
      * @param IRequest $request  The request object
      * @param string   $zgwApi   The ZGW API group
@@ -1306,31 +1400,53 @@ class ZgwService
         string $uuid
     ): JSONResponse {
         $resourceUrl = $this->buildBaseUrl(
-            $request,
+            request: $request,
             zgwApi: $zgwApi,
             resource: $resource
         ).'/'.$uuid;
 
-        $entry = [
-            'uuid'               => $uuid.'-audit-1',
-            'bron'               => 'procest',
-            'applicatieId'       => 'procest',
-            'applicatieWeergave' => 'Procest',
-            'actie'              => 'create',
-            'actieWeergave'      => 'Object aangemaakt',
-            'resultaat'          => 200,
-            'hoofdObject'        => $resourceUrl,
-            'resource'           => $resource,
-            'resourceUrl'        => $resourceUrl,
-            'resourceWeergave'   => $resource,
-            'aanmaakdatum'       => date('c'),
-        ];
+        // Fetch real audit trail from OpenRegister.
+        $entries = [];
+        if ($this->openRegisterObjectService !== null) {
+            try {
+                $logs = $this->openRegisterObjectService->getLogs($uuid, [], false, false);
+                foreach ($logs as $log) {
+                    $entries[] = $this->mapAuditTrailToZgw(
+                        log: $log,
+                        resourceUrl: $resourceUrl,
+                        resource: $resource
+                    );
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning(
+                    'Failed to fetch audit trail for '.$uuid.': '.$e->getMessage()
+                );
+            }
+        }
 
-        return new JSONResponse(data: [$entry]);
+        // If no entries found, return a synthetic creation entry.
+        if (empty($entries) === true) {
+            $entries[] = [
+                'uuid'               => $uuid.'-audit-1',
+                'bron'               => 'procest',
+                'applicatieId'       => 'procest',
+                'applicatieWeergave' => 'Procest',
+                'actie'              => 'create',
+                'actieWeergave'      => 'Object aangemaakt',
+                'resultaat'          => 200,
+                'hoofdObject'        => $resourceUrl,
+                'resource'           => $resource,
+                'resourceUrl'        => $resourceUrl,
+                'resourceWeergave'   => $resource,
+                'aanmaakdatum'       => date('c'),
+            ];
+        }
+
+        return new JSONResponse(data: $entries);
     }//end handleAudittrailIndex()
 
     /**
-     * Handle audit trail show (placeholder — shared across registers).
+     * Handle audit trail show — proxies to OpenRegister's audit trail.
      *
      * @param IRequest $request   The request object
      * @param string   $zgwApi    The ZGW API group
@@ -1348,11 +1464,36 @@ class ZgwService
         string $auditUuid
     ): JSONResponse {
         $resourceUrl = $this->buildBaseUrl(
-            $request,
+            request: $request,
             zgwApi: $zgwApi,
             resource: $resource
         ).'/'.$uuid;
 
+        // Try to find the specific audit trail entry from OpenRegister.
+        if ($this->openRegisterObjectService !== null) {
+            try {
+                $logs = $this->openRegisterObjectService->getLogs($uuid, [], false, false);
+                foreach ($logs as $log) {
+                    if (is_array($log) === true) {
+                        $logData = $log;
+                    } else {
+                        $logData = $log->jsonSerialize();
+                    }
+
+                    if (($logData['uuid'] ?? '') === $auditUuid) {
+                        return new JSONResponse(
+                            data: $this->mapAuditTrailToZgw(log: $log, resourceUrl: $resourceUrl, resource: $resource)
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning(
+                    'Failed to fetch audit trail entry '.$auditUuid.': '.$e->getMessage()
+                );
+            }
+        }//end if
+
+        // Fallback: return a synthetic entry with the requested UUID.
         return new JSONResponse(
             data: [
                 'uuid'               => $auditUuid,
@@ -1370,6 +1511,69 @@ class ZgwService
             ]
         );
     }//end handleAudittrailShow()
+
+    /**
+     * Map an OpenRegister AuditTrail entry to ZGW audittrail format.
+     *
+     * @param object|array $log         The OpenRegister audit trail entry
+     * @param string       $resourceUrl The ZGW resource URL
+     * @param string       $resource    The ZGW resource name
+     *
+     * @return array ZGW-formatted audit trail entry
+     */
+    private function mapAuditTrailToZgw(
+        object|array $log,
+        string $resourceUrl,
+        string $resource
+    ): array {
+        if (is_array($log) === true) {
+            $logData = $log;
+        } else {
+            $logData = $log->jsonSerialize();
+        }
+
+        // Map OpenRegister action names to ZGW actie names.
+        $actionMap = [
+            'save'                                 => 'create',
+            'create'                               => 'create',
+            'update'                               => 'update',
+            'patch'                                => 'partial_update',
+            'delete'                               => 'destroy',
+            'lock'                                 => 'create',
+            'unlock'                               => 'destroy',
+            'publish'                              => 'update',
+            'depublish'                            => 'update',
+            'referential_integrity.cascade_delete' => 'destroy',
+        ];
+
+        $actionDisplayMap = [
+            'create'         => 'Object aangemaakt',
+            'update'         => 'Object bijgewerkt',
+            'partial_update' => 'Object deels bijgewerkt',
+            'destroy'        => 'Object verwijderd',
+            'list'           => 'Objecten opgevraagd',
+            'retrieve'       => 'Object opgevraagd',
+        ];
+
+        $orAction = $logData['action'] ?? 'create';
+        $zgwActie = $actionMap[$orAction] ?? $orAction;
+        $weergave = $actionDisplayMap[$zgwActie] ?? ucfirst($orAction);
+
+        return [
+            'uuid'               => $logData['uuid'] ?? '',
+            'bron'               => 'procest',
+            'applicatieId'       => $logData['user'] ?? 'procest',
+            'applicatieWeergave' => $logData['userName'] ?? 'Procest',
+            'actie'              => $zgwActie,
+            'actieWeergave'      => $weergave,
+            'resultaat'          => 200,
+            'hoofdObject'        => $resourceUrl,
+            'resource'           => $resource,
+            'resourceUrl'        => $resourceUrl,
+            'resourceWeergave'   => $resource,
+            'aanmaakdatum'       => $logData['created'] ?? date('c'),
+        ];
+    }//end mapAuditTrailToZgw()
 
     /**
      * Resolve whether a zaak is closed (has einddatum set).
@@ -1428,8 +1632,13 @@ class ZgwService
                 return null;
             }
 
-            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
-            $endDate  = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
+            if (is_array($zaak) === true) {
+                $zaakData = $zaak;
+            } else {
+                $zaakData = $zaak->jsonSerialize();
+            }
+
+            $endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
 
             return $endDate !== null && $endDate !== '';
         } catch (\Throwable $e) {
@@ -1498,8 +1707,13 @@ class ZgwService
                 return null;
             }
 
-            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
-            $endDate  = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
+            if (is_array($zaak) === true) {
+                $zaakData = $zaak;
+            } else {
+                $zaakData = $zaak->jsonSerialize();
+            }
+
+            $endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
 
             return $endDate !== null && $endDate !== '';
         } catch (\Throwable $e) {
@@ -1558,7 +1772,12 @@ class ZgwService
                 return null;
             }
 
-            $ztData  = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
+            if (is_array($zaaktype) === true) {
+                $ztData = $zaaktype;
+            } else {
+                $ztData = $zaaktype->jsonSerialize();
+            }
+
             $isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
 
             if ($isDraft === false || $isDraft === 'false' || $isDraft === '0' || $isDraft === 0) {
@@ -1631,7 +1850,12 @@ class ZgwService
                 return null;
             }
 
-            $ztData  = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
+            if (is_array($zaaktype) === true) {
+                $ztData = $zaaktype;
+            } else {
+                $ztData = $zaaktype->jsonSerialize();
+            }
+
             $isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
 
             if ($isDraft === false || $isDraft === 'false' || $isDraft === '0' || $isDraft === 0) {

@@ -70,235 +70,237 @@ namespace OCA\Procest\Service;
 class ZgwDrcRulesService extends ZgwRulesBase
 {
     /**
-     * Rules for creating an EnkelvoudigInformatieObject (POST /documenten/v1/enkelvoudiginformatieobjecten).
+     * Rules for creating an EnkelvoudigInformatieObject.
      *
-     * Implements:
-     * - drc-001: Validate informatieobjecttype exists and is published (concept=false).
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
-     * - drc-005: Derive vertrouwelijkheidaanduiding from informatieobjecttype if not set.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
-     * - drc-008: Auto-generate identificatie if not provided. Validate uniqueness
-     *   of identificatie + bronorganisatie combination.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     * Implements drc-001, drc-005, drc-008.
      *
      * @param array $body The ZGW request body (Dutch field names)
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
     public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array
     {
-        // drc-001: Validate informatieobjecttype is published (not concept).
+        // Drc-001: Validate informatieobjecttype is published (not concept).
         $iotUrl = $body['informatieobjecttype'] ?? '';
         if ($iotUrl !== '' && $this->objectService !== null) {
-            $error = $this->validateTypeUrl($iotUrl, 'informatieobjecttype', 'document_type_schema');
-            if ($error !== null) {
-                return $error;
-            }
-        }
-
-        // drc-005: Derive vertrouwelijkheidaanduiding from informatieobjecttype if not set.
-        if (empty($body['vertrouwelijkheidaanduiding']) === true && $iotUrl !== '') {
-            $body = $this->deriveVertrouwelijkheidaanduiding($body, $iotUrl);
-        }
-
-        // drc-006a: Default indicatieGebruiksrecht to null on creation.
-        if (array_key_exists('indicatieGebruiksrecht', $body) === false
-            || $body['indicatieGebruiksrecht'] === false
-        ) {
-            $body['indicatieGebruiksrecht'] = null;
-        }
-
-        // drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
-        if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
-            $error = $this->validateIndicatieGebruiksrechtTrue($body);
-            if ($error !== null) {
-                return $error;
-            }
-        }
-
-        // drc-008: Check unique identificatie + bronorganisatie.
-        if (empty($body['identificatie']) === false) {
-            $error = $this->checkFieldUniqueness(
-                $body['identificatie'] ?? '',
-                'identifier',
-                $body['bronorganisatie'] ?? '',
-                'sourceOrganisation',
-                'identificatie'
+            $error = $this->validateTypeUrl(
+                typeUrl: $iotUrl,
+                fieldName: 'informatieobjecttype',
+                schemaKey: 'document_type_schema'
             );
             if ($error !== null) {
                 return $error;
             }
         }
 
-        // drc-008: Auto-generate identificatie if not provided.
-        if (empty($body['identificatie']) === true) {
-            $body['identificatie'] = $this->generateIdentificatie('DOCUMENT');
+        // Drc-005: Derive vertrouwelijkheidaanduiding from informatieobjecttype if not set.
+        if (empty($body['vertrouwelijkheidaanduiding']) === true && $iotUrl !== '') {
+            $body = $this->deriveVertrouwelijkheidaanduiding(body: $body, iotUrl: $iotUrl);
         }
 
-        return $this->ok($body);
+        // Drc-006a: Default indicatieGebruiksrecht to null on creation.
+        if (array_key_exists('indicatieGebruiksrecht', $body) === false
+            || $body['indicatieGebruiksrecht'] === false
+        ) {
+            $body['indicatieGebruiksrecht'] = null;
+        }
+
+        // Drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
+        if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
+            $error = $this->validateIndicatieGebruiksrechtTrue(body: $body);
+            if ($error !== null) {
+                return $error;
+            }
+        }
+
+        // Drc-008: Check unique identificatie + bronorganisatie.
+        if (empty($body['identificatie']) === false) {
+            $error = $this->checkFieldUniqueness(
+                field1Value: $body['identificatie'] ?? '',
+                field1Search: 'identifier',
+                field2Value: $body['bronorganisatie'] ?? '',
+                field2Search: 'sourceOrganisation',
+                errorField: 'identificatie'
+            );
+            if ($error !== null) {
+                return $error;
+            }
+        }
+
+        // Drc-008: Auto-generate identificatie if not provided.
+        if (empty($body['identificatie']) === true) {
+            $body['identificatie'] = $this->generateIdentificatie(prefix: 'DOCUMENT');
+        }
+
+        return $this->ok(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenCreate()
 
     /**
      * Rules for updating an EnkelvoudigInformatieObject (PUT).
      *
-     * Implements:
-     * - drc-003: Block update when status is 'definitief' without valid lock.
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
-     * - drc-006: Require valid lock ID for modifications on locked documents.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     * Implements drc-003, drc-006.
      *
      * @param array      $body           The ZGW request body
      * @param array|null $existingObject The existing EIO data
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
     public function rulesEnkelvoudiginformatieobjectenUpdate(
         array $body,
         ?array $existingObject=null
     ): array {
-        // drc-006: Check lock requirement.
-        $lockError = $this->validateLock($body, $existingObject);
+        // Drc-006: Check lock requirement.
+        $lockError = $this->validateLock(body: $body, existingObject: $existingObject);
         if ($lockError !== null) {
             return $lockError;
         }
 
-        return $this->ok($body);
+        return $this->ok(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenUpdate()
 
     /**
      * Rules for patching an EnkelvoudigInformatieObject (PATCH).
      *
-     * Implements:
-     * - drc-003: Block update when status is 'definitief' without valid lock.
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
-     * - drc-006: Require valid lock ID for modifications on locked documents.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     * Implements drc-003, drc-006.
      *
      * @param array      $body           The ZGW request body
      * @param array|null $existingObject The existing EIO data
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
     public function rulesEnkelvoudiginformatieobjectenPatch(
         array $body,
         ?array $existingObject=null
     ): array {
-        // drc-006: Check lock requirement.
-        $lockError = $this->validateLock($body, $existingObject);
+        // Drc-006: Check lock requirement.
+        $lockError = $this->validateLock(body: $body, existingObject: $existingObject);
         if ($lockError !== null) {
             return $lockError;
         }
 
-        return $this->ok($body);
+        return $this->ok(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenPatch()
 
     /**
      * Rules for destroying an EnkelvoudigInformatieObject (DELETE).
      *
-     * Implements:
-     * - drc-007: Cannot destroy an informatieobject that has ObjectInformatieObject relations.
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     * Implements drc-007.
      *
      * @param array      $body           The ZGW request body (usually empty)
      * @param array|null $existingObject The existing EIO data
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
     public function rulesEnkelvoudiginformatieobjectenDestroy(
         array $body,
         ?array $existingObject=null
     ): array {
         if ($existingObject === null || $this->objectService === null) {
-            return $this->ok($body);
+            return $this->ok(body: $body);
         }
 
         $existingId = $existingObject['id'] ?? ($existingObject['@self']['id'] ?? null);
         if ($existingId === null) {
-            return $this->ok($body);
+            return $this->ok(body: $body);
         }
 
-        // drc-007: Check for ObjectInformatieObject relations.
+        // Drc-007: Check for ObjectInformatieObject relations.
         $register  = $this->mappingConfig['sourceRegister'] ?? '';
         $oioSchema = $this->settingsService->getConfigValue(key: 'document_link_schema');
 
         if ($register !== '' && $oioSchema !== '') {
             // OIO stores the full informatieobject URL in the 'document' field,
             // so search with both UUID and partial match to find any OIO relations.
-            $relatedIds = $this->findOioRelationsForDocument($register, $oioSchema, $existingId);
+            $relatedIds = $this->findOioRelationsForDocument(
+                register: $register,
+                schema: $oioSchema,
+                docUuid: $existingId
+            );
             if (empty($relatedIds) === false) {
                 return $this->error(
-                    400,
-                    'Het informatieobject kan niet verwijderd worden omdat er nog relaties aan gekoppeld zijn.',
-                    [$this->fieldError(
-                        'nonFieldErrors',
-                        'pending-relations',
-                        'Het informatieobject heeft nog ObjectInformatieObject relaties.'
-                    )
+                    status: 400,
+                    detail: 'Het informatieobject kan niet verwijderd worden omdat er nog relaties aan gekoppeld zijn.',
+                    invalidParams: [
+                        $this->fieldError(
+                            fieldName: 'nonFieldErrors',
+                            code: 'pending-relations',
+                            reason: 'Het informatieobject heeft nog ObjectInformatieObject relaties.'
+                        ),
                     ]
                 );
             }
-        }
+        }//end if
 
-        return $this->ok($body);
+        return $this->ok(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenDestroy()
 
     /**
-     * Rules for creating an ObjectInformatieObject (POST /documenten/v1/objectinformatieobjecten).
+     * Rules for creating an ObjectInformatieObject.
      *
-     * Implements:
-     * - drc-002: Validate informatieobject URL exists. Validate uniqueness of
-     *   informatieobject + object + objectType combination.
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     * Implements drc-002.
      *
      * @param array $body The ZGW request body
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
     public function rulesObjectinformatieobjectenCreate(array $body): array
     {
-        // drc-002: Validate informatieobject URL.
+        // Drc-002: Validate informatieobject URL.
         $ioUrl = $body['informatieobject'] ?? '';
         if ($ioUrl !== '') {
-            $error = $this->validateInformatieobjectUrl($ioUrl);
+            $error = $this->validateInformatieobjectUrl(ioUrl: $ioUrl);
             if ($error !== null) {
                 return $error;
             }
         }
 
-        // drc-002: Validate object URL.
+        // Drc-002: Validate object URL.
         $objectUrl  = $body['object'] ?? '';
         $objectType = $body['objectType'] ?? '';
         if ($objectUrl !== '') {
-            $error = $this->validateObjectUrl($objectUrl, $objectType);
+            $error = $this->validateObjectUrl(objectUrl: $objectUrl, objectType: $objectType);
             if ($error !== null) {
                 return $error;
             }
         }
 
-        // drc-003 (VNG): Validate uniqueness of object + informatieobject + objectType.
+        // Drc-003 (VNG): Validate uniqueness of object + informatieobject + objectType.
         // Must run BEFORE cross-register check so duplicate errors take priority.
         if ($ioUrl !== '' && $objectUrl !== '' && $this->objectService !== null) {
-            $error = $this->checkOioUniqueness($ioUrl, $objectUrl, $body['objectType'] ?? '');
+            $error = $this->checkOioUniqueness(
+                ioUrl: $ioUrl,
+                objectUrl: $objectUrl,
+                objectType: $body['objectType'] ?? ''
+            );
             if ($error !== null) {
                 return $error;
             }
         }
 
-        // drc-004 (VNG): Cross-register validation — ZIO/BIO must exist in ZRC/BRC.
+        // Drc-004 (VNG): Cross-register validation — ZIO/BIO must exist in ZRC/BRC.
         $objectType = $body['objectType'] ?? '';
         if ($ioUrl !== '' && $objectUrl !== '' && $objectType !== '' && $this->objectService !== null) {
-            $error = $this->validateOioCrossRegister($ioUrl, $objectUrl, $objectType);
+            $error = $this->validateOioCrossRegister(
+                ioUrl: $ioUrl,
+                objectUrl: $objectUrl,
+                objectType: $objectType
+            );
             if ($error !== null) {
                 return $error;
             }
         }
 
-        return $this->ok($body);
+        return $this->ok(body: $body);
     }//end rulesObjectinformatieobjectenCreate()
 
     /**
@@ -319,7 +321,12 @@ class ZgwDrcRulesService extends ZgwRulesBase
         string $docUuid
     ): array {
         // First try by exact UUID (in case stored as UUID).
-        $results = $this->findAllObjectsByField($register, $schema, 'document', $docUuid);
+        $results = $this->findAllObjectsByField(
+            register: $register,
+            schema: $schema,
+            field: 'document',
+            value: $docUuid
+        );
         if (empty($results) === false) {
             return $results;
         }
@@ -335,8 +342,13 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
             $ids = [];
             foreach (($result['results'] ?? []) as $obj) {
-                $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
-                $id   = $data['id'] ?? ($data['@self']['id'] ?? null);
+                if (is_array($obj) === true) {
+                    $data = $obj;
+                } else {
+                    $data = $obj->jsonSerialize();
+                }
+
+                $id = $data['id'] ?? ($data['@self']['id'] ?? null);
                 if ($id !== null) {
                     $ids[] = $id;
                 }
@@ -345,7 +357,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $ids;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'drc-007: OIO relation search with partial match failed: '.$e->getMessage()
+                'Drc-007: OIO relation search with partial match failed: '.$e->getMessage()
             );
             return [];
         }//end try
@@ -353,10 +365,6 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
     /**
      * Validate that indicatieGebruiksrecht=true requires existing gebruiksrechten (drc-006b).
-     *
-     * When creating an EIO with indicatieGebruiksrecht=true, there must already be
-     * gebruiksrechten records for this document. Since this is a create operation,
-     * the document doesn't exist yet, so there can't be any gebruiksrechten.
      *
      * @param array $body The request body
      *
@@ -366,13 +374,13 @@ class ZgwDrcRulesService extends ZgwRulesBase
     {
         // On create, the document does not yet exist so there can be no gebruiksrechten.
         return $this->error(
-            400,
-            'indicatieGebruiksrecht kan niet true zijn zonder dat er gebruiksrechten bestaan.',
-            [
+            status: 400,
+            detail: 'indicatieGebruiksrecht kan niet true zijn zonder dat er gebruiksrechten bestaan.',
+            invalidParams: [
                 $this->fieldError(
-                    'indicatieGebruiksrecht',
-                    'missing-gebruiksrechten',
-                    'Er zijn geen gebruiksrechten voor dit informatieobject.'
+                    fieldName: 'indicatieGebruiksrecht',
+                    code: 'missing-gebruiksrechten',
+                    reason: 'Er zijn geen gebruiksrechten voor dit informatieobject.'
                 ),
             ]
         );
@@ -381,11 +389,6 @@ class ZgwDrcRulesService extends ZgwRulesBase
     /**
      * Validate OIO object URL (drc-002a/b/c/d).
      *
-     * Validates that the object URL:
-     * 1. Is a syntactically valid URL
-     * 2. Contains a valid UUID
-     * 3. Matches the objectType (zaak URL contains /zaken/, besluit URL contains /besluiten/)
-     *
      * @param string $objectUrl  The object URL
      * @param string $objectType The object type (zaak or besluit)
      *
@@ -393,39 +396,43 @@ class ZgwDrcRulesService extends ZgwRulesBase
      */
     private function validateObjectUrl(string $objectUrl, string $objectType): ?array
     {
-        // drc-002a/b: Check URL validity.
-        if ($this->isValidUrl($objectUrl) === false) {
+        // Drc-002a/b: Check URL validity.
+        if ($this->isValidUrl(url: $objectUrl) === false) {
             return $this->error(
-                400,
-                'De object URL is ongeldig.',
-                [
-                    $this->fieldError('object', 'bad-url', 'De object URL is ongeldig.'),
+                status: 400,
+                detail: 'De object URL is ongeldig.',
+                invalidParams: [
+                    $this->fieldError(fieldName: 'object', code: 'bad-url', reason: 'De object URL is ongeldig.'),
                 ]
             );
         }
 
-        // drc-002a/b: Check URL contains a UUID.
-        $objectUuid = $this->extractUuid($objectUrl);
+        // Drc-002a/b: Check URL contains a UUID.
+        $objectUuid = $this->extractUuid(value: $objectUrl);
         if ($objectUuid === null) {
             return $this->error(
-                400,
-                'De object URL bevat geen geldig UUID.',
-                [
-                    $this->fieldError('object', 'bad-url', 'De object URL bevat geen geldig UUID.'),
+                status: 400,
+                detail: 'De object URL bevat geen geldig UUID.',
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'object',
+                        code: 'bad-url',
+                        reason: 'De object URL bevat geen geldig UUID.'
+                    ),
                 ]
             );
         }
 
-        // drc-002c/d: Validate objectType matches the URL path.
+        // Drc-002c/d: Validate objectType matches the URL path.
         if ($objectType === 'zaak' && strpos($objectUrl, '/zaken/') === false) {
             return $this->error(
-                400,
-                'De object URL wijst niet naar een zaak.',
-                [
+                status: 400,
+                detail: 'De object URL wijst niet naar een zaak.',
+                invalidParams: [
                     $this->fieldError(
-                        'object',
-                        'invalid-resource',
-                        'De object URL wijst niet naar een zaak resource.'
+                        fieldName: 'object',
+                        code: 'invalid-resource',
+                        reason: 'De object URL wijst niet naar een zaak resource.'
                     ),
                 ]
             );
@@ -433,13 +440,13 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
         if ($objectType === 'besluit' && strpos($objectUrl, '/besluiten/') === false) {
             return $this->error(
-                400,
-                'De object URL wijst niet naar een besluit.',
-                [
+                status: 400,
+                detail: 'De object URL wijst niet naar een besluit.',
+                invalidParams: [
                     $this->fieldError(
-                        'object',
-                        'invalid-resource',
-                        'De object URL wijst niet naar een besluit resource.'
+                        fieldName: 'object',
+                        code: 'invalid-resource',
+                        reason: 'De object URL wijst niet naar een besluit resource.'
                     ),
                 ]
             );
@@ -451,10 +458,6 @@ class ZgwDrcRulesService extends ZgwRulesBase
     /**
      * Validate OIO cross-register: ZIO/BIO must exist (drc-004 VNG).
      *
-     * When creating an OIO with objectType=zaak, a corresponding
-     * ZaakInformatieObject must exist in ZRC. For objectType=besluit,
-     * a BesluitInformatieObject must exist in BRC.
-     *
      * @param string $ioUrl      The informatieobject URL
      * @param string $objectUrl  The object URL (zaak or besluit)
      * @param string $objectType The object type (zaak or besluit)
@@ -463,8 +466,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      */
     private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array
     {
-        $ioUuid     = $this->extractUuid($ioUrl) ?? '';
-        $objectUuid = $this->extractUuid($objectUrl) ?? '';
+        $ioUuid     = $this->extractUuid(value: $ioUrl) ?? '';
+        $objectUuid = $this->extractUuid(value: $objectUrl) ?? '';
 
         if ($ioUuid === '' || $objectUuid === '') {
             return null;
@@ -506,18 +509,27 @@ class ZgwDrcRulesService extends ZgwRulesBase
             $total  = $result['total'] ?? count($result['results'] ?? []);
 
             if ($total === 0) {
-                $detail = $objectType === 'zaak' ? 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.' : 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
+                if ($objectType === 'zaak') {
+                    $detail = 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.';
+                } else {
+                    $detail = 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
+                }
+
                 return $this->error(
-                        400,
-                        $detail,
-                        [
-                            $this->fieldError('nonFieldErrors', 'inconsistent-relation', $detail),
-                        ]
-                        );
+                    status: 400,
+                    detail: $detail,
+                    invalidParams: [
+                        $this->fieldError(
+                            fieldName: 'nonFieldErrors',
+                            code: 'inconsistent-relation',
+                            reason: $detail
+                        ),
+                    ]
+                );
             }
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'drc-004: Cross-register validation failed: '.$e->getMessage()
+                'Drc-004: Cross-register validation failed: '.$e->getMessage()
             );
         }//end try
 
@@ -526,8 +538,6 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
     /**
      * Validate OIO uniqueness: object + informatieobject + objectType (drc-003 VNG).
-     *
-     * The combination of informatieobject, object, and objectType must be unique.
      *
      * @param string $ioUrl      The informatieobject URL
      * @param string $objectUrl  The object URL (zaak or besluit)
@@ -540,52 +550,144 @@ class ZgwDrcRulesService extends ZgwRulesBase
         $register  = $this->mappingConfig['sourceRegister'] ?? '';
         $oioSchema = $this->settingsService->getConfigValue(key: 'document_link_schema');
 
-        if ($register === '' || $oioSchema === '') {
+        if ($register === '') {
             return null;
         }
 
-        try {
-            // Search by full URL since OIO stores the full URL, not just UUID.
-            $searchParams = [
-                'document' => $ioUrl,
-                'object'   => $objectUrl,
-                '_limit'   => 1,
-            ];
+        $duplicateError = $this->error(
+            status: 400,
+            detail: 'De combinatie informatieobject + object + objectType bestaat al.',
+            invalidParams: [
+                $this->fieldError(
+                    fieldName: 'nonFieldErrors',
+                    code: 'unique',
+                    reason: 'De combinatie informatieobject + object + objectType bestaat al.'
+                ),
+            ]
+        );
 
-            $query  = $this->objectService->buildSearchQuery(
-                requestParams: $searchParams,
+        $ioUuid     = $this->extractUuid(value: $ioUrl);
+        $objectUuid = $this->extractUuid(value: $objectUrl);
+
+        // Check OIO schema for existing duplicates.
+        if ($oioSchema !== '') {
+            $found = $this->searchDuplicateRelation(
                 register: $register,
-                schema: $oioSchema
+                schema: $oioSchema,
+                ioUrl: $ioUrl,
+                objectUrl: $objectUrl,
+                ioUuid: $ioUuid,
+                objectUuid: $objectUuid,
+                objectField: 'object'
             );
-            $result = $this->objectService->searchObjectsPaginated(query: $query);
-            $total  = $result['total'] ?? count($result['results'] ?? []);
-
-            if ($total > 0) {
-                return $this->error(
-                    400,
-                    'De combinatie informatieobject + object + objectType bestaat al.',
-                    [$this->fieldError(
-                        'nonFieldErrors',
-                        'unique',
-                        'De combinatie informatieobject + object + objectType bestaat al.'
-                    )
-                    ]
-                );
+            if ($found === true) {
+                return $duplicateError;
             }
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'drc-003: OIO uniqueness check failed: '.$e->getMessage()
-            );
-        }//end try
+        }
+
+        // Drc-003a/b: Also check ZIO/BIO schemas — a relationship created via
+        // ZRC (zaakinformatieobjecten) or BRC (besluitinformatieobjecten) counts
+        // as a duplicate for OIO creation.
+        $crossSchemaKey = '';
+        $crossField     = '';
+        if ($objectType === 'zaak') {
+            $crossSchemaKey = 'case_document_schema';
+            $crossField     = 'case';
+        } else if ($objectType === 'besluit') {
+            $crossSchemaKey = 'decision_document_schema';
+            $crossField     = 'decision';
+        }
+
+        if ($crossSchemaKey !== '') {
+            $crossSchema = $this->settingsService->getConfigValue(key: $crossSchemaKey);
+            if ($crossSchema !== '') {
+                $found = $this->searchDuplicateRelation(
+                    register: $register,
+                    schema: $crossSchema,
+                    ioUrl: $ioUrl,
+                    objectUrl: $objectUrl,
+                    ioUuid: $ioUuid,
+                    objectUuid: $objectUuid,
+                    objectField: $crossField
+                );
+                if ($found === true) {
+                    return $duplicateError;
+                }
+            }
+        }
 
         return null;
     }//end checkOioUniqueness()
 
     /**
-     * Validate lock requirement for document modifications (drc-006).
+     * Search for an existing relation in a schema by document+object combination.
      *
-     * When a document has status 'definitief' and is locked, the request
-     * must include the correct lock ID.
+     * @param string      $register    The register ID
+     * @param string      $schema      The schema ID to search
+     * @param string      $ioUrl       The informatieobject URL
+     * @param string      $objectUrl   The object URL
+     * @param string|null $ioUuid      The extracted informatieobject UUID
+     * @param string|null $objectUuid  The extracted object UUID
+     * @param string      $objectField The field name for the object reference
+     *
+     * @return bool True if a duplicate was found
+     */
+    private function searchDuplicateRelation(
+        string $register,
+        string $schema,
+        string $ioUrl,
+        string $objectUrl,
+        ?string $ioUuid,
+        ?string $objectUuid,
+        string $objectField
+    ): bool {
+        try {
+            // Search by full URL.
+            $query  = $this->objectService->buildSearchQuery(
+                requestParams: ['document' => $ioUrl, $objectField => $objectUrl, '_limit' => 1],
+                register: $register,
+                schema: $schema
+            );
+            $result = $this->objectService->searchObjectsPaginated(query: $query);
+            if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
+                return true;
+            }
+
+            // Fallback: search by UUID (stored data may use UUID instead of URL).
+            if ($ioUuid !== null && $objectUuid !== null) {
+                $query  = $this->objectService->buildSearchQuery(
+                    requestParams: ['document' => $ioUuid, $objectField => $objectUuid, '_limit' => 1],
+                    register: $register,
+                    schema: $schema
+                );
+                $result = $this->objectService->searchObjectsPaginated(query: $query);
+                if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
+                    return true;
+                }
+
+                // Full-text search using both UUIDs (field-specific LIKE
+                // with % is not supported by MagicMapper).
+                $query  = $this->objectService->buildSearchQuery(
+                    requestParams: ['_search' => $ioUuid.' '.$objectUuid, '_limit' => 1],
+                    register: $register,
+                    schema: $schema
+                );
+                $result = $this->objectService->searchObjectsPaginated(query: $query);
+                if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
+                    return true;
+                }
+            }//end if
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'Drc-003: Uniqueness check failed for schema '.$schema.': '.$e->getMessage()
+            );
+        }//end try
+
+        return false;
+    }//end searchDuplicateRelation()
+
+    /**
+     * Validate lock requirement for document modifications (drc-006).
      *
      * @param array      $body           The request body
      * @param array|null $existingObject The existing EIO data
@@ -604,26 +706,34 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return null;
         }
 
-        // drc-006: Require valid lock ID.
+        // Drc-006: Require valid lock ID.
         $requestLock = $body['lock'] ?? '';
         if ($requestLock === '') {
             return $this->error(
-                    400,
-                    'Het document is vergrendeld. Geef een geldig lock ID mee.',
-                    [
-                        $this->fieldError('lock', 'required', 'Het document is vergrendeld.'),
-                    ]
-                    );
+                status: 400,
+                detail: 'Het document is vergrendeld. Geef een geldig lock ID mee.',
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'lock',
+                        code: 'required',
+                        reason: 'Het document is vergrendeld.'
+                    ),
+                ]
+            );
         }
 
         if ($requestLock !== $existingLock) {
             return $this->error(
-                    400,
-                    'Het opgegeven lock ID is niet geldig.',
-                    [
-                        $this->fieldError('lock', 'incorrect-lock-id', 'Het opgegeven lock ID komt niet overeen.'),
-                    ]
-                    );
+                status: 400,
+                detail: 'Het opgegeven lock ID is niet geldig.',
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'lock',
+                        code: 'incorrect-lock-id',
+                        reason: 'Het opgegeven lock ID komt niet overeen.'
+                    ),
+                ]
+            );
         }
 
         return null;
@@ -632,31 +742,26 @@ class ZgwDrcRulesService extends ZgwRulesBase
     /**
      * Derive vertrouwelijkheidaanduiding from informatieobjecttype (drc-005).
      *
-     * If the client does not send vertrouwelijkheidaanduiding, it must be
-     * derived from InformatieObjectType.vertrouwelijkheidaanduiding.
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
-     *
      * @param array  $body   The request body
      * @param string $iotUrl The informatieobjecttype URL
      *
      * @return array The body with derived vertrouwelijkheidaanduiding
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
     private function deriveVertrouwelijkheidaanduiding(array $body, string $iotUrl): array
     {
-        $uuid = $this->extractUuid($iotUrl);
+        $uuid = $this->extractUuid(value: $iotUrl);
         if ($uuid === null) {
             return $body;
         }
 
-        $iotData = $this->findBySchemaKey($uuid, 'document_type_schema');
+        $iotData = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
         if ($iotData === null) {
             return $body;
         }
 
-        $va = $iotData['confidentiality']
-            ?? ($iotData['confidentialityDesignation']
-            ?? ($iotData['vertrouwelijkheidaanduiding'] ?? ''));
+        $va = $iotData['confidentiality'] ?? $iotData['confidentialityDesignation'] ?? $iotData['vertrouwelijkheidaanduiding'] ?? '';
         if ($va !== '') {
             $body['vertrouwelijkheidaanduiding'] = $va;
         }

@@ -61,7 +61,7 @@ class NrcController extends Controller
         IRequest $request,
         private readonly ZgwService $zgwService,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**

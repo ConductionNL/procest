@@ -113,7 +113,7 @@ class ZgwBusinessRulesService
                 $body = $this->ztcRules->preserveConcept($body, $resource, $existingObject);
             }
 
-            // ztc-009/ztc-010: Protect published types from modification.
+            // Ztc-009/ztc-010: Protect published types from modification.
             $conceptCheck = $this->ztcRules->checkConceptProtection(
                 $resource,
                 $action,
@@ -131,7 +131,7 @@ class ZgwBusinessRulesService
             return [
                 'valid'         => false,
                 'status'        => 403,
-                'detail'        => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan '.'zonder scope zaken.geforceerd-bijwerken.',
+                'detail'        => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
                 'code'          => 'permission_denied',
                 'invalidParams' => [
                     [
@@ -145,7 +145,13 @@ class ZgwBusinessRulesService
         }
 
         // ---- Delegate to per-register rule services ----
-        return $this->dispatchToRegister($zgwApi, $resource, $action, $body, $existingObject);
+        return $this->dispatchToRegister(
+            zgwApi: $zgwApi,
+            resource: $resource,
+            action: $action,
+            body: $body,
+            existingObject: $existingObject
+        );
     }//end validate()
 
     /**
@@ -178,22 +184,42 @@ class ZgwBusinessRulesService
 
         // --- Zaken API (ZRC) ---
         if ($zgwApi === 'zaken') {
-            return $this->dispatchZrc($resource, $action, $body, $existingObject);
+            return $this->dispatchZrc(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject
+            );
         }
 
         // --- Catalogi API (ZTC) ---
         if ($zgwApi === 'catalogi') {
-            return $this->dispatchZtc($resource, $action, $body, $existingObject);
+            return $this->dispatchZtc(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject
+            );
         }
 
         // --- Documenten API (DRC) ---
         if ($zgwApi === 'documenten') {
-            return $this->dispatchDrc($resource, $action, $body, $existingObject);
+            return $this->dispatchDrc(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject
+            );
         }
 
         // --- Besluiten API (BRC) ---
         if ($zgwApi === 'besluiten') {
-            return $this->dispatchBrc($resource, $action, $body, $existingObject);
+            return $this->dispatchBrc(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject
+            );
         }
 
         return $ok;
@@ -234,7 +260,7 @@ class ZgwBusinessRulesService
                 => $this->zrcRules->rulesZaakinformatieobjectenPatch($body, $existingObject),
             $resource === 'zaakeigenschappen' && $action === 'create'
                 => $this->zrcRules->rulesZaakeigenschappenCreate($body),
-            default => $this->ok($body),
+            default => $this->ok(body: $body),
         };//end match
     }//end dispatchZrc()
 
@@ -259,7 +285,7 @@ class ZgwBusinessRulesService
                 => $this->ztcRules->rulesZaaktypeinformatieobjecttypenCreate($body),
             $resource === 'resultaattypen' && $action === 'create'
                 => $this->ztcRules->rulesResultaattypenCreate($body),
-            default => $this->ok($body),
+            default => $this->ok(body: $body),
         };
     }//end dispatchZtc()
 
@@ -286,7 +312,7 @@ class ZgwBusinessRulesService
                 => $this->drcRules->rulesEnkelvoudiginformatieobjectenDestroy($body, $existingObject),
             $resource === 'objectinformatieobjecten' && $action === 'create'
                 => $this->drcRules->rulesObjectinformatieobjectenCreate($body),
-            default => $this->ok($body),
+            default => $this->ok(body: $body),
         };
     }//end dispatchDrc()
 
@@ -311,7 +337,7 @@ class ZgwBusinessRulesService
                 => $this->brcRules->rulesBesluitenPatch($body, $existingObject),
             $resource === 'besluitinformatieobjecten' && $action === 'create'
                 => $this->brcRules->rulesBesluitinformatieobjectenCreate($body),
-            default => $this->ok($body),
+            default => $this->ok(body: $body),
         };
     }//end dispatchBrc()
 

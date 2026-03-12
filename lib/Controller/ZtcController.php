@@ -104,7 +104,7 @@ class ZtcController extends Controller
         IRequest $request,
         private readonly ZgwService $zgwService,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -140,15 +140,15 @@ class ZtcController extends Controller
         // ZTC datumGeldigheid: post-filter results by date validity.
         $datumGeldigheid = $this->request->getParam('datumGeldigheid');
         if ($datumGeldigheid !== null && $datumGeldigheid !== '') {
-            $data['results'] = $this->filterByDatumGeldigheid($data['results'], $datumGeldigheid);
+            $data['results'] = $this->filterByDatumGeldigheid(results: $data['results'], datumGeldigheid: $datumGeldigheid);
             $data['count']   = count($data['results']);
         }
 
         // Enrich cross-references and filter invalid URLs from paginated results.
         if (isset(self::URL_FILTER_FIELDS[$resource]) === true) {
             foreach ($data['results'] as $idx => $item) {
-                $item = $this->enrichCrossReferences($resource, $item);
-                $data['results'][$idx] = $this->filterValidUrls($resource, $item);
+                $item = $this->enrichCrossReferences(resource: $resource, data: $item);
+                $data['results'][$idx] = $this->filterValidUrls(resource: $resource, data: $item);
             }
         }
 
@@ -174,9 +174,14 @@ class ZtcController extends Controller
             return $authError;
         }
 
-        // ztc-010: Resolve parent zaaktype draft status for sub-resource creation.
+        // Ztc-010: Resolve parent zaaktype draft status for sub-resource creation.
         $body = $this->zgwService->getRequestBody($this->request);
         $parentZaaktypeDraft = $this->zgwService->resolveParentZaaktypeDraftFromBody($resource, $body);
+
+        // Ztc-010m: For ZIOT, resolve informatieobjecttype by omschrijving if not a UUID/URL.
+        if ($resource === 'zaaktype-informatieobjecttypen') {
+            $this->resolveIotByOmschrijving(body: $body);
+        }
 
         $response = $this->zgwService->handleCreate(
             $this->request,
@@ -185,15 +190,15 @@ class ZtcController extends Controller
             parentZaaktypeDraft: $parentZaaktypeDraft
         );
 
-        // Enrich cross-references on create response (same as show/index).
+        // Enrich cross-references on create response (without validity filtering
+        // since referenced types may not yet be published at creation time).
         if (isset(self::URL_FILTER_FIELDS[$resource]) === true
             && $response->getStatus() === Http::STATUS_CREATED
         ) {
-            $data     = $response->getData();
-            $data     = $this->enrichCrossReferences($resource, $data);
-            $filtered = $this->filterValidUrls($resource, $data);
+            $data = $response->getData();
+            $data = $this->enrichCrossReferences(resource: $resource, data: $data);
 
-            return new JSONResponse(data: $filtered, statusCode: Http::STATUS_CREATED);
+            return new JSONResponse(data: $data, statusCode: Http::STATUS_CREATED);
         }
 
         return $response;
@@ -226,8 +231,8 @@ class ZtcController extends Controller
             && $response->getStatus() === Http::STATUS_OK
         ) {
             $data     = $response->getData();
-            $data     = $this->enrichCrossReferences($resource, $data);
-            $filtered = $this->filterValidUrls($resource, $data);
+            $data     = $this->enrichCrossReferences(resource: $resource, data: $data);
+            $filtered = $this->filterValidUrls(resource: $resource, data: $data);
 
             return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
         }
@@ -251,12 +256,16 @@ class ZtcController extends Controller
         }
 
         try {
-            $existingObj  = $this->zgwService->getObjectService()->find(
+            $existingObj = $this->zgwService->getObjectService()->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existingObj) ? $existingObj : $existingObj->jsonSerialize();
+            if (is_array($existingObj) === true) {
+                $existingData = $existingObj;
+            } else {
+                $existingData = $existingObj->jsonSerialize();
+            }
 
             return $this->zgwService->resolveParentZaaktypeDraft($resource, $existingData);
         } catch (\Throwable $e) {
@@ -287,7 +296,7 @@ class ZtcController extends Controller
             return $authError;
         }
 
-        $parentZtDraft = $this->resolveParentDraft($resource, $uuid);
+        $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
 
         $response = $this->zgwService->handleUpdate(
             $this->request,
@@ -303,8 +312,8 @@ class ZtcController extends Controller
             && $response->getStatus() === Http::STATUS_OK
         ) {
             $data     = $response->getData();
-            $data     = $this->enrichCrossReferences($resource, $data);
-            $filtered = $this->filterValidUrls($resource, $data);
+            $data     = $this->enrichCrossReferences(resource: $resource, data: $data);
+            $filtered = $this->filterValidUrls(resource: $resource, data: $data);
 
             return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
         }
@@ -334,7 +343,7 @@ class ZtcController extends Controller
             return $authError;
         }
 
-        $parentZtDraft = $this->resolveParentDraft($resource, $uuid);
+        $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
 
         $response = $this->zgwService->handleUpdate(
             $this->request,
@@ -350,8 +359,8 @@ class ZtcController extends Controller
             && $response->getStatus() === Http::STATUS_OK
         ) {
             $data     = $response->getData();
-            $data     = $this->enrichCrossReferences($resource, $data);
-            $filtered = $this->filterValidUrls($resource, $data);
+            $data     = $this->enrichCrossReferences(resource: $resource, data: $data);
+            $filtered = $this->filterValidUrls(resource: $resource, data: $data);
 
             return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
         }
@@ -381,7 +390,7 @@ class ZtcController extends Controller
             return $authError;
         }
 
-        $parentZtDraft = $this->resolveParentDraft($resource, $uuid);
+        $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
 
         return $this->zgwService->handleDestroy(
             $this->request,
@@ -429,7 +438,7 @@ class ZtcController extends Controller
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['isDraft'] = false;
 
-            if (isset($existingData['identifier']) && is_int($existingData['identifier'])) {
+            if (isset($existingData['identifier']) === true && is_int($existingData['identifier']) === true) {
                 $existingData['identifier'] = (string) $existingData['identifier'];
             }
 
@@ -442,13 +451,17 @@ class ZtcController extends Controller
                 }
             }
 
-            $object     = $this->zgwService->getObjectService()->saveObject(
+            $object = $this->zgwService->getObjectService()->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $existingData,
                 uuid: $uuid
             );
-            $objectData = is_array($object) ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             $baseUrl         = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
@@ -459,7 +472,7 @@ class ZtcController extends Controller
                 baseUrl: $baseUrl
             );
 
-            return new JSONResponse(data: $mapped, statusCode: Http::STATUS_OK);
+            return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
                 'ZTC publish error: '.$e->getMessage(),
@@ -484,7 +497,7 @@ class ZtcController extends Controller
      */
     public function publishZaaktype(string $uuid): JSONResponse
     {
-        return $this->handlePublish('zaaktypen', $uuid);
+        return $this->handlePublish(resource: 'zaaktypen', uuid: $uuid);
     }//end publishZaaktype()
 
     /**
@@ -501,7 +514,7 @@ class ZtcController extends Controller
      */
     public function publishBesluittype(string $uuid): JSONResponse
     {
-        return $this->handlePublish('besluittypen', $uuid);
+        return $this->handlePublish(resource: 'besluittypen', uuid: $uuid);
     }//end publishBesluittype()
 
     /**
@@ -518,7 +531,7 @@ class ZtcController extends Controller
      */
     public function publishInformatieobjecttype(string $uuid): JSONResponse
     {
-        return $this->handlePublish('informatieobjecttypen', $uuid);
+        return $this->handlePublish(resource: 'informatieobjecttypen', uuid: $uuid);
     }//end publishInformatieobjecttype()
 
     /**
@@ -550,11 +563,11 @@ class ZtcController extends Controller
         $uuid    = $data['uuid'] ?? '';
 
         if ($resource === 'besluittypen' && $uuid !== '') {
-            $data = $this->enrichBesluittype($data, $baseUrl, $objectService, $uuid);
+            $data = $this->enrichBesluittype(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
         }
 
         if ($resource === 'zaaktypen' && $uuid !== '') {
-            $data = $this->enrichZaaktype($data, $baseUrl, $objectService, $uuid);
+            $data = $this->enrichZaaktype(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
 
             // Ensure array fields default to [] instead of null.
             $arrayFields = [
@@ -602,12 +615,16 @@ class ZtcController extends Controller
         }
 
         try {
-            $object     = $objectService->find(
+            $object = $objectService->find(
                 id: $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             // Expand documentTypes UUIDs to informatieobjecttypen URLs.
             $docTypes = $objectData['documentTypes'] ?? '';
@@ -680,12 +697,16 @@ class ZtcController extends Controller
         $ztMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaaktypen');
         if ($ztMapping !== null) {
             try {
-                $object     = $objectService->find(
+                $object = $objectService->find(
                     id: $uuid,
                     register: $ztMapping['sourceRegister'],
                     schema: $ztMapping['sourceSchema']
                 );
-                $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+                if (is_array($object) === true) {
+                    $objectData = $object;
+                } else {
+                    $objectData = $object->jsonSerialize();
+                }
 
                 $subCases = $objectData['subCaseTypes'] ?? [];
                 if (is_array($subCases) === true && empty($subCases) === false) {
@@ -697,13 +718,18 @@ class ZtcController extends Controller
                         }
 
                         try {
-                            $refObj  = $objectService->find(
+                            $refObj = $objectService->find(
                                 id: $ztUuid,
                                 register: $ztMapping['sourceRegister'],
                                 schema: $ztMapping['sourceSchema']
                             );
-                            $refData = is_array($refObj) === true ? $refObj : $refObj->jsonSerialize();
-                            $ident   = $refData['identifier'] ?? '';
+                            if (is_array($refObj) === true) {
+                                $refData = $refObj;
+                            } else {
+                                $refData = $refObj->jsonSerialize();
+                            }
+
+                            $ident = $refData['identifier'] ?? '';
 
                             if ($ident !== '') {
                                 $query  = $objectService->buildSearchQuery(
@@ -713,8 +739,13 @@ class ZtcController extends Controller
                                 );
                                 $result = $objectService->searchObjectsPaginated(query: $query);
                                 foreach (($result['results'] ?? []) as $match) {
-                                    $mData = is_array($match) === true ? $match : $match->jsonSerialize();
-                                    $mId   = $mData['id'] ?? ($mData['@self']['id'] ?? '');
+                                    if (is_array($match) === true) {
+                                        $mData = $match;
+                                    } else {
+                                        $mData = $match->jsonSerialize();
+                                    }
+
+                                    $mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
                                     if ($mId !== '') {
                                         $urls[] = $baseUrl.'/zaaktypen/'.$mId;
                                     }
@@ -747,12 +778,28 @@ class ZtcController extends Controller
         }//end if
 
         // Expand UUIDs in gerelateerdeZaaktypen to all ZTs with same identifier.
-        if (isset($data['gerelateerdeZaaktypen']) === true
-            && is_array($data['gerelateerdeZaaktypen']) === true
+        // Read from raw object's relatedCaseTypes (JSON-encoded string) since Twig
+        // outbound mapping cannot handle array-of-objects.
+        if (isset($objectData) === true) {
+            $relatedRaw = $objectData['relatedCaseTypes'] ?? null;
+        } else {
+            $relatedRaw = null;
+        }
+
+        if ($relatedRaw === null) {
+            $relatedRaw = $data['gerelateerdeZaaktypen'] ?? null;
+        }
+
+        if (is_string($relatedRaw) === true) {
+            $relatedRaw = json_decode($relatedRaw, true);
+        }
+
+        if (is_array($relatedRaw) === true
+            && empty($relatedRaw) === false
             && $ztMapping !== null
         ) {
             $expanded = [];
-            foreach ($data['gerelateerdeZaaktypen'] as $rel) {
+            foreach ($relatedRaw as $rel) {
                 $ztRef = $rel['zaaktype'] ?? '';
                 if (is_string($ztRef) === false || $ztRef === '') {
                     continue;
@@ -766,13 +813,18 @@ class ZtcController extends Controller
 
                 // Look up identifier, find all matching ZTs.
                 try {
-                    $refObj  = $objectService->find(
+                    $refObj = $objectService->find(
                         id: $ztRef,
                         register: $ztMapping['sourceRegister'],
                         schema: $ztMapping['sourceSchema']
                     );
-                    $refData = is_array($refObj) === true ? $refObj : $refObj->jsonSerialize();
-                    $ident   = $refData['identifier'] ?? '';
+                    if (is_array($refObj) === true) {
+                        $refData = $refObj;
+                    } else {
+                        $refData = $refObj->jsonSerialize();
+                    }
+
+                    $ident = $refData['identifier'] ?? '';
 
                     if ($ident !== '') {
                         $query  = $objectService->buildSearchQuery(
@@ -782,15 +834,20 @@ class ZtcController extends Controller
                         );
                         $result = $objectService->searchObjectsPaginated(query: $query);
                         foreach (($result['results'] ?? []) as $match) {
-                            $mData = is_array($match) === true ? $match : $match->jsonSerialize();
-                            $mId   = $mData['id'] ?? ($mData['@self']['id'] ?? '');
+                            if (is_array($match) === true) {
+                                $mData = $match;
+                            } else {
+                                $mData = $match->jsonSerialize();
+                            }
+
+                            $mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
                             if ($mId !== '') {
                                 $entry = $rel;
                                 $entry['zaaktype'] = $baseUrl.'/zaaktypen/'.$mId;
                                 $expanded[]        = $entry;
                             }
                         }
-                    }
+                    }//end if
                 } catch (\Throwable $e) {
                     $rel['zaaktype'] = $baseUrl.'/zaaktypen/'.$ztRef;
                     $expanded[]      = $rel;
@@ -827,20 +884,30 @@ class ZtcController extends Controller
 
                 $iotUrls = [];
                 foreach (($result['results'] ?? []) as $ziot) {
-                    $ziotData = is_array($ziot) === true ? $ziot : $ziot->jsonSerialize();
-                    $iotRef   = $ziotData['informatieobjecttype'] ?? '';
+                    if (is_array($ziot) === true) {
+                        $ziotData = $ziot;
+                    } else {
+                        $ziotData = $ziot->jsonSerialize();
+                    }
+
+                    $iotRef = $ziotData['informatieobjecttype'] ?? '';
                     if ($iotRef === '') {
                         continue;
                     }
 
                     // Look up the IOT to get its name, then find all IOTs with that name.
                     try {
-                        $iotObj  = $objectService->find(
+                        $iotObj = $objectService->find(
                             id: $iotRef,
                             register: $iotMapping['sourceRegister'],
                             schema: $iotMapping['sourceSchema']
                         );
-                        $iotData = is_array($iotObj) === true ? $iotObj : $iotObj->jsonSerialize();
+                        if (is_array($iotObj) === true) {
+                            $iotData = $iotObj;
+                        } else {
+                            $iotData = $iotObj->jsonSerialize();
+                        }
+
                         $iotName = $iotData['name'] ?? '';
 
                         if ($iotName !== '') {
@@ -852,13 +919,18 @@ class ZtcController extends Controller
                             );
                             $iotResult = $objectService->searchObjectsPaginated(query: $iotQuery);
                             foreach (($iotResult['results'] ?? []) as $matchingIot) {
-                                $mData = is_array($matchingIot) === true ? $matchingIot : $matchingIot->jsonSerialize();
-                                $mId   = $mData['id'] ?? ($mData['@self']['id'] ?? '');
+                                if (is_array($matchingIot) === true) {
+                                    $mData = $matchingIot;
+                                } else {
+                                    $mData = $matchingIot->jsonSerialize();
+                                }
+
+                                $mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
                                 if ($mId !== '') {
                                     $iotUrls[] = $baseUrl.'/informatieobjecttypen/'.$mId;
                                 }
                             }
-                        }
+                        }//end if
                     } catch (\Throwable $e) {
                         // If IOT lookup fails, fall back to direct UUID.
                         $iotUrls[] = $baseUrl.'/informatieobjecttypen/'.$iotRef;
@@ -891,7 +963,12 @@ class ZtcController extends Controller
 
                 $btUrls = [];
                 foreach (($result['results'] ?? []) as $bt) {
-                    $btData = is_array($bt) === true ? $bt : $bt->jsonSerialize();
+                    if (is_array($bt) === true) {
+                        $btData = $bt;
+                    } else {
+                        $btData = $bt->jsonSerialize();
+                    }
+
                     $btUuid = $btData['id'] ?? ($btData['@self']['id'] ?? '');
                     if ($btUuid !== '') {
                         $btUrls[] = $baseUrl.'/besluittypen/'.$btUuid;
@@ -930,7 +1007,12 @@ class ZtcController extends Controller
 
                 $urls = [];
                 foreach (($result['results'] ?? []) as $sub) {
-                    $subData = is_array($sub) === true ? $sub : $sub->jsonSerialize();
+                    if (is_array($sub) === true) {
+                        $subData = $sub;
+                    } else {
+                        $subData = $sub->jsonSerialize();
+                    }
+
                     $subUuid = $subData['id'] ?? ($subData['@self']['id'] ?? '');
                     if ($subUuid !== '') {
                         $urls[] = $baseUrl.'/'.$resourceName.'/'.$subUuid;
@@ -1014,15 +1096,15 @@ class ZtcController extends Controller
             $filtered = [];
             foreach ($data[$field] as $item) {
                 if ($nested === true) {
-                    // gerelateerdeZaaktypen: array of objects with 'zaaktype' URL field.
+                    // GerelateerdeZaaktypen: array of objects with 'zaaktype' URL field.
                     $url = $item['zaaktype'] ?? '';
-                    if ($this->isUrlValid($url, $schemaKey, $today) === true) {
+                    if ($this->isUrlValid(url: $url, schemaKey: $schemaKey, today: $today) === true) {
                         $filtered[] = $item;
                     }
                 } else {
                     // Simple URL string array.
                     if (is_string($item) === true
-                        && $this->isUrlValid($item, $schemaKey, $today) === true
+                        && $this->isUrlValid(url: $item, schemaKey: $schemaKey, today: $today) === true
                     ) {
                         $filtered[] = $item;
                     }
@@ -1092,7 +1174,11 @@ class ZtcController extends Controller
                 schema: $mappingConfig['sourceSchema']
             );
 
-            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             // Must be published (isDraft=false / concept=false).
             $isDraft = $objectData['isDraft'] ?? ($objectData['concept'] ?? true);
@@ -1171,4 +1257,87 @@ class ZtcController extends Controller
             $auditUuid
         );
     }//end audittrailShow()
+
+    /**
+     * Resolve informatieobjecttype by omschrijving when not a UUID/URL (ztc-010m).
+     *
+     * The ZGW standard allows referencing an IOT by omschrijving in ZIOT creation.
+     * This method looks up the IOT by omschrijving and replaces it with its UUID.
+     *
+     * @param array $body The request body (modified in-place via cached body)
+     *
+     * @return void
+     */
+    private function resolveIotByOmschrijving(array $body): void
+    {
+        $iotValue = $body['informatieobjecttype'] ?? '';
+        if ($iotValue === '') {
+            return;
+        }
+
+        // Already a UUID or URL — no resolution needed.
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $iotValue) === 1) {
+            return;
+        }
+
+        if (filter_var($iotValue, FILTER_VALIDATE_URL) !== false) {
+            return;
+        }
+
+        // Try to look up by omschrijving (internal field: name).
+        $objectService = $this->zgwService->getObjectService();
+        if ($objectService === null) {
+            return;
+        }
+
+        $iotMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'informatieobjecttypen');
+        if ($iotMapping === null) {
+            return;
+        }
+
+        try {
+            $query  = $objectService->buildSearchQuery(
+                requestParams: ['name' => $iotValue, '_limit' => 1],
+                register: $iotMapping['sourceRegister'],
+                schema: $iotMapping['sourceSchema']
+            );
+            $result = $objectService->searchObjectsPaginated(
+                query: $query,
+                _rbac: false,
+                _multitenancy: false
+            );
+
+            if (($result['total'] ?? 0) === 0) {
+                // Fallback: full-text search.
+                $query  = $objectService->buildSearchQuery(
+                    requestParams: ['_search' => $iotValue, '_limit' => 1],
+                    register: $iotMapping['sourceRegister'],
+                    schema: $iotMapping['sourceSchema']
+                );
+                $result = $objectService->searchObjectsPaginated(
+                    query: $query,
+                    _rbac: false,
+                    _multitenancy: false
+                );
+            }
+
+            if (($result['total'] ?? 0) > 0) {
+                $iot = $result['results'][0];
+                if (is_array($iot) === true) {
+                    $iotData = $iot;
+                } else {
+                    $iotData = $iot->jsonSerialize();
+                }
+
+                $iotUuid = $iotData['id'] ?? ($iotData['@self']['id'] ?? '');
+                if ($iotUuid !== '') {
+                    $this->zgwService->updateCachedBodyField('informatieobjecttype', $iotUuid);
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->debug(
+                'ztc-010m: Failed to resolve IOT by omschrijving: '.$e->getMessage()
+            );
+        }//end try
+    }//end resolveIotByOmschrijving()
 }//end class

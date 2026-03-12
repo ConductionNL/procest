@@ -58,7 +58,7 @@ class AcController extends Controller
         IRequest $request,
         private readonly ZgwService $zgwService,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -174,7 +174,7 @@ class AcController extends Controller
             $body = $this->zgwService->getRequestBody($this->request);
 
             // Run AC business rules validation.
-            $validationError = $this->validateApplicatieBody($body);
+            $validationError = $this->validateApplicatieBody(body: $body);
             if ($validationError !== null) {
                 return $validationError;
             }
@@ -325,7 +325,7 @@ class AcController extends Controller
      */
     public function patch(string $uuid): JSONResponse
     {
-        return $this->update($uuid);
+        return $this->update(uuid: $uuid);
     }//end patch()
 
     /**
@@ -406,20 +406,20 @@ class AcController extends Controller
      */
     private function validateApplicatieBody(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
-        // ac-002: Check heeftAlleAutorisaties consistency (before uniqueness).
-        $authConsistencyError = $this->validateAutorisatieConsistency($body);
+        // Ac-002: Check heeftAlleAutorisaties consistency (before uniqueness).
+        $authConsistencyError = $this->validateAutorisatieConsistency(body: $body);
         if ($authConsistencyError !== null) {
             return $authConsistencyError;
         }
 
-        // ac-003: Check scope-based field requirements (before uniqueness).
-        $scopeError = $this->validateAutorisatieScopes($body);
+        // Ac-003: Check scope-based field requirements (before uniqueness).
+        $scopeError = $this->validateAutorisatieScopes(body: $body);
         if ($scopeError !== null) {
             return $scopeError;
         }
 
-        // ac-001: Check clientId uniqueness (after content validation).
-        $clientIdError = $this->validateClientIdUniqueness($body, $excludeUuid);
+        // Ac-001: Check clientId uniqueness (after content validation).
+        $clientIdError = $this->validateClientIdUniqueness(body: $body, excludeUuid: $excludeUuid);
         if ($clientIdError !== null) {
             return $clientIdError;
         }
@@ -453,7 +453,7 @@ class AcController extends Controller
             }
 
             // Check if any of the existing consumer's clientIds overlap.
-            $existingClientIds = $this->getConsumerClientIds($consumer);
+            $existingClientIds = $this->getConsumerClientIds(consumer: $consumer);
 
             foreach ($clientIds as $requestedId) {
                 if (in_array($requestedId, $existingClientIds, true) === true) {
@@ -498,7 +498,7 @@ class AcController extends Controller
             $heeftAlle = false;
         }
 
-        // ac-002a: heeftAlleAutorisaties=true + non-empty autorisaties.
+        // Ac-002a: heeftAlleAutorisaties=true + non-empty autorisaties.
         if ($heeftAlle === true && is_array($autorisaties) === true && count($autorisaties) > 0) {
             return new JSONResponse(
                 data: [
@@ -506,7 +506,8 @@ class AcController extends Controller
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'ambiguous-authorizations-specified',
-                            'reason' => 'Wanneer heeftAlleAutorisaties op true staat, mag autorisaties niet'.' opgegeven worden. Indien heeftAlleAutorisaties false is, dan moet'.' autorisaties opgegeven worden.',
+                            // phpcs:ignore Generic.Files.LineLength.MaxExceeded
+                            'reason' => 'Wanneer heeftAlleAutorisaties op true staat, mag autorisaties niet opgegeven worden. Indien heeftAlleAutorisaties false is, dan moet autorisaties opgegeven worden.',
                         ],
                     ],
                 ],
@@ -514,7 +515,7 @@ class AcController extends Controller
             );
         }
 
-        // ac-002b: heeftAlleAutorisaties=false + empty autorisaties.
+        // Ac-002b: heeftAlleAutorisaties=false + empty autorisaties.
         if ($heeftAlle === false
             && is_array($autorisaties) === true
             && count($autorisaties) === 0
@@ -565,10 +566,10 @@ class AcController extends Controller
             $scopes    = $autorisatie['scopes'] ?? [];
 
             // Check if any scope relates to the component's domain.
-            $hasZakenScope      = $this->scopesContain($scopes, 'zaken');
-            $hasDocumentenScope = $this->scopesContain($scopes, 'documenten');
+            $hasZakenScope      = $this->scopesContain(scopes: $scopes, keyword: 'zaken');
+            $hasDocumentenScope = $this->scopesContain(scopes: $scopes, keyword: 'documenten');
 
-            // ac-003a/003b: ZRC with zaken-related scope.
+            // Ac-003a/003b: ZRC with zaken-related scope.
             if ($component === 'zrc' && $hasZakenScope === true) {
                 $zaaktype = $autorisatie['zaaktype'] ?? null;
                 $maxVertr = $autorisatie['maxVertrouwelijkheidaanduiding'] ?? null;
@@ -585,12 +586,12 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.maxVertrouwelijkheidaanduiding",
                         'code'   => 'required',
-                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t. zaken'.' is opgegeven.',
+                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t. zaken is opgegeven.',
                     ];
                 }
             }//end if
 
-            // ac-003c/003d: DRC with documenten-related scope.
+            // Ac-003c/003d: DRC with documenten-related scope.
             if ($component === 'drc' && $hasDocumentenScope === true) {
                 $infoType = $autorisatie['informatieobjecttype'] ?? null;
                 $maxVertr = $autorisatie['maxVertrouwelijkheidaanduiding'] ?? null;
@@ -599,7 +600,7 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.informatieobjecttype",
                         'code'   => 'required',
-                        'reason' => 'informatieobjecttype is verplicht wanneer een scope m.b.t. documenten'.' is opgegeven.',
+                        'reason' => 'informatieobjecttype is verplicht wanneer een scope m.b.t. documenten is opgegeven.',
                     ];
                 }
 
@@ -607,13 +608,14 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.maxVertrouwelijkheidaanduiding",
                         'code'   => 'required',
-                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t.'.' documenten is opgegeven.',
+                        // phpcs:ignore Generic.Files.LineLength.TooLong
+                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t. documenten is opgegeven.',
                     ];
                 }
             }//end if
 
-            // ac-003e (not tested but included): BRC with besluiten-related scope.
-            $hasBesluitenScope = $this->scopesContain($scopes, 'besluiten');
+            // Ac-003e (not tested but included): BRC with besluiten-related scope.
+            $hasBesluitenScope = $this->scopesContain(scopes: $scopes, keyword: 'besluiten');
             if ($component === 'brc' && $hasBesluitenScope === true) {
                 $besluittype = $autorisatie['besluittype'] ?? null;
                 if ($besluittype === null || $besluittype === '') {

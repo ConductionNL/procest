@@ -156,12 +156,16 @@ abstract class ZgwRulesBase
     {
         $detail = "Het veld {$fieldName} mag niet gewijzigd worden.";
         return $this->error(
-                400,
-                $detail,
-                [
-                    $this->fieldError($fieldName, 'wijzigen-niet-toegelaten', $detail),
-                ]
-                );
+            status: 400,
+            detail: $detail,
+            invalidParams: [
+                $this->fieldError(
+                    fieldName: $fieldName,
+                    code: 'wijzigen-niet-toegelaten',
+                    reason: $detail
+                ),
+            ]
+        );
     }//end fieldImmutableError()
 
     /**
@@ -231,19 +235,19 @@ abstract class ZgwRulesBase
      */
     protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array
     {
-        $extractedUuid = $this->extractUuid($typeUrl);
+        $extractedUuid = $this->extractUuid(value: $typeUrl);
         if ($extractedUuid === null) {
             return $this->error(
-                    400,
-                    "De {$fieldName} URL is ongeldig.",
-                    [
-                        $this->fieldError(
-                    $fieldName,
-                    'bad-url',
-                    "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-                ),
-                    ]
-                    );
+                status: 400,
+                detail: "De {$fieldName} URL is ongeldig.",
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: $fieldName,
+                        code: 'bad-url',
+                        reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
+                    ),
+                ]
+            );
         }
 
         $register = $this->mappingConfig['sourceRegister'] ?? '';
@@ -261,28 +265,37 @@ abstract class ZgwRulesBase
             );
         } catch (\Throwable $e) {
             return $this->error(
-                    400,
-                    "De {$fieldName} URL is ongeldig.",
-                    [
-                        $this->fieldError(
-                    $fieldName,
-                    'bad-url',
-                    "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-                ),
-                    ]
-                    );
+                status: 400,
+                detail: "De {$fieldName} URL is ongeldig.",
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: $fieldName,
+                        code: 'bad-url',
+                        reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
+                    ),
+                ]
+            );
         }
 
-        $typeData = is_array($typeObject) === true ? $typeObject : $typeObject->jsonSerialize();
-        $isDraft  = $typeData['isDraft'] ?? true;
+        if (is_array($typeObject) === true) {
+            $typeData = $typeObject;
+        } else {
+            $typeData = $typeObject->jsonSerialize();
+        }
+
+        $isDraft = $typeData['isDraft'] ?? true;
         if ($isDraft === true) {
             return $this->error(
-                    400,
-                    ucfirst($fieldName).' is nog in concept.',
-                    [
-                        $this->fieldError($fieldName, 'not-published', ucfirst($fieldName).' is nog in concept.'),
-                    ]
-                    );
+                status: 400,
+                detail: ucfirst($fieldName).' is nog in concept.',
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: $fieldName,
+                        code: 'not-published',
+                        reason: ucfirst($fieldName).' is nog in concept.'
+                    ),
+                ]
+            );
         }
 
         return null;
@@ -297,28 +310,32 @@ abstract class ZgwRulesBase
      */
     protected function validateInformatieobjectUrl(string $ioUrl): ?array
     {
-        if ($this->isValidUrl($ioUrl) === false) {
+        if ($this->isValidUrl(url: $ioUrl) === false) {
             return $this->error(
-                    400,
-                    'De informatieobject URL is ongeldig.',
-                    [
-                        $this->fieldError('informatieobject', 'bad-url', 'Ongeldige URL.'),
-                    ]
-                    );
+                status: 400,
+                detail: 'De informatieobject URL is ongeldig.',
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'informatieobject',
+                        code: 'bad-url',
+                        reason: 'Ongeldige URL.'
+                    ),
+                ]
+            );
         }
 
-        $ioUuid = $this->extractUuid($ioUrl);
+        $ioUuid = $this->extractUuid(value: $ioUrl);
 
-        // brc-003a: If UUID extraction fails, the URL doesn't point to a valid resource.
+        // Brc-003a: If UUID extraction fails, the URL doesn't point to a valid resource.
         if ($ioUuid === null) {
             return $this->error(
-                400,
-                'De informatieobject URL is ongeldig.',
-                [
+                status: 400,
+                detail: 'De informatieobject URL is ongeldig.',
+                invalidParams: [
                     $this->fieldError(
-                        'informatieobject',
-                        'bad-url',
-                        'De informatieobject URL bevat geen geldig UUID.'
+                        fieldName: 'informatieobject',
+                        code: 'bad-url',
+                        reason: 'De informatieobject URL bevat geen geldig UUID.'
                     ),
                 ]
             );
@@ -360,30 +377,39 @@ abstract class ZgwRulesBase
      */
     protected function validateExternalUrl(string $url, string $fieldName): ?array
     {
-        if ($this->isValidUrl($url) === false) {
+        if ($this->isValidUrl(url: $url) === false) {
             return $this->error(
-                    400,
-                    "De {$fieldName} URL is ongeldig.",
-                    [
-                        $this->fieldError($fieldName, 'bad-url', "De {$fieldName} URL is ongeldig."),
-                    ]
-                    );
+                status: 400,
+                detail: "De {$fieldName} URL is ongeldig.",
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: $fieldName,
+                        code: 'bad-url',
+                        reason: "De {$fieldName} URL is ongeldig."
+                    ),
+                ]
+            );
         }
 
         $path        = parse_url($url, PHP_URL_PATH) ?? '';
         $segments    = array_filter(explode('/', $path));
-        $lastSegment = end($segments) ?: '';
+        $lastSegment = end($segments);
+        if ($lastSegment === false) {
+            $lastSegment = '';
+        }
+
         $uuidPattern = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
 
         if (preg_match($uuidPattern, $lastSegment) !== 1) {
             return $this->error(
-                400,
-                "De {$fieldName} URL wijst niet naar een geldig object.",
-                [$this->fieldError(
-                    $fieldName,
-                    'invalid-resource',
-                    "De {$fieldName} URL wijst niet naar een geldig object."
-                )
+                status: 400,
+                detail: "De {$fieldName} URL wijst niet naar een geldig object.",
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: $fieldName,
+                        code: 'invalid-resource',
+                        reason: "De {$fieldName} URL wijst niet naar een geldig object."
+                    ),
                 ]
             );
         }
@@ -462,8 +488,12 @@ abstract class ZgwRulesBase
                 return null;
             }
 
-            $obj  = $results[0];
-            $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+            $obj = $results[0];
+            if (is_array($obj) === true) {
+                $data = $obj;
+            } else {
+                $data = $obj->jsonSerialize();
+            }
 
             return $data['id'] ?? ($data['@self']['id'] ?? null);
         } catch (\Throwable $e) {
@@ -501,8 +531,13 @@ abstract class ZgwRulesBase
 
             $ids = [];
             foreach (($result['results'] ?? []) as $obj) {
-                $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
-                $id   = $data['id'] ?? ($data['@self']['id'] ?? null);
+                if (is_array($obj) === true) {
+                    $data = $obj;
+                } else {
+                    $data = $obj->jsonSerialize();
+                }
+
+                $id = $data['id'] ?? ($data['@self']['id'] ?? null);
                 if ($id !== null) {
                     $ids[] = $id;
                 }
@@ -545,7 +580,11 @@ abstract class ZgwRulesBase
                 register: $register,
                 schema: $schema
             );
-            return is_array($obj) === true ? $obj : $obj->jsonSerialize();
+            if (is_array($obj) === true) {
+                return $obj;
+            }
+
+            return $obj->jsonSerialize();
         } catch (\Throwable $e) {
             return null;
         }
@@ -586,7 +625,7 @@ abstract class ZgwRulesBase
             // numeric strings (e.g. "000000000") as integers, which breaks
             // exact-match search for field2 (sourceOrganisation).
             $query = [
-                '@self' => [
+                '@self'       => [
                     'register' => (int) $register,
                     'schema'   => (int) $schema,
                 ],
@@ -607,7 +646,12 @@ abstract class ZgwRulesBase
             // count it as a match (conservative: assume coercion happened).
             $matchCount = 0;
             foreach (($result['results'] ?? []) as $obj) {
-                $data       = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+                if (is_array($obj) === true) {
+                    $data = $obj;
+                } else {
+                    $data = $obj->jsonSerialize();
+                }
+
                 $storedVal  = $data[$field2Search] ?? null;
                 $storedStr  = (string) $storedVal;
                 $compareStr = (string) $field2Value;
@@ -622,17 +666,18 @@ abstract class ZgwRulesBase
                 if ($isMatch === true) {
                     $matchCount++;
                 }
-            }
+            }//end foreach
 
             if ($matchCount > 0) {
                 return $this->error(
-                    400,
-                    'De combinatie is niet uniek.',
-                    [$this->fieldError(
-                        $errorField,
-                        'identificatie-niet-uniek',
-                        'De combinatie bestaat al.'
-                    )
+                    status: 400,
+                    detail: 'De combinatie is niet uniek.',
+                    invalidParams: [
+                        $this->fieldError(
+                            fieldName: $errorField,
+                            code: 'identificatie-niet-uniek',
+                            reason: 'De combinatie bestaat al.'
+                        ),
                     ]
                 );
             }

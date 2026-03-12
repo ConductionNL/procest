@@ -75,90 +75,96 @@ class ZgwBrcRulesService extends ZgwRulesBase
     /**
      * Rules for creating a besluit (POST /besluiten/v1/besluiten).
      *
-     * Implements:
-     * - brc-001: Validate besluittype URL exists and is published (concept=false).
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
-     * - brc-002: Guarantee unique combination of verantwoordelijkeOrganisatie + identificatie.
-     *   Auto-generate identificatie if not provided.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
-     * - brc-007: Validate zaak-besluittype relation. The zaak's zaaktype must be listed
-     *   in the besluittype's zaaktypen.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
+     * Implements brc-001, brc-002, brc-007.
      *
      * @param array $body The ZGW request body (Dutch field names)
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
      */
     public function rulesBesluitenCreate(array $body): array
     {
-        // brc-001: Validate besluittype URL.
+        // Brc-001: Validate besluittype URL.
         $besluitTypeUrl = $body['besluittype'] ?? '';
         if (empty($besluitTypeUrl) === false && $this->objectService !== null) {
-            $error = $this->validateTypeUrl($besluitTypeUrl, 'besluittype', 'decision_type_schema');
+            $error = $this->validateTypeUrl(
+                typeUrl: $besluitTypeUrl,
+                fieldName: 'besluittype',
+                schemaKey: 'decision_type_schema'
+            );
             if ($error !== null) {
                 return $error;
             }
         }
 
-        // brc-002: Check unique combination of verantwoordelijkeOrganisatie + identificatie.
+        // Brc-002: Check unique combination of verantwoordelijkeOrganisatie + identificatie.
         if (empty($body['identificatie']) === false && $this->objectService !== null) {
-            $uniqueError = $this->checkBesluitIdentificatieUnique($body);
+            $uniqueError = $this->checkBesluitIdentificatieUnique(body: $body);
             if ($uniqueError !== null) {
                 return $uniqueError;
             }
         }
 
-        // brc-007: Validate zaak-besluittype relation.
+        // Brc-007: Validate zaak-besluittype relation.
         $zaakUrl = $body['zaak'] ?? null;
         if ($zaakUrl !== null && $zaakUrl !== '' && empty($besluitTypeUrl) === false
             && $this->objectService !== null
         ) {
-            $relError = $this->validateZaakBesluittypeRelation($zaakUrl, $besluitTypeUrl);
+            $relError = $this->validateZaakBesluittypeRelation(
+                zaakUrl: $zaakUrl,
+                besluitTypeUrl: $besluitTypeUrl
+            );
             if ($relError !== null) {
                 return $relError;
             }
         }
 
-        // brc-002: Auto-generate identificatie if not provided.
+        // Brc-002: Auto-generate identificatie if not provided.
         if (empty($body['identificatie']) === true) {
-            $body['identificatie'] = $this->generateIdentificatie('BESLUIT');
+            $body['identificatie'] = $this->generateIdentificatie(prefix: 'BESLUIT');
         }
 
-        return $this->ok($body);
+        return $this->ok(body: $body);
     }//end rulesBesluitenCreate()
 
     /**
      * Rules for updating a besluit (PUT /besluiten/v1/besluiten/{uuid}).
      *
-     * Implements:
-     * - brc-001: Besluittype is immutable after creation.
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
-     * - brc-002: Identificatie and verantwoordelijkeOrganisatie are immutable.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
+     * Implements brc-001 and brc-002 immutability.
      *
      * @param array      $body           The ZGW request body
      * @param array|null $existingObject The existing besluit data
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
      */
     public function rulesBesluitenUpdate(array $body, ?array $existingObject=null): array
     {
-        $result = $this->ok($body);
+        $result = $this->ok(body: $body);
 
-        $result = $this->checkBesluitTypeImmutability($result, $existingObject);
+        $result = $this->checkBesluitTypeImmutability(
+            result: $result,
+            existingObject: $existingObject
+        );
         if ($result['valid'] === false) {
             return $result;
         }
 
-        $result = $this->checkBesluitFieldImmutability($result, $existingObject);
+        $result = $this->checkBesluitFieldImmutability(
+            result: $result,
+            existingObject: $existingObject
+        );
         if ($result['valid'] === false) {
             return $result;
         }
 
         // Preserve immutable fields from existing object when omitted in PUT body.
-        $result = $this->preserveImmutableBesluitFields($result, $existingObject);
+        $result = $this->preserveImmutableBesluitFields(
+            result: $result,
+            existingObject: $existingObject
+        );
 
         return $result;
     }//end rulesBesluitenUpdate()
@@ -175,56 +181,60 @@ class ZgwBrcRulesService extends ZgwRulesBase
      */
     public function rulesBesluitenPatch(array $body, ?array $existingObject=null): array
     {
-        $result = $this->ok($body);
+        $result = $this->ok(body: $body);
 
-        $result = $this->checkBesluitTypeImmutability($result, $existingObject);
+        $result = $this->checkBesluitTypeImmutability(
+            result: $result,
+            existingObject: $existingObject
+        );
         if ($result['valid'] === false) {
             return $result;
         }
 
-        return $this->checkBesluitFieldImmutability($result, $existingObject);
+        return $this->checkBesluitFieldImmutability(
+            result: $result,
+            existingObject: $existingObject
+        );
     }//end rulesBesluitenPatch()
 
     /**
-     * Rules for creating a BesluitInformatieObject (POST /besluiten/v1/besluitinformatieobjecten).
+     * Rules for creating a BesluitInformatieObject.
      *
-     * Implements:
-     * - brc-003: Validate informatieobject URL exists.
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
-     * - brc-004: Set aardRelatieWeergave automatically.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
-     * - brc-008: Validate informatieobjecttype in besluittype.informatieobjecttypen.
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
+     * Implements brc-003, brc-004, brc-008.
      *
      * @param array $body The ZGW request body
      *
      * @return array The validation result
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
      */
     public function rulesBesluitinformatieobjectenCreate(array $body): array
     {
-        // brc-003: Validate informatieobject URL.
+        // Brc-003: Validate informatieobject URL.
         $ioUrl = $body['informatieobject'] ?? '';
         if ($ioUrl !== '' && $this->objectService !== null) {
-            $error = $this->validateInformatieobjectUrl($ioUrl);
+            $error = $this->validateInformatieobjectUrl(ioUrl: $ioUrl);
             if ($error !== null) {
                 return $error;
             }
         }
 
-        // brc-008: Validate informatieobjecttype in besluittype.informatieobjecttypen.
+        // Brc-008: Validate informatieobjecttype in besluittype.informatieobjecttypen.
         $besluitUrl = $body['besluit'] ?? '';
         if ($besluitUrl !== '' && $ioUrl !== '' && $this->objectService !== null) {
-            $iotError = $this->validateBioInformatieobjecttype($besluitUrl, $ioUrl);
+            $iotError = $this->validateBioInformatieobjecttype(
+                besluitUrl: $besluitUrl,
+                ioUrl: $ioUrl
+            );
             if ($iotError !== null) {
                 return $iotError;
             }
         }
 
-        // brc-004: Set aardRelatieWeergave automatically.
+        // Brc-004: Set aardRelatieWeergave automatically.
         $body['aardRelatieWeergave'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
 
-        return $this->ok($body);
+        return $this->ok(body: $body);
     }//end rulesBesluitinformatieobjectenCreate()
 
     /**
@@ -246,11 +256,11 @@ class ZgwBrcRulesService extends ZgwRulesBase
         $existBesluittype = $existingObject['decisionType'] ?? '';
 
         if ($newBesluittype !== null && $existBesluittype !== '') {
-            $newUuid = $this->extractUuid($newBesluittype);
+            $newUuid = $this->extractUuid(value: $newBesluittype);
             if ($newUuid !== null && $newUuid !== $existBesluittype
-                && $this->extractUuid($existBesluittype) !== $newUuid
+                && $this->extractUuid(value: $existBesluittype) !== $newUuid
             ) {
-                return $this->fieldImmutableError('besluittype');
+                return $this->fieldImmutableError(fieldName: 'besluittype');
             }
         }
 
@@ -275,19 +285,25 @@ class ZgwBrcRulesService extends ZgwRulesBase
 
         $body = $result['enrichedBody'];
 
-        // brc-002: identificatie is immutable.
+        // Brc-002: identificatie is immutable.
         if (isset($body['identificatie']) === true) {
-            $existingId = $existingObject['title'] ?? ($existingObject['identifier'] ?? ($existingObject['identificatie'] ?? ''));
+            $existingId = $existingObject['title'] ?? $existingObject['identifier'] ?? '';
+            if ($existingId === '') {
+                $existingId = $existingObject['identificatie'] ?? '';
+            }
+
             if ($existingId !== '' && $body['identificatie'] !== $existingId) {
-                return $this->fieldImmutableError('identificatie');
+                return $this->fieldImmutableError(fieldName: 'identificatie');
             }
         }
 
-        // brc-002: verantwoordelijkeOrganisatie is immutable.
+        // Brc-002: verantwoordelijkeOrganisatie is immutable.
         if (isset($body['verantwoordelijkeOrganisatie']) === true) {
-            $existingOrg = $existingObject['responsibleOrganisation'] ?? ($existingObject['verantwoordelijkeOrganisatie'] ?? '');
+            $orgKey      = 'responsibleOrganisation';
+            $orgFallback = 'verantwoordelijkeOrganisatie';
+            $existingOrg = $existingObject[$orgKey] ?? $existingObject[$orgFallback] ?? '';
             if ($existingOrg !== '' && $body['verantwoordelijkeOrganisatie'] !== $existingOrg) {
-                return $this->fieldImmutableError('verantwoordelijkeOrganisatie');
+                return $this->fieldImmutableError(fieldName: 'verantwoordelijkeOrganisatie');
             }
         }
 
@@ -311,7 +327,11 @@ class ZgwBrcRulesService extends ZgwRulesBase
         $body = $result['enrichedBody'];
 
         if (isset($body['identificatie']) === false || $body['identificatie'] === '') {
-            $existingId = $existingObject['title'] ?? ($existingObject['identifier'] ?? ($existingObject['identificatie'] ?? ''));
+            $existingId = $existingObject['title'] ?? $existingObject['identifier'] ?? '';
+            if ($existingId === '') {
+                $existingId = $existingObject['identificatie'] ?? '';
+            }
+
             if ($existingId !== '') {
                 $body['identificatie'] = $existingId;
             }
@@ -320,7 +340,9 @@ class ZgwBrcRulesService extends ZgwRulesBase
         if (isset($body['verantwoordelijkeOrganisatie']) === false
             || $body['verantwoordelijkeOrganisatie'] === ''
         ) {
-            $existingOrg = $existingObject['responsibleOrganisation'] ?? ($existingObject['verantwoordelijkeOrganisatie'] ?? '');
+            $orgKey      = 'responsibleOrganisation';
+            $orgFallback = 'verantwoordelijkeOrganisatie';
+            $existingOrg = $existingObject[$orgKey] ?? $existingObject[$orgFallback] ?? '';
             if ($existingOrg !== '') {
                 $body['verantwoordelijkeOrganisatie'] = $existingOrg;
             }
@@ -370,13 +392,14 @@ class ZgwBrcRulesService extends ZgwRulesBase
 
             if ($total > 0) {
                 return $this->error(
-                    400,
-                    'De combinatie van verantwoordelijke_organisatie en identificatie is niet uniek.',
-                    [$this->fieldError(
-                        'identificatie',
-                        'identificatie-niet-uniek',
-                        'De combinatie van verantwoordelijke_organisatie en identificatie bestaat al.'
-                    )
+                    status: 400,
+                    detail: 'De combinatie van verantwoordelijke_organisatie en identificatie is niet uniek.',
+                    invalidParams: [
+                        $this->fieldError(
+                            fieldName: 'identificatie',
+                            code: 'identificatie-niet-uniek',
+                            reason: 'De combinatie van verantwoordelijke_organisatie en identificatie bestaat al.'
+                        ),
                     ]
                 );
             }
@@ -409,12 +432,12 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Look up the zaak to get its zaaktype.
-        $zaakUuid = $this->extractUuid($zaakUrl);
+        $zaakUuid = $this->extractUuid(value: $zaakUrl);
         if ($zaakUuid === null) {
             return null;
         }
 
-        $zaakData = $this->findBySchemaKey($zaakUuid, 'case_schema');
+        $zaakData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
         if ($zaakData === null) {
             return null;
         }
@@ -425,17 +448,17 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Look up the besluittype to check its zaaktypen/caseTypes.
-        $btUuid = $this->extractUuid($besluitTypeUrl);
+        $btUuid = $this->extractUuid(value: $besluitTypeUrl);
         if ($btUuid === null) {
             return null;
         }
 
-        $btData = $this->findBySchemaKey($btUuid, 'decision_type_schema');
+        $btData = $this->findBySchemaKey(uuid: $btUuid, schemaKey: 'decision_type_schema');
         if ($btData === null) {
             return null;
         }
 
-        $zaakCaseTypeUuid = $this->extractUuid($zaakCaseType);
+        $zaakCaseTypeUuid = $this->extractUuid(value: $zaakCaseType);
 
         // Check direction 1: BT.caseTypes contains the zaaktype UUID.
         $caseTypes = $btData['caseTypes'] ?? [];
@@ -448,14 +471,14 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         foreach ($caseTypes as $ct) {
-            $ctUuid = $this->extractUuid((string) $ct);
+            $ctUuid = $this->extractUuid(value: (string) $ct);
             if ($ctUuid !== null && $ctUuid === $zaakCaseTypeUuid) {
                 return null;
             }
         }
 
         // Check direction 2: ZT.decisionTypes contains the BT omschrijving or UUID.
-        $ztData = $this->findBySchemaKey($zaakCaseTypeUuid, 'case_type_schema');
+        $ztData = $this->findBySchemaKey(uuid: $zaakCaseTypeUuid, schemaKey: 'case_type_schema');
         if ($ztData !== null) {
             $decisionTypes = $ztData['decisionTypes'] ?? [];
             if (is_string($decisionTypes) === true) {
@@ -467,7 +490,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
                 foreach ($decisionTypes as $dt) {
                     $dtStr = (string) $dt;
                     // Match by omschrijving or UUID.
-                    $dtUuid = $this->extractUuid($dtStr);
+                    $dtUuid = $this->extractUuid(value: $dtStr);
                     if (($dtUuid !== null && $dtUuid === $btUuid)
                         || ($btOmschrijving !== '' && $dtStr === $btOmschrijving)
                     ) {
@@ -480,10 +503,14 @@ class ZgwBrcRulesService extends ZgwRulesBase
         $detail = 'Het zaaktype van de zaak is niet gerelateerd aan het besluittype.';
 
         return $this->error(
-            400,
-            $detail,
-            [
-                $this->fieldError('nonFieldErrors', 'zaaktype-mismatch', $detail),
+            status: 400,
+            detail: $detail,
+            invalidParams: [
+                $this->fieldError(
+                    fieldName: 'nonFieldErrors',
+                    code: 'zaaktype-mismatch',
+                    reason: $detail
+                ),
             ]
         );
     }//end validateZaakBesluittypeRelation()
@@ -506,12 +533,12 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Get the besluit to find its besluittype.
-        $besluitUuid = $this->extractUuid($besluitUrl);
+        $besluitUuid = $this->extractUuid(value: $besluitUrl);
         if ($besluitUuid === null) {
             return null;
         }
 
-        $besluitData = $this->findBySchemaKey($besluitUuid, 'decision_schema');
+        $besluitData = $this->findBySchemaKey(uuid: $besluitUuid, schemaKey: 'decision_schema');
         if ($besluitData === null) {
             return null;
         }
@@ -522,12 +549,12 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Get the besluittype.
-        $btUuid = $this->extractUuid($decisionTypeId);
+        $btUuid = $this->extractUuid(value: $decisionTypeId);
         if ($btUuid === null) {
             return null;
         }
 
-        $btData = $this->findBySchemaKey($btUuid, 'decision_type_schema');
+        $btData = $this->findBySchemaKey(uuid: $btUuid, schemaKey: 'decision_type_schema');
         if ($btData === null) {
             return null;
         }
@@ -539,23 +566,28 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         if (is_array($allowedDocTypes) === false || empty($allowedDocTypes) === true) {
-            $detail = 'Het informatieobjecttype van het informatieobject is niet '.'gespecificeerd in het besluittype.informatieobjecttypen.';
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            $detail = 'Het informatieobjecttype van het informatieobject is niet gespecificeerd in het besluittype.informatieobjecttypen.';
             return $this->error(
-                    400,
-                    $detail,
-                    [
-                        $this->fieldError('nonFieldErrors', 'missing-informatieobjecttype', $detail),
-                    ]
-                    );
+                status: 400,
+                detail: $detail,
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'nonFieldErrors',
+                        code: 'missing-informatieobjecttype',
+                        reason: $detail
+                    ),
+                ]
+            );
         }
 
         // Get the informatieobject to find its informatieobjecttype.
-        $ioUuid = $this->extractUuid($ioUrl);
+        $ioUuid = $this->extractUuid(value: $ioUrl);
         if ($ioUuid === null) {
             return null;
         }
 
-        $ioData = $this->findBySchemaKey($ioUuid, 'document_schema');
+        $ioData = $this->findBySchemaKey(uuid: $ioUuid, schemaKey: 'document_schema');
         if ($ioData === null) {
             return null;
         }
@@ -566,12 +598,12 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Look up the documentType to get its name.
-        $docTypeUuid = $this->extractUuid($docTypeId);
+        $docTypeUuid = $this->extractUuid(value: $docTypeId);
         if ($docTypeUuid === null) {
             return null;
         }
 
-        $dtData = $this->findBySchemaKey($docTypeUuid, 'document_type_schema');
+        $dtData = $this->findBySchemaKey(uuid: $docTypeUuid, schemaKey: 'document_type_schema');
         if ($dtData === null) {
             return null;
         }
@@ -588,14 +620,19 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         if ($found === false) {
-            $detail = 'Het informatieobjecttype van het informatieobject is niet '.'gespecificeerd in het besluittype.informatieobjecttypen.';
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            $detail = 'Het informatieobjecttype van het informatieobject is niet gespecificeerd in het besluittype.informatieobjecttypen.';
             return $this->error(
-                    400,
-                    $detail,
-                    [
-                        $this->fieldError('nonFieldErrors', 'missing-informatieobjecttype', $detail),
-                    ]
-                    );
+                status: 400,
+                detail: $detail,
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'nonFieldErrors',
+                        code: 'missing-informatieobjecttype',
+                        reason: $detail
+                    ),
+                ]
+            );
         }
 
         return null;

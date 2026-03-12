@@ -166,7 +166,7 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { CnDashboardPage } from '@conduction/nextcloud-vue'
+import CnDashboardPage from '../components/CnDashboardPage.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'

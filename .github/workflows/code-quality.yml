@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, master, development]
 
+permissions:
+  pull-requests: write
+
 jobs:
   quality:
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
@@ -17,5 +20,3 @@ jobs:
       enable-phpmetrics: false
       enable-frontend: true
       enable-eslint: true
-    permissions:
-      pull-requests: write

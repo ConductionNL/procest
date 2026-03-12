@@ -1,38 +1,51 @@
 <template>
 	<div>
-		<CnDashboardPage
-			:title="t('procest', 'Dashboard')"
-			:widgets="widgetDefs"
-			:layout="dashboardLayout"
-			:loading="globalLoading && !hasData"
-			:empty-label="t('procest', 'No widgets configured')"
-			:unavailable-label="t('procest', 'Widget not available')"
-			@layout-change="onLayoutChange">
-			<!-- Header actions: quick action buttons -->
-			<template #header-actions>
-				<NcButton type="primary" @click="showCreateDialog = true">
-					<template #icon>
-						<Plus :size="20" />
-					</template>
-					{{ t('procest', 'New Case') }}
-				</NcButton>
-				<NcButton @click="showTaskDialog = true">
-					<template #icon>
-						<Plus :size="20" />
-					</template>
-					{{ t('procest', 'New Task') }}
-				</NcButton>
-				<NcButton :disabled="globalLoading"
-					:aria-label="t('procest', 'Refresh dashboard')"
-					@click="loadDashboardData">
-					<template #icon>
-						<Refresh :size="20" :class="{ 'icon-spinning': globalLoading }" />
-					</template>
-				</NcButton>
-			</template>
+		<div class="dashboard-page">
+			<!-- Header: title + actions -->
+			<div class="dashboard-header">
+				<h1 class="dashboard-title">{{ t('procest', 'Dashboard') }}</h1>
+				<div class="dashboard-actions">
+					<NcButton type="primary" @click="showCreateDialog = true">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('procest', 'New Case') }}
+					</NcButton>
+					<NcButton @click="showTaskDialog = true">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('procest', 'New Task') }}
+					</NcButton>
+					<NcButton :disabled="globalLoading"
+						:aria-label="t('procest', 'Refresh dashboard')"
+						@click="loadDashboardData">
+						<template #icon>
+							<Refresh :size="20" :class="{ 'icon-spinning': globalLoading }" />
+						</template>
+					</NcButton>
+				</div>
+			</div>
 
-			<!-- KPI Cards widget -->
-			<template #widget-kpis>
+			<!-- Loading state -->
+			<div v-if="globalLoading && !hasData" class="dashboard-loading">
+				{{ t('procest', 'Loading dashboard…') }}
+			</div>
+
+			<!-- Empty state -->
+			<div v-else-if="showEmptyState" class="welcome-message">
+				<p v-if="isAdmin">
+					{{ t('procest', 'Welcome to Procest! Get started by creating your first case type in Settings.') }}
+				</p>
+				<p v-else>
+					{{ t('procest', 'Welcome to Procest! Get started by creating your first case or task using the buttons above.') }}
+				</p>
+			</div>
+
+			<!-- Widget grid -->
+			<div v-else class="dashboard-grid">
+				<!-- KPI Cards widget -->
+			<div class="dashboard-widget dashboard-widget--full">
 				<div class="kpi-row">
 					<div class="kpi-card">
 						<div class="kpi-icon">
@@ -71,10 +84,11 @@
 						</div>
 					</div>
 				</div>
-			</template>
+			</div>
 
-			<!-- Cases by Status widget -->
-			<template #widget-cases-by-status>
+				<!-- Cases by Status widget -->
+			<div class="dashboard-widget">
+				<h3 class="dashboard-widget__title">{{ t('procest', 'Cases by Status') }}</h3>
 				<div class="status-widget-content">
 					<div v-if="statusData.length === 0" class="chart-empty">
 						{{ t('procest', 'No open cases') }}
@@ -94,10 +108,11 @@
 						</div>
 					</div>
 				</div>
-			</template>
+			</div>
 
-			<!-- My Work widget -->
-			<template #widget-my-work>
+				<!-- My Work widget -->
+			<div class="dashboard-widget">
+				<h3 class="dashboard-widget__title">{{ t('procest', 'My Work') }}</h3>
 				<div class="my-work-widget-content">
 					<div v-if="myWorkItems.length === 0" class="chart-empty">
 						{{ t('procest', 'No items assigned to you') }}
@@ -127,20 +142,9 @@
 						</NcButton>
 					</div>
 				</div>
-			</template>
-
-			<!-- Empty state override with welcome message -->
-			<template #empty>
-				<div v-if="showEmptyState" class="welcome-message">
-					<p v-if="isAdmin">
-						{{ t('procest', 'Welcome to Procest! Get started by creating your first case type in Settings.') }}
-					</p>
-					<p v-else>
-						{{ t('procest', 'Welcome to Procest! Get started by creating your first case or task using the buttons above.') }}
-					</p>
-				</div>
-			</template>
-		</CnDashboardPage>
+			</div>
+			</div>
+		</div>
 
 		<!-- Error display -->
 		<div v-if="error" class="dashboard-error">
@@ -166,7 +170,6 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { CnDashboardPage } from '@conduction/nextcloud-vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
@@ -174,6 +177,7 @@ import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import { useObjectStore } from '../store/modules/object.js'
+import { getCurrentUserId } from '../utils/currentUser.js'
 import {
 	computeKpis,
 	aggregateByStatus,
@@ -191,21 +195,10 @@ const BAR_COLORS = [
 	'var(--color-text-maxcontrast)',
 ]
 
-/**
- * Default dashboard layout — positions for the 3 built-in widgets.
- * KPIs span full width (12 cols), status chart and my work share the second row.
- */
-const DEFAULT_LAYOUT = [
-	{ id: 1, widgetId: 'kpis', gridX: 0, gridY: 0, gridWidth: 12, gridHeight: 2, showTitle: false },
-	{ id: 2, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 3, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-]
-
 export default {
 	name: 'Dashboard',
 	components: {
 		NcButton,
-		CnDashboardPage,
 		Plus,
 		Refresh,
 		FolderOpen,
@@ -231,7 +224,6 @@ export default {
 			globalLoading: false,
 			error: null,
 			refreshTimer: null,
-			dashboardLayout: [...DEFAULT_LAYOUT],
 		}
 	},
 	computed: {
@@ -253,17 +245,6 @@ export default {
 				&& this.caseTypes.length === 0
 				&& !this.error
 		},
-		/**
-		 * Widget definitions for CnDashboardPage.
-		 * Each widget is a custom type — rendered by the matching #widget-{id} slot.
-		 */
-		widgetDefs() {
-			return [
-				{ id: 'kpis', title: t('procest', 'Key Metrics'), type: 'custom' },
-				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
-				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
-			]
-		},
 	},
 	async mounted() {
 		await this.loadDashboardData()
@@ -282,7 +263,7 @@ export default {
 			this.globalLoading = true
 			this.error = null
 
-			const currentUser = OC?.currentUser || ''
+			const currentUser = getCurrentUserId()
 			const today = new Date()
 			const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
 
@@ -333,11 +314,6 @@ export default {
 			}
 		},
 
-		onLayoutChange(newLayout) {
-			this.dashboardLayout = newLayout
-			// TODO: Persist layout to app config when ready
-		},
-
 		barWidth(count) {
 			const max = Math.max(1, ...this.statusData.map(s => s.count))
 			const pct = (count / max) * 100
@@ -370,6 +346,72 @@ export default {
 </script>
 
 <style scoped>
+/* Dashboard layout */
+.dashboard-page {
+	padding: 16px;
+}
+
+.dashboard-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.dashboard-title {
+	font-size: 24px;
+	font-weight: 700;
+	margin: 0;
+}
+
+.dashboard-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.dashboard-loading {
+	padding: 40px;
+	text-align: center;
+	color: var(--color-text-maxcontrast);
+}
+
+.dashboard-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: auto auto;
+	gap: 16px;
+}
+
+.dashboard-widget {
+	background: var(--color-main-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	overflow: hidden;
+}
+
+.dashboard-widget--full {
+	grid-column: 1 / -1;
+}
+
+.dashboard-widget__title {
+	font-size: 15px;
+	margin: 0;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-widget--full .dashboard-widget__title {
+	display: none;
+}
+
+@media (max-width: 900px) {
+	.dashboard-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
 /* KPI Cards */
 .kpi-row {
 	display: grid;

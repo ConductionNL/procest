@@ -282,6 +282,7 @@
 <script>
 import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { getCurrentUserId } from '../../utils/currentUser.js'
 import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
 import { isOverdue, isDueToday, getOverdueText, formatDueDate, sortTasks, getPriorityLevels } from '../../utils/taskHelpers.js'
 import { calculateDeadline, formatDate, formatDuration } from '../../utils/caseHelpers.js'
@@ -526,7 +527,7 @@ export default {
 
 		async executeStatusChange(targetStatus, resultText = null) {
 			const now = new Date().toISOString()
-			const currentUser = OC?.currentUser || 'unknown'
+			const currentUser = getCurrentUserId('unknown')
 
 			const statusHistory = [...(this.caseData.statusHistory || [])]
 			statusHistory.push({
@@ -576,7 +577,7 @@ export default {
 			}
 
 			this.saving = true
-			const currentUser = OC?.currentUser || 'unknown'
+			const currentUser = getCurrentUserId('unknown')
 			const now = new Date().toISOString()
 
 			const activity = [...(this.caseData.activity || [])]
@@ -635,7 +636,7 @@ export default {
 		},
 
 		async confirmExtension() {
-			const currentUser = OC?.currentUser || 'unknown'
+			const currentUser = getCurrentUserId('unknown')
 			const now = new Date().toISOString()
 
 			const newDeadline = calculateDeadline(
@@ -680,7 +681,7 @@ export default {
 
 		// --- Activity ---
 		async onAddNote(text) {
-			const currentUser = OC?.currentUser || 'unknown'
+			const currentUser = getCurrentUserId('unknown')
 			const now = new Date().toISOString()
 
 			const activity = [...(this.caseData.activity || [])]

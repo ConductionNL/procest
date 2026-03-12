@@ -15,6 +15,7 @@
 <script>
 import { NcSelect } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { getCurrentUserId } from '../../../utils/currentUser.js'
 
 export default {
 	name: 'QuickStatusDropdown',
@@ -55,7 +56,7 @@ export default {
 
 			this.saving = true
 			const now = new Date().toISOString()
-			const currentUser = OC?.currentUser || 'unknown'
+			const currentUser = getCurrentUserId('unknown')
 
 			const statusHistory = [...(this.caseObj.statusHistory || [])]
 			statusHistory.push({

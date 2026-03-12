@@ -88,6 +88,7 @@
 <script>
 import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { getCurrentUserId } from '../../utils/currentUser.js'
 import { validateCaseCreate, isCaseTypeUsable } from '../../utils/caseValidation.js'
 import { calculateDeadline, generateIdentifier, formatDate, formatDuration } from '../../utils/caseHelpers.js'
 
@@ -180,7 +181,7 @@ export default {
 			const startDate = now.toISOString().split('T')[0] + 'T00:00:00Z'
 			const deadline = calculateDeadline(now, this.selectedCaseType.processingDeadline)
 			const initialStatus = this.initialStatusType
-			const currentUser = OC?.currentUser || 'unknown'
+			const currentUser = getCurrentUserId('unknown')
 
 			const caseData = {
 				title: this.form.title.trim(),

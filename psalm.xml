@@ -59,8 +59,11 @@
                 <referencedClass name="OCP\Http\Client\IClientService"/>
                 <referencedClass name="OCP\Notification\IManager"/>
                 <referencedClass name="OCP\Share\IManager"/>
+                <!-- OpenRegister (runtime dependency, not in composer) -->
+                <referencedClass name="OCA\OpenRegister\Event\DeepLinkRegistrationEvent"/>
             </errorLevel>
         </UndefinedClass>
+        <MissingTemplateParam errorLevel="suppress"/>
         <UndefinedMagicMethod errorLevel="suppress"/>
         <UnusedClass errorLevel="suppress"/>
         <PossiblyUnusedMethod errorLevel="suppress"/>

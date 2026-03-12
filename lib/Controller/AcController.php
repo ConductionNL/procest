@@ -59,7 +59,7 @@ class AcController extends Controller
         private readonly ZgwService $zgwService,
     ) {
         parent::__construct(appName: $appName, request: $request);
-    }
+    }//end __construct()
 
     /**
      * List all applicaties, optionally filtered by clientId.
@@ -94,7 +94,7 @@ class AcController extends Controller
 
             if ($clientId !== null && $clientId !== '') {
                 $filterClientId = $clientId;
-            } elseif ($clientIds !== null && $clientIds !== '') {
+            } else if ($clientIds !== null && $clientIds !== '') {
                 $filterClientId = $clientIds;
             }
 
@@ -127,21 +127,21 @@ class AcController extends Controller
 
             return new JSONResponse(
                 data: [
-                        'count'    => count($results),
-                        'next'     => null,
-                        'previous' => null,
-                        'results'  => $results,
-                    ]
+                    'count'    => count($results),
+                    'next'     => null,
+                    'previous' => null,
+                    'results'  => $results,
+                ]
             );
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->error('AC list error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->zgwService->getLogger()->error('AC list error: '.$e->getMessage(), ['exception' => $e]);
 
             return new JSONResponse(
                 data: ['detail' => 'Internal server error'],
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end index()
 
     /**
      * Create a new applicatie.
@@ -187,14 +187,14 @@ class AcController extends Controller
 
             return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->error('AC create error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->zgwService->getLogger()->error('AC create error: '.$e->getMessage(), ['exception' => $e]);
 
             return new JSONResponse(
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }
-    }
+        }//end try
+    }//end create()
 
     /**
      * Retrieve a single applicatie by UUID.
@@ -242,14 +242,14 @@ class AcController extends Controller
 
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->error('AC show error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->zgwService->getLogger()->error('AC show error: '.$e->getMessage(), ['exception' => $e]);
 
             return new JSONResponse(
                 data: ['detail' => 'Not found'],
                 statusCode: Http::STATUS_NOT_FOUND
             );
-        }
-    }
+        }//end try
+    }//end show()
 
     /**
      * Full update (PUT) an applicatie by UUID.
@@ -290,7 +290,7 @@ class AcController extends Controller
             $consumerData = $this->applicatieToConsumer(body: $body);
 
             foreach ($consumerData as $key => $value) {
-                $setter = 'set' . ucfirst($key);
+                $setter = 'set'.ucfirst($key);
                 if (method_exists($consumer, $setter) === true) {
                     $consumer->$setter($value);
                 }
@@ -302,14 +302,14 @@ class AcController extends Controller
 
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->error('AC update error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->zgwService->getLogger()->error('AC update error: '.$e->getMessage(), ['exception' => $e]);
 
             return new JSONResponse(
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }
-    }
+        }//end try
+    }//end update()
 
     /**
      * Partial update (PATCH) an applicatie by UUID.
@@ -326,7 +326,7 @@ class AcController extends Controller
     public function patch(string $uuid): JSONResponse
     {
         return $this->update(uuid: $uuid);
-    }
+    }//end patch()
 
     /**
      * Delete an applicatie by UUID.
@@ -367,14 +367,14 @@ class AcController extends Controller
 
             return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->error('AC delete error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->zgwService->getLogger()->error('AC delete error: '.$e->getMessage(), ['exception' => $e]);
 
             return new JSONResponse(
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         }
-    }
+    }//end destroy()
 
     /**
      * Find a consumer entity by its UUID.
@@ -391,7 +391,7 @@ class AcController extends Controller
         }
 
         return $consumers[0];
-    }
+    }//end findConsumerByUuid()
 
     /**
      * Validate an applicatie request body against AC business rules.
@@ -404,7 +404,7 @@ class AcController extends Controller
      *
      * @return JSONResponse|null Validation error response or null if valid.
      */
-    private function validateApplicatieBody(array $body, ?string $excludeUuid = null): ?JSONResponse
+    private function validateApplicatieBody(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
         // Ac-002: Check heeftAlleAutorisaties consistency (before uniqueness).
         $authConsistencyError = $this->validateAutorisatieConsistency(body: $body);
@@ -425,7 +425,7 @@ class AcController extends Controller
         }
 
         return null;
-    }
+    }//end validateApplicatieBody()
 
     /**
      * Validate that clientIds are not already used by another applicatie (ac-001).
@@ -435,7 +435,7 @@ class AcController extends Controller
      *
      * @return JSONResponse|null Error response or null if valid.
      */
-    private function validateClientIdUniqueness(array $body, ?string $excludeUuid = null): ?JSONResponse
+    private function validateClientIdUniqueness(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
         $clientIds = $body['clientIds'] ?? [];
         if (is_array($clientIds) === false || count($clientIds) === 0) {
@@ -471,10 +471,10 @@ class AcController extends Controller
                     );
                 }
             }
-        }
+        }//end foreach
 
         return null;
-    }
+    }//end validateClientIdUniqueness()
 
     /**
      * Validate heeftAlleAutorisaties consistency with autorisaties (ac-002).
@@ -494,7 +494,7 @@ class AcController extends Controller
         // Normalize boolean.
         if ($heeftAlle === 'true' || $heeftAlle === '1' || $heeftAlle === 1) {
             $heeftAlle = true;
-        } elseif ($heeftAlle === 'false' || $heeftAlle === '0' || $heeftAlle === 0) {
+        } else if ($heeftAlle === 'false' || $heeftAlle === '0' || $heeftAlle === 0) {
             $heeftAlle = false;
         }
 
@@ -506,7 +506,7 @@ class AcController extends Controller
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'ambiguous-authorizations-specified',
-                            // phpcs:ignore Generic.Files.LineLength.TooLong
+                            // phpcs:ignore Generic.Files.LineLength.MaxExceeded
                             'reason' => 'Wanneer heeftAlleAutorisaties op true staat, mag autorisaties niet opgegeven worden. Indien heeftAlleAutorisaties false is, dan moet autorisaties opgegeven worden.',
                         ],
                     ],
@@ -516,8 +516,7 @@ class AcController extends Controller
         }
 
         // Ac-002b: heeftAlleAutorisaties=false + empty autorisaties.
-        if (
-            $heeftAlle === false
+        if ($heeftAlle === false
             && is_array($autorisaties) === true
             && count($autorisaties) === 0
             && array_key_exists('autorisaties', $body) === true
@@ -528,8 +527,7 @@ class AcController extends Controller
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'missing-authorizations',
-                            'reason' => 'Wanneer heeftAlleAutorisaties false is,'
-                                . ' dan moet autorisaties opgegeven worden.',
+                            'reason' => 'Wanneer heeftAlleAutorisaties false is, dan moet autorisaties opgegeven worden.',
                         ],
                     ],
                 ],
@@ -538,7 +536,7 @@ class AcController extends Controller
         }
 
         return null;
-    }
+    }//end validateAutorisatieConsistency()
 
     /**
      * Validate autorisatie entries have required fields based on component and scope (ac-003).
@@ -588,11 +586,10 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.maxVertrouwelijkheidaanduiding",
                         'code'   => 'required',
-                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht'
-                            . ' wanneer een scope m.b.t. zaken is opgegeven.',
+                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t. zaken is opgegeven.',
                     ];
                 }
-            }
+            }//end if
 
             // Ac-003c/003d: DRC with documenten-related scope.
             if ($component === 'drc' && $hasDocumentenScope === true) {
@@ -603,8 +600,7 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.informatieobjecttype",
                         'code'   => 'required',
-                        'reason' => 'informatieobjecttype is verplicht'
-                            . ' wanneer een scope m.b.t. documenten is opgegeven.',
+                        'reason' => 'informatieobjecttype is verplicht wanneer een scope m.b.t. documenten is opgegeven.',
                     ];
                 }
 
@@ -616,7 +612,7 @@ class AcController extends Controller
                         'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t. documenten is opgegeven.',
                     ];
                 }
-            }
+            }//end if
 
             // Ac-003e (not tested but included): BRC with besluiten-related scope.
             $hasBesluitenScope = $this->scopesContain(scopes: $scopes, keyword: 'besluiten');
@@ -630,7 +626,7 @@ class AcController extends Controller
                     ];
                 }
             }
-        }
+        }//end foreach
 
         if (count($invalidParams) > 0) {
             return new JSONResponse(
@@ -640,7 +636,7 @@ class AcController extends Controller
         }
 
         return null;
-    }
+    }//end validateAutorisatieScopes()
 
     /**
      * Check whether any scope in the array contains the given keyword.
@@ -659,7 +655,7 @@ class AcController extends Controller
         }
 
         return false;
-    }
+    }//end scopesContain()
 
     /**
      * Get all clientIds for a consumer (primary name + any extras).
@@ -686,7 +682,7 @@ class AcController extends Controller
         }
 
         return $clientIds;
-    }
+    }//end getConsumerClientIds()
 
     /**
      * Convert a consumer entity to a ZGW applicatie representation.
@@ -722,14 +718,14 @@ class AcController extends Controller
         }
 
         return [
-            'url'                   => $baseUrl . '/' . $data['uuid'],
+            'url'                   => $baseUrl.'/'.$data['uuid'],
             'uuid'                  => $data['uuid'],
             'clientIds'             => $clientIds,
             'label'                 => ($data['description'] ?? ''),
             'heeftAlleAutorisaties' => ($authConfig['superuser'] ?? false),
             'autorisaties'          => ($authConfig['scopes'] ?? []),
         ];
-    }
+    }//end consumerToApplicatie()
 
     /**
      * Convert a ZGW applicatie request body to consumer data.
@@ -773,5 +769,5 @@ class AcController extends Controller
             'authorizationType'          => 'jwt-zgw',
             'authorizationConfiguration' => $authConfig,
         ];
-    }
-}
+    }//end applicatieToConsumer()
+}//end class

@@ -165,7 +165,7 @@ class ZgwService
                 ['exception' => $e->getMessage()]
             );
         }
-    }
+    }//end __construct()
 
     /**
      * Get the OpenRegister ObjectService.
@@ -175,7 +175,7 @@ class ZgwService
     public function getObjectService(): ?object
     {
         return $this->openRegisterObjectService;
-    }
+    }//end getObjectService()
 
     /**
      * Get the OpenRegister ConsumerMapper.
@@ -185,7 +185,7 @@ class ZgwService
     public function getConsumerMapper(): ?object
     {
         return $this->consumerMapper;
-    }
+    }//end getConsumerMapper()
 
     /**
      * Get the ZGW mapping service.
@@ -195,7 +195,7 @@ class ZgwService
     public function getZgwMappingService(): ZgwMappingService
     {
         return $this->zgwMappingService;
-    }
+    }//end getZgwMappingService()
 
     /**
      * Get the pagination helper.
@@ -205,7 +205,7 @@ class ZgwService
     public function getPaginationHelper(): ZgwPaginationHelper
     {
         return $this->paginationHelper;
-    }
+    }//end getPaginationHelper()
 
     /**
      * Get the document service.
@@ -215,7 +215,7 @@ class ZgwService
     public function getDocumentService(): ZgwDocumentService
     {
         return $this->documentService;
-    }
+    }//end getDocumentService()
 
     /**
      * Get the business rules service.
@@ -225,7 +225,7 @@ class ZgwService
     public function getBusinessRulesService(): ZgwBusinessRulesService
     {
         return $this->businessRulesService;
-    }
+    }//end getBusinessRulesService()
 
     /**
      * Get the logger.
@@ -235,7 +235,7 @@ class ZgwService
     public function getLogger(): LoggerInterface
     {
         return $this->logger;
-    }
+    }//end getLogger()
 
     /**
      * Load ZGW mapping configuration.
@@ -253,7 +253,7 @@ class ZgwService
         }
 
         return $this->zgwMappingService->getMapping(resourceKey: $resourceKey);
-    }
+    }//end loadMappingConfig()
 
     /**
      * Translate ZGW query parameters to OpenRegister filter parameters.
@@ -287,8 +287,7 @@ class ZgwService
                 $field    = $mapped['field'] ?? $key;
                 $operator = $mapped['operator'] ?? null;
 
-                if (
-                    ($mapped['extractUuid'] ?? false) === true
+                if (($mapped['extractUuid'] ?? false) === true
                     && is_string($value) === true
                 ) {
                     $parts = explode('/', rtrim($value, '/'));
@@ -296,15 +295,15 @@ class ZgwService
                 }
 
                 if ($operator !== null) {
-                    $filters[$field . '.' . $operator] = $value;
+                    $filters[$field.'.'.$operator] = $value;
                 } else {
                     $filters[$field] = $value;
                 }
             }
-        }
+        }//end foreach
 
         return $filters;
-    }
+    }//end translateQueryParams()
 
     /**
      * Create a Mapping object for outbound (English to Dutch) transformation.
@@ -317,7 +316,7 @@ class ZgwService
     {
         $mapping     = new Mapping();
         $mappingData = [
-            'name'        => 'zgw-outbound-' . ($mappingConfig['zgwResource'] ?? 'unknown'),
+            'name'        => 'zgw-outbound-'.($mappingConfig['zgwResource'] ?? 'unknown'),
             'mapping'     => $mappingConfig['propertyMapping'] ?? [],
             'unset'       => $mappingConfig['unset'] ?? [],
             'cast'        => $mappingConfig['cast'] ?? [],
@@ -326,7 +325,7 @@ class ZgwService
         $mapping->hydrate(object: $mappingData);
 
         return $mapping;
-    }
+    }//end createOutboundMapping()
 
     /**
      * Create a Mapping object for inbound (Dutch to English) transformation.
@@ -339,7 +338,7 @@ class ZgwService
     {
         $mapping     = new Mapping();
         $mappingData = [
-            'name'        => 'zgw-inbound-' . ($mappingConfig['zgwResource'] ?? 'unknown'),
+            'name'        => 'zgw-inbound-'.($mappingConfig['zgwResource'] ?? 'unknown'),
             'mapping'     => $mappingConfig['reverseMapping'] ?? [],
             'unset'       => $mappingConfig['reverseUnset'] ?? [],
             'cast'        => $mappingConfig['reverseCast'] ?? [],
@@ -348,7 +347,7 @@ class ZgwService
         $mapping->hydrate(object: $mappingData);
 
         return $mapping;
-    }
+    }//end createInboundMapping()
 
     /**
      * Apply outbound mapping (English to Dutch) to an object.
@@ -374,11 +373,10 @@ class ZgwService
         $objectData['_updated'] = $selfMeta['updated'] ?? '';
 
         $zgwResource = $mappingConfig['zgwResource'] ?? '';
-        if (
-            $zgwResource === 'enkelvoudiginformatieobject'
+        if ($zgwResource === 'enkelvoudiginformatieobject'
             && $objectData['_uuid'] !== ''
         ) {
-            $objectData['_downloadUrl'] = $baseUrl . '/' . $objectData['_uuid'] . '/download';
+            $objectData['_downloadUrl'] = $baseUrl.'/'.$objectData['_uuid'].'/download';
         }
 
         $mapped = $this->openRegisterMappingService->executeMapping(
@@ -394,7 +392,7 @@ class ZgwService
         }
 
         return $mapped;
-    }
+    }//end applyOutboundMapping()
 
     /**
      * Apply inbound mapping (Dutch to English) to request data.
@@ -439,7 +437,7 @@ class ZgwService
         }
 
         return $mapped;
-    }
+    }//end applyInboundMapping()
 
     /**
      * Get the request body, falling back to raw body parsing for malformed JSON.
@@ -485,13 +483,13 @@ class ZgwService
 
                 return $decoded;
             }
-        }
+        }//end if
 
         // Fallback: use getParams() for non-JSON requests (multipart, form-encoded).
         $this->cachedRequestBody = $request->getParams();
 
         return $this->cachedRequestBody;
-    }
+    }//end getRequestBody()
 
     /**
      * Extract the UUID from the request URL path.
@@ -513,7 +511,7 @@ class ZgwService
         }
 
         return $uuid;
-    }
+    }//end resolvePathUuid()
 
     /**
      * Update a field in the cached request body.
@@ -530,7 +528,7 @@ class ZgwService
         if ($this->cachedRequestBody !== null) {
             $this->cachedRequestBody[$key] = $value;
         }
-    }
+    }//end updateCachedBodyField()
 
     /**
      * Build the base URL for ZGW API responses.
@@ -546,8 +544,8 @@ class ZgwService
         $serverHost = $request->getServerHost();
         $scheme     = $request->getServerProtocol();
 
-        return $scheme . '://' . $serverHost . '/index.php/apps/procest/api/zgw/' . $zgwApi . '/v1/' . $resource;
-    }
+        return $scheme.'://'.$serverHost.'/index.php/apps/procest/api/zgw/'.$zgwApi.'/v1/'.$resource;
+    }//end buildBaseUrl()
 
     /**
      * Validate JWT-ZGW authentication from the Authorization header.
@@ -591,7 +589,7 @@ class ZgwService
         }
 
         return null;
-    }
+    }//end validateJwtAuth()
 
     /**
      * Check if the current JWT consumer has a specific scope.
@@ -643,8 +641,7 @@ class ZgwService
             foreach ($scopes as $auth) {
                 $authComponent = $auth['component'] ?? '';
                 $authScopes    = $auth['scopes'] ?? [];
-                if (
-                    $authComponent === $component
+                if ($authComponent === $component
                     && in_array($scope, $authScopes, true) === true
                 ) {
                     return true;
@@ -654,11 +651,11 @@ class ZgwService
             return false;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Could not check consumer scope: ' . $e->getMessage()
+                'Could not check consumer scope: '.$e->getMessage()
             );
             return true;
-        }
-    }
+        }//end try
+    }//end consumerHasScope()
 
     /**
      * Get the consumer's authorization details for a component (for zrc-006).
@@ -720,11 +717,11 @@ class ZgwService
             return $result;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Could not get consumer autorisaties: ' . $e->getMessage()
+                'Could not get consumer autorisaties: '.$e->getMessage()
             );
             return null;
-        }
-    }
+        }//end try
+    }//end getConsumerAuthorisaties()
 
     /**
      * Publish a ZGW notification (non-blocking).
@@ -751,7 +748,7 @@ class ZgwService
             resourceUrl: $resourceUrl,
             actie: $actie
         );
-    }
+    }//end publishNotification()
 
     /**
      * Build the error response data from a validation result.
@@ -772,7 +769,7 @@ class ZgwService
         }
 
         return $data;
-    }
+    }//end buildValidationError()
 
     /**
      * Return an "OpenRegister unavailable" error response.
@@ -785,7 +782,7 @@ class ZgwService
             data: ['detail' => 'OpenRegister is not available'],
             statusCode: Http::STATUS_SERVICE_UNAVAILABLE
         );
-    }
+    }//end unavailableResponse()
 
     /**
      * Return a "mapping not found" error response.
@@ -801,7 +798,7 @@ class ZgwService
             data: ['detail' => "No ZGW mapping configured for {$zgwApi}/{$resource}"],
             statusCode: Http::STATUS_NOT_FOUND
         );
-    }
+    }//end mappingNotFoundResponse()
 
     /**
      * Generic index (list) operation for a ZGW resource.
@@ -888,15 +885,15 @@ class ZgwService
             return new JSONResponse(data: $paginatedResult);
         } catch (\Throwable $e) {
             $this->logger->error(
-                'ZGW list error: ' . $e->getMessage(),
+                'ZGW list error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => 'Internal server error'],
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end handleIndex()
 
     /**
      * Generic create operation for a ZGW resource.
@@ -914,9 +911,9 @@ class ZgwService
         IRequest $request,
         string $zgwApi,
         string $resource,
-        ?bool $zaakClosed = null,
-        bool $hasForceer = true,
-        ?bool $parentZaaktypeDraft = null
+        ?bool $zaakClosed=null,
+        bool $hasForceer=true,
+        ?bool $parentZaaktypeDraft=null
     ): JSONResponse {
         if ($this->openRegisterObjectService === null) {
             return $this->unavailableResponse();
@@ -998,7 +995,7 @@ class ZgwService
                 baseUrl: $baseUrl
             );
 
-            $resourceUrl = $baseUrl . '/' . $objectUuid;
+            $resourceUrl = $baseUrl.'/'.$objectUuid;
             $this->publishNotification(
                 zgwApi: $zgwApi,
                 resource: $resource,
@@ -1009,15 +1006,15 @@ class ZgwService
             return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
         } catch (\Throwable $e) {
             $this->logger->error(
-                'ZGW create error: ' . $e->getMessage(),
+                'ZGW create error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }
-    }
+        }//end try
+    }//end handleCreate()
 
     /**
      * Generic show (get single) operation for a ZGW resource.
@@ -1069,15 +1066,15 @@ class ZgwService
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
             $this->logger->error(
-                'ZGW show error: ' . $e->getMessage(),
+                'ZGW show error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => 'Not found'],
                 statusCode: Http::STATUS_NOT_FOUND
             );
-        }
-    }
+        }//end try
+    }//end handleShow()
 
     /**
      * Generic update (PUT/PATCH) operation for a ZGW resource.
@@ -1102,10 +1099,10 @@ class ZgwService
         string $zgwApi,
         string $resource,
         string $uuid,
-        bool $partial = false,
-        ?bool $parentZtDraft = null,
-        ?bool $zaakClosed = null,
-        bool $hasForceer = true
+        bool $partial=false,
+        ?bool $parentZtDraft=null,
+        ?bool $zaakClosed=null,
+        bool $hasForceer=true
     ): JSONResponse {
         // Resolve UUID from URL path — Nextcloud's getParam() merges JSON body
         // into controller args, so a body "uuid" field can override the route's {uuid}.
@@ -1189,8 +1186,7 @@ class ZgwService
 
                 unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
 
-                if (
-                    isset($existingData['identifier']) === true
+                if (isset($existingData['identifier']) === true
                     && is_int($existingData['identifier']) === true
                 ) {
                     $existingData['identifier'] = (string) $existingData['identifier'];
@@ -1252,7 +1248,7 @@ class ZgwService
                         }
                     }
                 }
-            }
+            }//end if
 
             // Apply _directFields after PATCH merge to ensure they override correctly.
             if (empty($directFields) === false && is_array($englishData) === true) {
@@ -1284,22 +1280,22 @@ class ZgwService
             $this->publishNotification(
                 zgwApi: $zgwApi,
                 resource: $resource,
-                resourceUrl: $baseUrl . '/' . $uuid,
+                resourceUrl: $baseUrl.'/'.$uuid,
                 actie: 'update'
             );
 
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
             $this->logger->error(
-                'ZGW update error (' . $resource . ' ' . $uuid . '): ' . $e->getMessage(),
+                'ZGW update error ('.$resource.' '.$uuid.'): '.$e->getMessage(),
                 ['exception' => $e, 'trace' => $e->getTraceAsString()]
             );
             return new JSONResponse(
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }
-    }
+        }//end try
+    }//end handleUpdate()
 
     /**
      * Generic destroy (delete) operation for a ZGW resource.
@@ -1319,9 +1315,9 @@ class ZgwService
         string $zgwApi,
         string $resource,
         string $uuid,
-        ?bool $parentZtDraft = null,
-        ?bool $zaakClosed = null,
-        bool $hasForceer = true
+        ?bool $parentZtDraft=null,
+        ?bool $zaakClosed=null,
+        bool $hasForceer=true
     ): JSONResponse {
         if ($this->openRegisterObjectService === null) {
             return $this->unavailableResponse();
@@ -1369,22 +1365,22 @@ class ZgwService
             $this->publishNotification(
                 zgwApi: $zgwApi,
                 resource: $resource,
-                resourceUrl: $baseUrl . '/' . $uuid,
+                resourceUrl: $baseUrl.'/'.$uuid,
                 actie: 'destroy'
             );
 
             return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
         } catch (\Throwable $e) {
             $this->logger->error(
-                'ZGW delete error: ' . $e->getMessage(),
+                'ZGW delete error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => 'Not found'],
                 statusCode: Http::STATUS_NOT_FOUND
             );
-        }
-    }
+        }//end try
+    }//end handleDestroy()
 
     /**
      * Handle audit trail index — proxies to OpenRegister's audit trail.
@@ -1406,7 +1402,7 @@ class ZgwService
             request: $request,
             zgwApi: $zgwApi,
             resource: $resource
-        ) . '/' . $uuid;
+        ).'/'.$uuid;
 
         // Fetch real audit trail from OpenRegister.
         $entries = [];
@@ -1422,7 +1418,7 @@ class ZgwService
                 }
             } catch (\Throwable $e) {
                 $this->logger->warning(
-                    'Failed to fetch audit trail for ' . $uuid . ': ' . $e->getMessage()
+                    'Failed to fetch audit trail for '.$uuid.': '.$e->getMessage()
                 );
             }
         }
@@ -1430,7 +1426,7 @@ class ZgwService
         // If no entries found, return a synthetic creation entry.
         if (empty($entries) === true) {
             $entries[] = [
-                'uuid'               => $uuid . '-audit-1',
+                'uuid'               => $uuid.'-audit-1',
                 'bron'               => 'procest',
                 'applicatieId'       => 'procest',
                 'applicatieWeergave' => 'Procest',
@@ -1446,7 +1442,7 @@ class ZgwService
         }
 
         return new JSONResponse(data: $entries);
-    }
+    }//end handleAudittrailIndex()
 
     /**
      * Handle audit trail show — proxies to OpenRegister's audit trail.
@@ -1470,7 +1466,7 @@ class ZgwService
             request: $request,
             zgwApi: $zgwApi,
             resource: $resource
-        ) . '/' . $uuid;
+        ).'/'.$uuid;
 
         // Try to find the specific audit trail entry from OpenRegister.
         if ($this->openRegisterObjectService !== null) {
@@ -1491,10 +1487,10 @@ class ZgwService
                 }
             } catch (\Throwable $e) {
                 $this->logger->warning(
-                    'Failed to fetch audit trail entry ' . $auditUuid . ': ' . $e->getMessage()
+                    'Failed to fetch audit trail entry '.$auditUuid.': '.$e->getMessage()
                 );
             }
-        }
+        }//end if
 
         // Fallback: return a synthetic entry with the requested UUID.
         return new JSONResponse(
@@ -1513,7 +1509,7 @@ class ZgwService
                 'aanmaakdatum'       => date('c'),
             ]
         );
-    }
+    }//end handleAudittrailShow()
 
     /**
      * Map an OpenRegister AuditTrail entry to ZGW audittrail format.
@@ -1576,7 +1572,7 @@ class ZgwService
             'resourceWeergave'   => $resource,
             'aanmaakdatum'       => $logData['created'] ?? date('c'),
         ];
-    }
+    }//end mapAuditTrailToZgw()
 
     /**
      * Resolve whether a zaak is closed (has einddatum set).
@@ -1611,8 +1607,7 @@ class ZgwService
             return null;
         }
 
-        if (
-            preg_match(
+        if (preg_match(
                 '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
                 (string) $zaakUuid,
                 $matches
@@ -1647,11 +1642,11 @@ class ZgwService
             return $endDate !== null && $endDate !== '';
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Could not resolve zaak closed status: ' . $e->getMessage()
+                'Could not resolve zaak closed status: '.$e->getMessage()
             );
             return null;
-        }
-    }
+        }//end try
+    }//end resolveZaakClosed()
 
     /**
      * Resolve whether a zaak is closed from a request body (for sub-resource creation).
@@ -1685,8 +1680,7 @@ class ZgwService
             return null;
         }
 
-        if (
-            preg_match(
+        if (preg_match(
                 '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
                 (string) $zaakUrl,
                 $matches
@@ -1723,8 +1717,8 @@ class ZgwService
             return $endDate !== null && $endDate !== '';
         } catch (\Throwable $e) {
             return null;
-        }
-    }
+        }//end try
+    }//end resolveZaakClosedFromBody()
 
     /**
      * Resolve whether the parent zaaktype is in draft (concept) state.
@@ -1753,8 +1747,7 @@ class ZgwService
             return null;
         }
 
-        if (
-            preg_match(
+        if (preg_match(
                 '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
                 (string) $zaaktypeUuid,
                 $matches
@@ -1793,11 +1786,11 @@ class ZgwService
             return true;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Could not resolve parent zaaktype draft status: ' . $e->getMessage()
+                'Could not resolve parent zaaktype draft status: '.$e->getMessage()
             );
             return null;
-        }
-    }
+        }//end try
+    }//end resolveParentZaaktypeDraft()
 
     /**
      * Resolve parent zaaktype draft status from a request body (for sub-resource creation).
@@ -1830,8 +1823,7 @@ class ZgwService
         }
 
         // Extract UUID from URL or plain UUID.
-        if (
-            preg_match(
+        if (preg_match(
                 '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
                 (string) $zaaktypeRef,
                 $matches
@@ -1872,9 +1864,9 @@ class ZgwService
             return true;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Could not resolve parent zaaktype draft from body: ' . $e->getMessage()
+                'Could not resolve parent zaaktype draft from body: '.$e->getMessage()
             );
             return null;
-        }
-    }
-}
+        }//end try
+    }//end resolveParentZaaktypeDraftFromBody()
+}//end class

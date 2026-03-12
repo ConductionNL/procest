@@ -115,7 +115,7 @@ class SettingsService
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Check if OpenRegister is installed and enabled.
@@ -125,7 +125,7 @@ class SettingsService
     public function isOpenRegisterAvailable(): bool
     {
         return $this->appManager->isEnabledForUser(self::OPENREGISTER_APP_ID);
-    }
+    }//end isOpenRegisterAvailable()
 
     /**
      * Load the register configuration from procest_register.json via ConfigurationService.
@@ -134,7 +134,7 @@ class SettingsService
      *
      * @return array Import result
      */
-    public function loadConfiguration(bool $force = false): array
+    public function loadConfiguration(bool $force=false): array
     {
         if ($this->isOpenRegisterAvailable() === false) {
             return [
@@ -154,14 +154,14 @@ class SettingsService
             );
             return [
                 'success' => false,
-                'message' => 'Could not access ConfigurationService: ' . $e->getMessage(),
+                'message' => 'Could not access ConfigurationService: '.$e->getMessage(),
             ];
         }
 
-        $configPath = __DIR__ . '/../Settings/procest_register.json';
+        $configPath = __DIR__.'/../Settings/procest_register.json';
         if (file_exists($configPath) === false) {
             $this->logger->error(
-                'Procest: Configuration file not found at ' . $configPath
+                'Procest: Configuration file not found at '.$configPath
             );
             return [
                 'success' => false,
@@ -200,7 +200,7 @@ class SettingsService
 
             return [
                 'success'    => true,
-                'message'    => 'Configuration imported and auto-configured (' . $configuredCount . ' schemas mapped)',
+                'message'    => 'Configuration imported and auto-configured ('.$configuredCount.' schemas mapped)',
                 'version'    => $configVersion,
                 'configured' => $configuredCount,
                 'result'     => $importResult,
@@ -212,10 +212,10 @@ class SettingsService
             );
             return [
                 'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage(),
+                'message' => 'Import failed: '.$e->getMessage(),
             ];
-        }
-    }
+        }//end try
+    }//end loadConfiguration()
 
     /**
      * Get all current settings as an associative array.
@@ -230,7 +230,7 @@ class SettingsService
         }
 
         return $config;
-    }
+    }//end getSettings()
 
     /**
      * Update settings with the provided data.
@@ -250,7 +250,7 @@ class SettingsService
         $this->logger->info('Procest settings updated', ['keys' => array_keys($data)]);
 
         return $this->getSettings();
-    }
+    }//end updateSettings()
 
     /**
      * Get a single configuration value by key.
@@ -260,10 +260,10 @@ class SettingsService
      *
      * @return string
      */
-    public function getConfigValue(string $key, string $default = ''): string
+    public function getConfigValue(string $key, string $default=''): string
     {
         return $this->appConfig->getValueString(Application::APP_ID, $key, $default);
-    }
+    }//end getConfigValue()
 
     /**
      * Set a single configuration value.
@@ -276,7 +276,7 @@ class SettingsService
     public function setConfigValue(string $key, string $value): void
     {
         $this->appConfig->setValueString(Application::APP_ID, $key, $value);
-    }
+    }//end setConfigValue()
 
     /**
      * Auto-configure schema and register IDs from the import result.
@@ -343,7 +343,7 @@ class SettingsService
             );
 
             $configuredCount++;
-        }
+        }//end foreach
 
         $this->logger->info(
             'Procest: Auto-configuration complete',
@@ -351,5 +351,5 @@ class SettingsService
         );
 
         return $configuredCount;
-    }
-}
+    }//end autoConfigureAfterImport()
+}//end class

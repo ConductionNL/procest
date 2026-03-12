@@ -101,8 +101,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         // Drc-006a: Default indicatieGebruiksrecht to null on creation.
-        if (
-            array_key_exists('indicatieGebruiksrecht', $body) === false
+        if (array_key_exists('indicatieGebruiksrecht', $body) === false
             || $body['indicatieGebruiksrecht'] === false
         ) {
             $body['indicatieGebruiksrecht'] = null;
@@ -136,7 +135,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }
+    }//end rulesEnkelvoudiginformatieobjectenCreate()
 
     /**
      * Rules for updating an EnkelvoudigInformatieObject (PUT).
@@ -152,7 +151,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      */
     public function rulesEnkelvoudiginformatieobjectenUpdate(
         array $body,
-        ?array $existingObject = null
+        ?array $existingObject=null
     ): array {
         // Drc-006: Check lock requirement.
         $lockError = $this->validateLock(body: $body, existingObject: $existingObject);
@@ -161,7 +160,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }
+    }//end rulesEnkelvoudiginformatieobjectenUpdate()
 
     /**
      * Rules for patching an EnkelvoudigInformatieObject (PATCH).
@@ -177,7 +176,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      */
     public function rulesEnkelvoudiginformatieobjectenPatch(
         array $body,
-        ?array $existingObject = null
+        ?array $existingObject=null
     ): array {
         // Drc-006: Check lock requirement.
         $lockError = $this->validateLock(body: $body, existingObject: $existingObject);
@@ -186,7 +185,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }
+    }//end rulesEnkelvoudiginformatieobjectenPatch()
 
     /**
      * Rules for destroying an EnkelvoudigInformatieObject (DELETE).
@@ -202,7 +201,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      */
     public function rulesEnkelvoudiginformatieobjectenDestroy(
         array $body,
-        ?array $existingObject = null
+        ?array $existingObject=null
     ): array {
         if ($existingObject === null || $this->objectService === null) {
             return $this->ok(body: $body);
@@ -238,10 +237,10 @@ class ZgwDrcRulesService extends ZgwRulesBase
                     ]
                 );
             }
-        }
+        }//end if
 
         return $this->ok(body: $body);
-    }
+    }//end rulesEnkelvoudiginformatieobjectenDestroy()
 
     /**
      * Rules for creating an ObjectInformatieObject.
@@ -302,7 +301,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }
+    }//end rulesObjectinformatieobjectenCreate()
 
     /**
      * Find OIO relations for a document UUID (drc-007/drc-008a).
@@ -335,7 +334,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         // Also search by partial URL match (OIO may store full URL).
         try {
             $query  = $this->objectService->buildSearchQuery(
-                requestParams: ['document' => '%' . $docUuid . '%', '_limit' => 100],
+                requestParams: ['document' => '%'.$docUuid.'%', '_limit' => 100],
                 register: $register,
                 schema: $schema
             );
@@ -358,11 +357,11 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $ids;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Drc-007: OIO relation search with partial match failed: ' . $e->getMessage()
+                'Drc-007: OIO relation search with partial match failed: '.$e->getMessage()
             );
             return [];
-        }
-    }
+        }//end try
+    }//end findOioRelationsForDocument()
 
     /**
      * Validate that indicatieGebruiksrecht=true requires existing gebruiksrechten (drc-006b).
@@ -385,7 +384,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
                 ),
             ]
         );
-    }
+    }//end validateIndicatieGebruiksrechtTrue()
 
     /**
      * Validate OIO object URL (drc-002a/b/c/d).
@@ -454,7 +453,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }
+    }//end validateObjectUrl()
 
     /**
      * Validate OIO cross-register: ZIO/BIO must exist (drc-004 VNG).
@@ -484,7 +483,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         if ($objectType === 'zaak') {
             $schemaKey   = 'case_document_schema';
             $searchField = 'case';
-        } elseif ($objectType === 'besluit') {
+        } else if ($objectType === 'besluit') {
             $schemaKey   = 'decision_document_schema';
             $searchField = 'decision';
         } else {
@@ -530,12 +529,12 @@ class ZgwDrcRulesService extends ZgwRulesBase
             }
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Drc-004: Cross-register validation failed: ' . $e->getMessage()
+                'Drc-004: Cross-register validation failed: '.$e->getMessage()
             );
-        }
+        }//end try
 
         return null;
-    }
+    }//end validateOioCrossRegister()
 
     /**
      * Validate OIO uniqueness: object + informatieobject + objectType (drc-003 VNG).
@@ -594,7 +593,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         if ($objectType === 'zaak') {
             $crossSchemaKey = 'case_document_schema';
             $crossField     = 'case';
-        } elseif ($objectType === 'besluit') {
+        } else if ($objectType === 'besluit') {
             $crossSchemaKey = 'decision_document_schema';
             $crossField     = 'decision';
         }
@@ -618,7 +617,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }
+    }//end checkOioUniqueness()
 
     /**
      * Search for an existing relation in a schema by document+object combination.
@@ -669,7 +668,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
                 // Full-text search using both UUIDs (field-specific LIKE
                 // with % is not supported by MagicMapper).
                 $query  = $this->objectService->buildSearchQuery(
-                    requestParams: ['_search' => $ioUuid . ' ' . $objectUuid, '_limit' => 1],
+                    requestParams: ['_search' => $ioUuid.' '.$objectUuid, '_limit' => 1],
                     register: $register,
                     schema: $schema
                 );
@@ -677,15 +676,15 @@ class ZgwDrcRulesService extends ZgwRulesBase
                 if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
                     return true;
                 }
-            }
+            }//end if
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Drc-003: Uniqueness check failed for schema ' . $schema . ': ' . $e->getMessage()
+                'Drc-003: Uniqueness check failed for schema '.$schema.': '.$e->getMessage()
             );
-        }
+        }//end try
 
         return false;
-    }
+    }//end searchDuplicateRelation()
 
     /**
      * Validate lock requirement for document modifications (drc-006).
@@ -738,7 +737,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }
+    }//end validateLock()
 
     /**
      * Derive vertrouwelijkheidaanduiding from informatieobjecttype (drc-005).
@@ -762,13 +761,11 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $body;
         }
 
-        $va = $iotData['confidentiality']
-            ?? $iotData['confidentialityDesignation']
-            ?? $iotData['vertrouwelijkheidaanduiding'] ?? '';
+        $va = $iotData['confidentiality'] ?? $iotData['confidentialityDesignation'] ?? $iotData['vertrouwelijkheidaanduiding'] ?? '';
         if ($va !== '') {
             $body['vertrouwelijkheidaanduiding'] = $va;
         }
 
         return $body;
-    }
-}
+    }//end deriveVertrouwelijkheidaanduiding()
+}//end class

@@ -41,7 +41,7 @@ class DashboardController extends Controller
     public function __construct(IRequest $request)
     {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
     /**
      * Render the main dashboard page.
@@ -54,5 +54,5 @@ class DashboardController extends Controller
     public function page(): TemplateResponse
     {
         return new TemplateResponse(Application::APP_ID, 'index');
-    }
-}
+    }//end page()
+}//end class

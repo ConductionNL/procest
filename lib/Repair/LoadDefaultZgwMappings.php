@@ -61,7 +61,7 @@ class LoadDefaultZgwMappings implements IRepairStep
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get the name of this repair step.
@@ -71,7 +71,7 @@ class LoadDefaultZgwMappings implements IRepairStep
     public function getName(): string
     {
         return 'Load default ZGW API mapping configurations for Procest';
-    }
+    }//end getName()
 
     /**
      * Run the repair step to load default ZGW mappings.
@@ -119,7 +119,7 @@ class LoadDefaultZgwMappings implements IRepairStep
             'Procest: Default ZGW mappings loaded',
             ['loaded' => $loaded, 'total' => count(value: $defaults)]
         );
-    }
+    }//end run()
 
     /**
      * Patch existing mappings that contain known bugs.
@@ -151,7 +151,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 $output->info('Patched enkelvoudiginformatieobject mapping: indicatieGebruiksrecht template.');
             }
         }
-    }
+    }//end patchExistingMappings()
 
     /**
      * Build a Twig URL-replacement template string.
@@ -169,11 +169,11 @@ class LoadDefaultZgwMappings implements IRepairStep
         // Insert /v1/ between API group and resource (e.g. "zaken/zaken" → "zaken/v1/zaken").
         $fromParts = explode('/', $from);
         $toParts   = explode('/', $to);
-        $fromPath  = $fromParts[0] . '/v1/' . $fromParts[1];
-        $toPath    = $toParts[0] . '/v1/' . $toParts[1];
+        $fromPath  = $fromParts[0].'/v1/'.$fromParts[1];
+        $toPath    = $toParts[0].'/v1/'.$toParts[1];
 
         return sprintf(self::TPL_PREFIX, $fromPath, $toPath, $varName);
-    }
+    }//end tplUrl()
 
     /**
      * Get the default mapping configurations for all 12 ZGW resources.
@@ -291,7 +291,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 settings: $settings
             ),
         ];
-    }
+    }//end getDefaultMappings()
 
     /**
      * Get default mapping for Zaak (case).
@@ -418,7 +418,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getZaakMapping()
 
     /**
      * Get default mapping for ZaakType (caseType).
@@ -524,7 +524,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getZaakTypeMapping()
 
     /**
      * Get default mapping for Status.
@@ -571,7 +571,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getStatusMapping()
 
     /**
      * Get default mapping for StatusType (statusType).
@@ -625,7 +625,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getStatusTypeMapping()
 
     /**
      * Get default mapping for Resultaat (result).
@@ -672,7 +672,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getResultaatMapping()
 
     /**
      * Get default mapping for ResultaatType (resultType).
@@ -740,7 +740,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getResultaatTypeMapping()
 
     /**
      * Get default mapping for Rol (role).
@@ -790,7 +790,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getRolMapping()
 
     /**
      * Get default mapping for RolType (roleType).
@@ -832,7 +832,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getRolTypeMapping()
 
     /**
      * Get default mapping for Eigenschap (propertyDefinition).
@@ -877,7 +877,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getEigenschapMapping()
 
     /**
      * Get default mapping for Besluit (decision).
@@ -921,8 +921,7 @@ class LoadDefaultZgwMappings implements IRepairStep
             'reverseMapping'        => [
                 'title'                   => '{{ identificatie }}',
                 'explanation'             => '{{ toelichting }}',
-                'case'                    => '{% if zaak is defined and zaak %}'
-                    . '{{ zaak | zgw_extract_uuid }}{% endif %}',
+                'case'                    => '{% if zaak is defined and zaak %}{{ zaak | zgw_extract_uuid }}{% endif %}',
                 'decisionType'            => '{{ besluittype | zgw_extract_uuid }}',
                 'responsibleOrganisation' => '{{ verantwoordelijkeOrganisatie }}',
                 'governingBody'           => '{{ bestuursorgaan }}',
@@ -940,7 +939,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getBesluitMapping()
 
     /**
      * Get default mapping for BesluitType (decisionType).
@@ -1009,7 +1008,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getBesluitTypeMapping()
 
     /**
      * Get default mapping for InformatieObjectType (documentType).
@@ -1071,7 +1070,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getInformatieObjectTypeMapping()
 
     /**
      * Get default mapping for EnkelvoudigInformatieObject (document).
@@ -1115,7 +1114,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ),
                 'locked'                      => '{{ locked }}',
                 'registratiedatum'            => '{{ _created }}',
-                // phpcs:ignore Generic.Files.LineLength.TooLong
+                // phpcs:ignore Generic.Files.LineLength.MaxExceeded
                 'indicatieGebruiksrecht'      => '{{ usageRightsIndication is same as(true) ? "true" : (usageRightsIndication is same as(false) ? "false" : "") }}',
             ],
             'reverseMapping'        => [
@@ -1171,7 +1170,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getEnkelvoudigInformatieObjectMapping()
 
     /**
      * Get default mapping for ObjectInformatieObject (documentLink).
@@ -1218,7 +1217,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getObjectInformatieObjectMapping()
 
     /**
      * Get default mapping for GebruiksRechten (usageRights).
@@ -1259,7 +1258,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getGebruiksrechtenMapping()
 
     /**
      * Get default mapping for Kanaal (notification channel).
@@ -1299,7 +1298,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getKanaalMapping()
 
     /**
      * Get default mapping for Abonnement (notification subscription).
@@ -1335,7 +1334,7 @@ class LoadDefaultZgwMappings implements IRepairStep
             'valueMapping'          => [],
             'queryParameterMapping' => [],
         ];
-    }
+    }//end getAbonnementMapping()
 
     /**
      * Get default mapping for Catalogus.
@@ -1387,7 +1386,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getCatalogusMapping()
 
     /**
      * Get default mapping for ZaaktypeInformatieobjecttype.
@@ -1447,7 +1446,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getZaaktypeInformatieobjecttypeMapping()
 
     /**
      * Get the mapping metadata for Applicatie (Consumer entity).
@@ -1472,7 +1471,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'autorisaties'          => 'authorizationConfiguration.scopes',
             ],
         ];
-    }
+    }//end getApplicatieMapping()
 
     /**
      * Create default test applicaties via OpenRegister's ConsumerMapper.
@@ -1520,7 +1519,7 @@ class LoadDefaultZgwMappings implements IRepairStep
         }
 
         $output->info("Created {$created}, updated {$updated} default test applicaties.");
-    }
+    }//end createDefaultApplicaties()
 
     /**
      * Get default test applicatie configurations.
@@ -1569,7 +1568,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getDefaultApplicaties()
 
     /**
      * Create default notification channels (kanalen).
@@ -1622,7 +1621,7 @@ class LoadDefaultZgwMappings implements IRepairStep
         }
 
         $output->info("Created {$created} default notification channels.");
-    }
+    }//end createDefaultKanalen()
 
     /**
      * Get default notification channel configurations.
@@ -1664,7 +1663,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'filters' => [],
             ],
         ];
-    }
+    }//end getDefaultKanalen()
 
     /**
      * Get default mapping for ZaakEigenschap (case property).
@@ -1710,7 +1709,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getZaakeigenschapMapping()
 
     /**
      * Get default mapping for ZaakInformatieObject (case document link).
@@ -1759,7 +1758,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getZaakinformatieobjectMapping()
 
     /**
      * Get default mapping for ZaakObject (case object).
@@ -1808,7 +1807,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getZaakobjectMapping()
 
     /**
      * Get default mapping for KlantContact (customer contact).
@@ -1854,7 +1853,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getKlantcontactMapping()
 
     /**
      * Get default mapping for BesluitInformatieObject (decision document link).
@@ -1899,7 +1898,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
+    }//end getBesluitinformatieobjectMapping()
 
     /**
      * Get default mapping for Verzending (dispatch).
@@ -1946,5 +1945,5 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ],
             ],
         ];
-    }
-}
+    }//end getVerzendingMapping()
+}//end class

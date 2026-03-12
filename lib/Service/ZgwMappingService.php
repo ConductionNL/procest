@@ -88,7 +88,7 @@ class ZgwMappingService
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get the mapping configuration for a specific ZGW resource.
@@ -101,7 +101,7 @@ class ZgwMappingService
     {
         $json = $this->appConfig->getValueString(
             Application::APP_ID,
-            self::CONFIG_PREFIX . $resourceKey,
+            self::CONFIG_PREFIX.$resourceKey,
             ''
         );
 
@@ -115,7 +115,7 @@ class ZgwMappingService
         }
 
         return $config;
-    }
+    }//end getMapping()
 
     /**
      * Save the mapping configuration for a specific ZGW resource.
@@ -131,7 +131,7 @@ class ZgwMappingService
 
         $this->appConfig->setValueString(
             Application::APP_ID,
-            self::CONFIG_PREFIX . $resourceKey,
+            self::CONFIG_PREFIX.$resourceKey,
             $json
         );
 
@@ -139,7 +139,7 @@ class ZgwMappingService
             'ZGW mapping saved',
             ['resourceKey' => $resourceKey]
         );
-    }
+    }//end saveMapping()
 
     /**
      * List all ZGW mapping configurations.
@@ -158,7 +158,7 @@ class ZgwMappingService
         }
 
         return $mappings;
-    }
+    }//end listMappings()
 
     /**
      * Delete the mapping configuration for a specific ZGW resource.
@@ -169,14 +169,14 @@ class ZgwMappingService
      */
     public function deleteMapping(string $resourceKey): void
     {
-        $configKey = self::CONFIG_PREFIX . $resourceKey;
+        $configKey = self::CONFIG_PREFIX.$resourceKey;
         $this->appConfig->deleteKey(app: Application::APP_ID, key: $configKey);
 
         $this->logger->info(
             'ZGW mapping deleted',
             ['resourceKey' => $resourceKey]
         );
-    }
+    }//end deleteMapping()
 
     /**
      * Get all known ZGW resource keys.
@@ -186,7 +186,7 @@ class ZgwMappingService
     public function getResourceKeys(): array
     {
         return self::RESOURCE_KEYS;
-    }
+    }//end getResourceKeys()
 
     /**
      * Check whether a mapping exists for a given resource.
@@ -198,7 +198,7 @@ class ZgwMappingService
     public function hasMapping(string $resourceKey): bool
     {
         return $this->getMapping(resourceKey: $resourceKey) !== null;
-    }
+    }//end hasMapping()
 
     /**
      * Reset a mapping to its default configuration.
@@ -219,5 +219,5 @@ class ZgwMappingService
                 ['resourceKey' => $resourceKey]
             );
         }
-    }
-}
+    }//end resetToDefault()
+}//end class

@@ -61,5 +61,5 @@ class DeepLinkRegistrationListener implements IEventListener
             schemaSlug: 'task',
             urlTemplate: '/apps/procest/#/tasks/{uuid}'
         );
-    }
-}
+    }//end handle()
+}//end class

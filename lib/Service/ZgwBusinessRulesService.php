@@ -61,7 +61,7 @@ class ZgwBusinessRulesService
         private readonly ZgwDrcRulesService $drcRules,
         private readonly ZgwBrcRulesService $brcRules,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Validate and enrich a request body before saving.
@@ -88,12 +88,12 @@ class ZgwBusinessRulesService
         string $resource,
         string $action,
         array $body,
-        ?array $existingObject = null,
-        ?object $objectService = null,
-        ?array $mappingConfig = null,
-        ?bool $parentZaaktypeDraft = null,
-        ?bool $zaakClosed = null,
-        bool $hasGeforceerd = true
+        ?array $existingObject=null,
+        ?object $objectService=null,
+        ?array $mappingConfig=null,
+        ?bool $parentZaaktypeDraft=null,
+        ?bool $zaakClosed=null,
+        bool $hasGeforceerd=true
     ): array {
         // Set context on all per-register rule services.
         $this->zrcRules->setContext($objectService, $mappingConfig);
@@ -124,15 +124,14 @@ class ZgwBusinessRulesService
             if ($conceptCheck !== null) {
                 return $conceptCheck;
             }
-        }
+        }//end if
 
         // ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
         if ($zaakClosed === true && $hasGeforceerd === false) {
             return [
                 'valid'         => false,
                 'status'        => 403,
-                'detail'        => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan'
-                    . ' zonder scope zaken.geforceerd-bijwerken.',
+                'detail'        => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
                 'code'          => 'permission_denied',
                 'invalidParams' => [
                     [
@@ -153,7 +152,7 @@ class ZgwBusinessRulesService
             body: $body,
             existingObject: $existingObject
         );
-    }
+    }//end validate()
 
     /**
      * Dispatch to the appropriate per-register rule service.
@@ -224,7 +223,7 @@ class ZgwBusinessRulesService
         }
 
         return $ok;
-    }
+    }//end dispatchToRegister()
 
     /**
      * Dispatch ZRC (Zaken API) rules.
@@ -263,7 +262,7 @@ class ZgwBusinessRulesService
                 => $this->zrcRules->rulesZaakeigenschappenCreate($body),
             default => $this->ok(body: $body),
         };//end match
-    }
+    }//end dispatchZrc()
 
     /**
      * Dispatch ZTC (Catalogi API) rules.
@@ -288,7 +287,7 @@ class ZgwBusinessRulesService
                 => $this->ztcRules->rulesResultaattypenCreate($body),
             default => $this->ok(body: $body),
         };
-    }
+    }//end dispatchZtc()
 
     /**
      * Dispatch DRC (Documenten API) rules.
@@ -315,7 +314,7 @@ class ZgwBusinessRulesService
                 => $this->drcRules->rulesObjectinformatieobjectenCreate($body),
             default => $this->ok(body: $body),
         };
-    }
+    }//end dispatchDrc()
 
     /**
      * Dispatch BRC (Besluiten API) rules.
@@ -340,7 +339,7 @@ class ZgwBusinessRulesService
                 => $this->brcRules->rulesBesluitinformatieobjectenCreate($body),
             default => $this->ok(body: $body),
         };
-    }
+    }//end dispatchBrc()
 
     /**
      * Build a successful validation result (pass-through).
@@ -357,5 +356,5 @@ class ZgwBusinessRulesService
             'detail'       => '',
             'enrichedBody' => $body,
         ];
-    }
-}
+    }//end ok()
+}//end class

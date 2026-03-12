@@ -109,7 +109,7 @@ class ZgwAuthMiddleware extends Middleware
         private readonly LoggerInterface $logger,
     ) {
         $this->loadOpenRegisterServices();
-    }
+    }//end __construct()
 
     /**
      * Load OpenRegister services dynamically.
@@ -132,7 +132,7 @@ class ZgwAuthMiddleware extends Middleware
                 ['exception' => $e->getMessage()]
             );
         }
-    }
+    }//end loadOpenRegisterServices()
 
     /**
      * Validate JWT and enforce scopes before controller execution.
@@ -174,7 +174,7 @@ class ZgwAuthMiddleware extends Middleware
             $this->authorizationService->authorizeJwt(authorization: $authorization);
         } catch (\Exception $e) {
             $this->logger->warning(
-                'ZGW auth failed: ' . $e->getMessage()
+                'ZGW auth failed: '.$e->getMessage()
             );
             throw new ZgwAuthException(
                 message: $e->getMessage(),
@@ -200,7 +200,7 @@ class ZgwAuthMiddleware extends Middleware
 
         // Enforce scope-based authorization.
         $this->enforceScopes(authConfig: $authConfig);
-    }
+    }//end beforeController()
 
     /**
      * Handle exceptions thrown during beforeController.
@@ -227,7 +227,7 @@ class ZgwAuthMiddleware extends Middleware
         }
 
         return null;
-    }
+    }//end afterException()
 
     /**
      * Enforce ZGW scope-based authorization.
@@ -262,8 +262,7 @@ class ZgwAuthMiddleware extends Middleware
 
         // Check if any scope grants cover this request.
         foreach ($scopes as $scopeGrant) {
-            if (
-                $this->scopeGrantCovers(
+            if ($this->scopeGrantCovers(
                     scopeGrant: $scopeGrant,
                     component: $component,
                     requiredSuffix: $requiredSuffix
@@ -277,7 +276,7 @@ class ZgwAuthMiddleware extends Middleware
             message: "Scope '{$component}.{$requiredSuffix}' is required for this operation",
             statusCode: Http::STATUS_FORBIDDEN
         );
-    }
+    }//end enforceScopes()
 
     /**
      * Check if a scope grant covers the required component and action.
@@ -309,7 +308,7 @@ class ZgwAuthMiddleware extends Middleware
         }
 
         return false;
-    }
+    }//end scopeGrantCovers()
 
     /**
      * Decode the JWT payload without verification (already verified by authorizeJwt).
@@ -336,7 +335,7 @@ class ZgwAuthMiddleware extends Middleware
         }
 
         return $decoded;
-    }
+    }//end decodeJwtPayload()
 
     /**
      * Find a Consumer entity by its issuer name.
@@ -356,13 +355,13 @@ class ZgwAuthMiddleware extends Middleware
             }
         } catch (\Exception $e) {
             $this->logger->warning(
-                'Failed to find consumer for issuer: ' . $issuer,
+                'Failed to find consumer for issuer: '.$issuer,
                 ['exception' => $e->getMessage()]
             );
         }
 
         return null;
-    }
+    }//end findConsumerByIssuer()
 
     /**
      * Compare confidentiality levels.
@@ -382,5 +381,5 @@ class ZgwAuthMiddleware extends Middleware
         }
 
         return $actualIndex <= $maxIndex;
-    }
-}
+    }//end isConfidentialityAllowed()
+}//end class

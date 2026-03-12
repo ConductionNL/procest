@@ -146,6 +146,11 @@
             "type": "string",
             "description": "Related case types (JSON-encoded array)"
           },
+          "subCaseTypes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "References to sub-case types (deelzaaktypen)"
+          },
           "decisionTypes": {
             "type": "array",
             "items": { "type": "string" },

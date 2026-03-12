@@ -42,7 +42,7 @@ class SettingsSection implements IIconSection
         private IL10N $l,
         private IURLGenerator $urlGenerator,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get the section identifier.
@@ -52,7 +52,7 @@ class SettingsSection implements IIconSection
     public function getID(): string
     {
         return 'procest';
-    }
+    }//end getID()
 
     /**
      * Get the display name of this section.
@@ -62,7 +62,7 @@ class SettingsSection implements IIconSection
     public function getName(): string
     {
         return $this->l->t('Procest');
-    }
+    }//end getName()
 
     /**
      * Get the priority for ordering this section.
@@ -72,7 +72,7 @@ class SettingsSection implements IIconSection
     public function getPriority(): int
     {
         return 75;
-    }
+    }//end getPriority()
 
     /**
      * Get the icon path for this section.
@@ -82,5 +82,5 @@ class SettingsSection implements IIconSection
     public function getIcon(): string
     {
         return $this->urlGenerator->imagePath(appName: 'procest', file: 'app-dark.svg');
-    }
-}
+    }//end getIcon()
+}//end class

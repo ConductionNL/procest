@@ -73,7 +73,7 @@ class BrcController extends Controller
         private readonly SettingsService $settingsService,
     ) {
         parent::__construct(appName: $appName, request: $request);
-    }
+    }//end __construct()
 
     /**
      * List resources of the given type.
@@ -100,7 +100,7 @@ class BrcController extends Controller
         }
 
         return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
-    }
+    }//end index()
 
     /**
      * Create a new resource of the given type.
@@ -135,7 +135,7 @@ class BrcController extends Controller
         }
 
         return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
-    }
+    }//end create()
 
     /**
      * Retrieve a single resource by UUID.
@@ -158,7 +158,7 @@ class BrcController extends Controller
         }
 
         return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
-    }
+    }//end show()
 
     /**
      * Full update (PUT) a resource by UUID.
@@ -197,7 +197,7 @@ class BrcController extends Controller
             $uuid,
             false
         );
-    }
+    }//end update()
 
     /**
      * Partial update (PATCH) a resource by UUID.
@@ -236,7 +236,7 @@ class BrcController extends Controller
             $uuid,
             true
         );
-    }
+    }//end patch()
 
     /**
      * Delete a resource by UUID.
@@ -278,7 +278,7 @@ class BrcController extends Controller
             $resource,
             $uuid
         );
-    }
+    }//end destroy()
 
     /**
      * List audit trail entries for a resource.
@@ -321,7 +321,7 @@ class BrcController extends Controller
         }
 
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
-    }
+    }//end audittrailIndex()
 
     /**
      * Retrieve a single audit trail entry for a resource.
@@ -351,7 +351,7 @@ class BrcController extends Controller
             $uuid,
             $auditUuid
         );
-    }
+    }//end audittrailShow()
 
     /**
      * Create a besluit with zaak-besluit sync to ZRC (brc-006).
@@ -382,7 +382,7 @@ class BrcController extends Controller
         }
 
         return $response;
-    }
+    }//end createBesluitWithZaakSync()
 
     /**
      * Sync a zaak-besluit relation to ZRC (brc-006).
@@ -441,14 +441,14 @@ class BrcController extends Controller
             );
 
             $this->zgwService->getLogger()->info(
-                'brc-006: Created zaakbesluit for zaak=' . $zaakUuid . ' besluit=' . $besluitUrl
+                'brc-006: Created zaakbesluit for zaak='.$zaakUuid.' besluit='.$besluitUrl
             );
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'brc-006: Failed to create zaakbesluit: ' . $e->getMessage()
+                'brc-006: Failed to create zaakbesluit: '.$e->getMessage()
             );
         }
-    }
+    }//end syncZaakBesluitToZrc()
 
     /**
      * List BesluitInformatieObjecten as a plain array (per ZGW spec).
@@ -508,15 +508,15 @@ class BrcController extends Controller
             return new JSONResponse(data: $mapped);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'BRC list BIO error: ' . $e->getMessage(),
+                'BRC list BIO error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => 'Internal server error'],
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end indexBesluitInformatieObjecten()
 
     /**
      * Create a BesluitInformatieObject with cross-register OIO sync (brc-005a).
@@ -611,22 +611,22 @@ class BrcController extends Controller
             $this->zgwService->publishNotification(
                 self::ZGW_API,
                 $resource,
-                $baseUrl . '/' . $objectUuid,
+                $baseUrl.'/'.$objectUuid,
                 'create'
             );
 
             return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'BRC create BIO error: ' . $e->getMessage(),
+                'BRC create BIO error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => $e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
-        }
-    }
+        }//end try
+    }//end createBesluitInformatieObject()
 
     /**
      * Create an ObjectInformatieObject in the DRC register (brc-005a).
@@ -662,10 +662,10 @@ class BrcController extends Controller
             );
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'brc-005a: Failed to create OIO in DRC: ' . $e->getMessage()
+                'brc-005a: Failed to create OIO in DRC: '.$e->getMessage()
             );
         }
-    }
+    }//end createOioInDrc()
 
     /**
      * Delete ObjectInformatieObjecten from DRC for a given besluit (brc-005b/009).
@@ -712,10 +712,10 @@ class BrcController extends Controller
             }
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'BRC: Failed to delete OIOs for besluit: ' . $e->getMessage()
+                'BRC: Failed to delete OIOs for besluit: '.$e->getMessage()
             );
-        }
-    }
+        }//end try
+    }//end deleteOiosForBesluit()
 
     /**
      * Delete a BesluitInformatieObject and its OIO in DRC (brc-005b).
@@ -758,7 +758,7 @@ class BrcController extends Controller
                     $this->request,
                     self::ZGW_API,
                     'besluiten'
-                ) . '/' . $decisionUuid;
+                ).'/'.$decisionUuid;
             }
 
             $ioUrl = $bioData['document'] ?? '';
@@ -775,22 +775,22 @@ class BrcController extends Controller
             $this->zgwService->publishNotification(
                 self::ZGW_API,
                 $resource,
-                $baseUrl . '/' . $uuid,
+                $baseUrl.'/'.$uuid,
                 'destroy'
             );
 
             return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'BRC delete BIO error: ' . $e->getMessage(),
+                'BRC delete BIO error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => 'Not found'],
                 statusCode: Http::STATUS_NOT_FOUND
             );
-        }
-    }
+        }//end try
+    }//end destroyBesluitInformatieObject()
 
     /**
      * Delete an OIO from DRC matching a specific besluit and informatieobject (brc-005b).
@@ -841,10 +841,10 @@ class BrcController extends Controller
             }
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->warning(
-                'brc-005b: Failed to delete OIO: ' . $e->getMessage()
+                'brc-005b: Failed to delete OIO: '.$e->getMessage()
             );
-        }
-    }
+        }//end try
+    }//end deleteOioByBesluitAndIo()
 
     /**
      * Delete a besluit with cascade to BIOs and OIOs (brc-009).
@@ -901,11 +901,10 @@ class BrcController extends Controller
                 $this->request,
                 self::ZGW_API,
                 'besluiten'
-            ) . '/' . $uuid;
+            ).'/'.$uuid;
 
             // Cascade delete of BesluitInformatieObjecten is handled by
             // OpenRegister via onDelete: CASCADE on decisionDocument.decision.
-
             // Brc-009: Sync-delete OIOs in DRC (cross-component side-effect).
             $this->deleteOiosForBesluit(besluitUrl: $besluitUrl);
 
@@ -916,20 +915,20 @@ class BrcController extends Controller
             $this->zgwService->publishNotification(
                 self::ZGW_API,
                 $resource,
-                $baseUrl . '/' . $uuid,
+                $baseUrl.'/'.$uuid,
                 'destroy'
             );
 
             return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->error(
-                'BRC delete besluit error: ' . $e->getMessage(),
+                'BRC delete besluit error: '.$e->getMessage(),
                 ['exception' => $e]
             );
             return new JSONResponse(
                 data: ['detail' => 'Not found'],
                 statusCode: Http::STATUS_NOT_FOUND
             );
-        }
-    }
-}
+        }//end try
+    }//end destroyBesluit()
+}//end class

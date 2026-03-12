@@ -38,7 +38,7 @@ class AdminSettings implements ISettings
     public function getForm(): TemplateResponse
     {
         return new TemplateResponse(Application::APP_ID, 'settings/admin');
-    }
+    }//end getForm()
 
     /**
      * Get the section ID this settings page belongs to.
@@ -48,7 +48,7 @@ class AdminSettings implements ISettings
     public function getSection(): string
     {
         return 'procest';
-    }
+    }//end getSection()
 
     /**
      * Get the priority for ordering within the section.
@@ -58,5 +58,5 @@ class AdminSettings implements ISettings
     public function getPriority(): int
     {
         return 10;
-    }
-}
+    }//end getPriority()
+}//end class

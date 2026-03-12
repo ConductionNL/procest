@@ -108,8 +108,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
 
         // Brc-007: Validate zaak-besluittype relation.
         $zaakUrl = $body['zaak'] ?? null;
-        if (
-            $zaakUrl !== null && $zaakUrl !== '' && empty($besluitTypeUrl) === false
+        if ($zaakUrl !== null && $zaakUrl !== '' && empty($besluitTypeUrl) === false
             && $this->objectService !== null
         ) {
             $relError = $this->validateZaakBesluittypeRelation(
@@ -127,7 +126,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         return $this->ok(body: $body);
-    }
+    }//end rulesBesluitenCreate()
 
     /**
      * Rules for updating a besluit (PUT /besluiten/v1/besluiten/{uuid}).
@@ -141,7 +140,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
      */
-    public function rulesBesluitenUpdate(array $body, ?array $existingObject = null): array
+    public function rulesBesluitenUpdate(array $body, ?array $existingObject=null): array
     {
         $result = $this->ok(body: $body);
 
@@ -168,7 +167,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         );
 
         return $result;
-    }
+    }//end rulesBesluitenUpdate()
 
     /**
      * Rules for patching a besluit (PATCH /besluiten/v1/besluiten/{uuid}).
@@ -180,7 +179,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
      *
      * @see rulesBesluitenUpdate() Same immutability rules apply.
      */
-    public function rulesBesluitenPatch(array $body, ?array $existingObject = null): array
+    public function rulesBesluitenPatch(array $body, ?array $existingObject=null): array
     {
         $result = $this->ok(body: $body);
 
@@ -196,7 +195,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
             result: $result,
             existingObject: $existingObject
         );
-    }
+    }//end rulesBesluitenPatch()
 
     /**
      * Rules for creating a BesluitInformatieObject.
@@ -236,7 +235,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         $body['aardRelatieWeergave'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
 
         return $this->ok(body: $body);
-    }
+    }//end rulesBesluitinformatieobjectenCreate()
 
     /**
      * Check that besluittype is not changed on update/patch (brc-001).
@@ -258,8 +257,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
 
         if ($newBesluittype !== null && $existBesluittype !== '') {
             $newUuid = $this->extractUuid(value: $newBesluittype);
-            if (
-                $newUuid !== null && $newUuid !== $existBesluittype
+            if ($newUuid !== null && $newUuid !== $existBesluittype
                 && $this->extractUuid(value: $existBesluittype) !== $newUuid
             ) {
                 return $this->fieldImmutableError(fieldName: 'besluittype');
@@ -267,7 +265,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         return $result;
-    }
+    }//end checkBesluitTypeImmutability()
 
     /**
      * Check besluit field immutability (brc-002).
@@ -310,7 +308,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         return $result;
-    }
+    }//end checkBesluitFieldImmutability()
 
     /**
      * Preserve immutable besluit fields from existing object when omitted in PUT body.
@@ -339,8 +337,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
             }
         }
 
-        if (
-            isset($body['verantwoordelijkeOrganisatie']) === false
+        if (isset($body['verantwoordelijkeOrganisatie']) === false
             || $body['verantwoordelijkeOrganisatie'] === ''
         ) {
             $orgKey      = 'responsibleOrganisation';
@@ -354,7 +351,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         $result['enrichedBody'] = $body;
 
         return $result;
-    }
+    }//end preserveImmutableBesluitFields()
 
     /**
      * Check that besluit identificatie + verantwoordelijkeOrganisatie is unique (brc-002).
@@ -408,12 +405,12 @@ class ZgwBrcRulesService extends ZgwRulesBase
             }
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'brc-002: Could not check besluit identificatie uniqueness: ' . $e->getMessage()
+                'brc-002: Could not check besluit identificatie uniqueness: '.$e->getMessage()
             );
-        }
+        }//end try
 
         return null;
-    }
+    }//end checkBesluitIdentificatieUnique()
 
     /**
      * Validate zaak-besluittype relation (brc-007).
@@ -494,15 +491,14 @@ class ZgwBrcRulesService extends ZgwRulesBase
                     $dtStr = (string) $dt;
                     // Match by omschrijving or UUID.
                     $dtUuid = $this->extractUuid(value: $dtStr);
-                    if (
-                        ($dtUuid !== null && $dtUuid === $btUuid)
+                    if (($dtUuid !== null && $dtUuid === $btUuid)
                         || ($btOmschrijving !== '' && $dtStr === $btOmschrijving)
                     ) {
                         return null;
                     }
                 }
             }
-        }
+        }//end if
 
         $detail = 'Het zaaktype van de zaak is niet gerelateerd aan het besluittype.';
 
@@ -517,7 +513,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
                 ),
             ]
         );
-    }
+    }//end validateZaakBesluittypeRelation()
 
     /**
      * Validate informatieobjecttype is in besluittype.informatieobjecttypen (brc-008).
@@ -640,5 +636,5 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         return null;
-    }
-}
+    }//end validateBioInformatieobjecttype()
+}//end class

@@ -52,7 +52,7 @@ class ZgwMappingController extends Controller
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
     /**
      * List all ZGW mapping configurations.
@@ -63,11 +63,11 @@ class ZgwMappingController extends Controller
     {
         return new JSONResponse(
             [
-                    'success'  => true,
-                    'mappings' => $this->zgwMappingService->listMappings(),
-                ]
+                'success'  => true,
+                'mappings' => $this->zgwMappingService->listMappings(),
+            ]
         );
-    }
+    }//end index()
 
     /**
      * Get a single ZGW mapping configuration.
@@ -83,19 +83,19 @@ class ZgwMappingController extends Controller
         if ($mapping === null) {
             return new JSONResponse(
                 [
-                        'success' => false,
-                        'message' => "No mapping configured for {$resourceKey}",
-                    ]
+                    'success' => false,
+                    'message' => "No mapping configured for {$resourceKey}",
+                ]
             );
         }
 
         return new JSONResponse(
             [
-                    'success' => true,
-                    'mapping' => $mapping,
-                ]
+                'success' => true,
+                'mapping' => $mapping,
+            ]
         );
-    }
+    }//end show()
 
     /**
      * Save a ZGW mapping configuration.
@@ -115,11 +115,11 @@ class ZgwMappingController extends Controller
 
         return new JSONResponse(
             [
-                    'success' => true,
-                    'mapping' => $this->zgwMappingService->getMapping($resourceKey),
-                ]
+                'success' => true,
+                'mapping' => $this->zgwMappingService->getMapping($resourceKey),
+            ]
         );
-    }
+    }//end update()
 
     /**
      * Delete a ZGW mapping configuration.
@@ -134,10 +134,10 @@ class ZgwMappingController extends Controller
 
         return new JSONResponse(
             [
-                    'success' => true,
-                ]
+                'success' => true,
+            ]
         );
-    }
+    }//end destroy()
 
     /**
      * Reset a single mapping to its default configuration.
@@ -152,9 +152,9 @@ class ZgwMappingController extends Controller
         if ($registerId === '') {
             return new JSONResponse(
                 [
-                        'success' => false,
-                        'message' => 'No Procest register configured',
-                    ]
+                    'success' => false,
+                    'message' => 'No Procest register configured',
+                ]
             );
         }
 
@@ -169,9 +169,9 @@ class ZgwMappingController extends Controller
 
         return new JSONResponse(
             [
-                    'success' => true,
-                    'mapping' => $this->zgwMappingService->getMapping($resourceKey),
-                ]
+                'success' => true,
+                'mapping' => $this->zgwMappingService->getMapping($resourceKey),
+            ]
         );
-    }
-}
+    }//end reset()
+}//end class

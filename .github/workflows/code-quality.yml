@@ -18,5 +18,6 @@ jobs:
       enable-phpmetrics: false
       enable-frontend: true
       enable-eslint: true
+      enable-phpunit: true
       enable-newman: true
       newman-collection-path: "data"

@@ -12,8 +12,11 @@ jobs:
     with:
       app-name: procest
       php-version: "8.3"
+      nextcloud-ref: stable32
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false
       enable-frontend: true
       enable-eslint: true
+      enable-newman: true
+      newman-collection-path: "data"

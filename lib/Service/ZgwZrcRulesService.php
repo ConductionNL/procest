@@ -508,9 +508,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if ($typeData === null) {
             $detail = "Het {$fieldName} hoort niet bij het zaaktype van de zaak.";
             return $this->error(
-                statusCode: 400,
+                status: 400,
                 detail: $detail,
-                invalidParams: [$this->fieldError(field: 'nonFieldErrors', code: 'zaaktype-mismatch', reason: $detail)]
+                invalidParams: [$this->fieldError(fieldName: 'nonFieldErrors', code: 'zaaktype-mismatch', reason: $detail)]
             );
         }
 
@@ -520,9 +520,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if ($typeCaseTypeUuid !== $zaaktypeUuid) {
             $detail = "Het {$fieldName} hoort niet bij het zaaktype van de zaak.";
             return $this->error(
-                statusCode: 400,
+                status: 400,
                 detail: $detail,
-                invalidParams: [$this->fieldError(field: 'nonFieldErrors', code: 'zaaktype-mismatch', reason: $detail)]
+                invalidParams: [$this->fieldError(fieldName: 'nonFieldErrors', code: 'zaaktype-mismatch', reason: $detail)]
             );
         }
 
@@ -605,7 +605,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if ($found === false) {
             $detail = 'Het informatieobjecttype van het informatieobject hoort niet bij het zaaktype van de zaak.';
             return $this->error(
-                statusCode: 400,
+                status: 400,
                 detail: $detail,
                 invalidParams: [$this->fieldError(
                     field: 'nonFieldErrors',
@@ -661,7 +661,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if ($commKanaal !== null && $commKanaal !== '') {
             if (filter_var($commKanaal, FILTER_VALIDATE_URL) === false) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'De communicatiekanaal URL is ongeldig.',
                     invalidParams: [
                         $this->fieldError(
@@ -688,7 +688,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 }
 
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'De communicatiekanaal URL is ongeldig.',
                     invalidParams: [
                         $this->fieldError(
@@ -708,7 +708,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 $relUrl = $relZaak['url'] ?? '';
                 if ($relUrl !== '' && $this->isValidUrl(url: $relUrl) === false) {
                     return $this->error(
-                        statusCode: 400,
+                        status: 400,
                         detail: 'relevanteAndereZaken bevat een ongeldige URL.',
                         invalidParams: [$this->fieldError(
                             field: "relevanteAndereZaken.{$idx}.url",
@@ -743,7 +743,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
             if (empty($errors) === false) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'Opschorting vereist indicatie en reden.',
                     invalidParams: $errors
                 );
@@ -772,7 +772,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
             if (empty($errors) === false) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'Verlenging vereist reden en duur.',
                     invalidParams: $errors
                 );
@@ -784,10 +784,10 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if ($hoofdzaak !== null && $hoofdzaak !== '') {
             if ($this->isValidUrl(url: $hoofdzaak) === false) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'De hoofdzaak URL is ongeldig.',
                     invalidParams: [
-                        $this->fieldError(field: 'hoofdzaak', code: 'bad-url', reason: 'De URL is ongeldig.'),
+                        $this->fieldError(fieldName: 'hoofdzaak', code: 'bad-url', reason: 'De URL is ongeldig.'),
                     ]
                 );
             }
@@ -798,7 +798,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 $hoofdzaakUuid = $this->extractUuid(url: $hoofdzaak);
                 if ($selfUuid !== null && $hoofdzaakUuid !== null && $selfUuid === $hoofdzaakUuid) {
                     return $this->error(
-                        statusCode: 400,
+                        status: 400,
                         detail: 'Een zaak kan niet zijn eigen hoofdzaak zijn.',
                         invalidParams: [$this->fieldError(
                             field: 'hoofdzaak',
@@ -834,7 +834,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             // On create: reject (cannot set date with nvt).
             if ($existingObject === null) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
                     invalidParams: [$this->fieldError(
                         field: 'laatsteBetaaldatum',
@@ -863,7 +863,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if ($archiefstatus !== null && $archiefstatus !== 'nog_te_archiveren') {
             if (empty($body['archiefnominatie'] ?? null) === true) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'archiefnominatie is vereist als archiefstatus niet "nog_te_archiveren" is.',
                     invalidParams: [$this->fieldError(
                         field: 'archiefnominatie',
@@ -876,7 +876,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
             if (empty($body['archiefactiedatum'] ?? null) === true) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'archiefactiedatum is vereist als archiefstatus niet "nog_te_archiveren" is.',
                     invalidParams: [$this->fieldError(
                         field: 'archiefactiedatum',
@@ -918,7 +918,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $hoofdzaakData = $this->findBySchemaKey(uuid: $hoofdzaakUuid, schemaKey: 'case_schema');
         if ($hoofdzaakData === null) {
             return $this->error(
-                statusCode: 400,
+                status: 400,
                 detail: 'De hoofdzaak is ongeldig.',
                 invalidParams: [$this->fieldError(
                     field: 'hoofdzaak',
@@ -933,7 +933,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $parentHoofdzaak = $hoofdzaakData['parentCase'] ?? ($hoofdzaakData['mainCase'] ?? ($hoofdzaakData['hoofdzaak'] ?? null));
         if ($parentHoofdzaak !== null && $parentHoofdzaak !== '') {
             return $this->error(
-                statusCode: 400,
+                status: 400,
                 detail: 'Een deelzaak van een deelzaak is niet toegestaan.',
                 invalidParams: [$this->fieldError(
                     field: 'hoofdzaak',
@@ -1000,7 +1000,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         foreach ($requestProducts as $product) {
             if (filter_var($product, FILTER_VALIDATE_URL) === false) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'productenOfDiensten bevat een ongeldige URL.',
                     invalidParams: [$this->fieldError(
                         field: 'productenOfDiensten',
@@ -1015,7 +1015,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         foreach ($requestProducts as $product) {
             if (in_array($product, $allowedProducts, true) === false) {
                 return $this->error(
-                    statusCode: 400,
+                    status: 400,
                     detail: 'productenOfDiensten bevat een waarde die niet in het zaaktype voorkomt.',
                     invalidParams: [$this->fieldError(
                         field: 'productenOfDiensten',

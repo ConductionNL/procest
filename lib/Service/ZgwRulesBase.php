@@ -235,7 +235,7 @@ abstract class ZgwRulesBase
      */
     protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array
     {
-        $extractedUuid = $this->extractUuid(value: $typeUrl);
+        $extractedUuid = $this->extractUuid(url: $typeUrl);
         if ($extractedUuid === null) {
             return $this->error(
                 status: 400,
@@ -324,7 +324,7 @@ abstract class ZgwRulesBase
             );
         }
 
-        $ioUuid = $this->extractUuid(value: $ioUrl);
+        $ioUuid = $this->extractUuid(url: $ioUrl);
 
         // Brc-003a: If UUID extraction fails, the URL doesn't point to a valid resource.
         if ($ioUuid === null) {

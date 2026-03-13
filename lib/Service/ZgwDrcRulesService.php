@@ -408,7 +408,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         }
 
         // Drc-002a/b: Check URL contains a UUID.
-        $objectUuid = $this->extractUuid(value: $objectUrl);
+        $objectUuid = $this->extractUuid(url: $objectUrl);
         if ($objectUuid === null) {
             return $this->error(
                 status: 400,
@@ -466,8 +466,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      */
     private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array
     {
-        $ioUuid     = $this->extractUuid(value: $ioUrl) ?? '';
-        $objectUuid = $this->extractUuid(value: $objectUrl) ?? '';
+        $ioUuid     = $this->extractUuid(url: $ioUrl) ?? '';
+        $objectUuid = $this->extractUuid(url: $objectUrl) ?? '';
 
         if ($ioUuid === '' || $objectUuid === '') {
             return null;
@@ -566,8 +566,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
             ]
         );
 
-        $ioUuid     = $this->extractUuid(value: $ioUrl);
-        $objectUuid = $this->extractUuid(value: $objectUrl);
+        $ioUuid     = $this->extractUuid(url: $ioUrl);
+        $objectUuid = $this->extractUuid(url: $objectUrl);
 
         // Check OIO schema for existing duplicates.
         if ($oioSchema !== '') {
@@ -751,7 +751,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      */
     private function deriveVertrouwelijkheidaanduiding(array $body, string $iotUrl): array
     {
-        $uuid = $this->extractUuid(value: $iotUrl);
+        $uuid = $this->extractUuid(url: $iotUrl);
         if ($uuid === null) {
             return $body;
         }

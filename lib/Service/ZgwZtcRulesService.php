@@ -168,7 +168,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: $detail,
                     invalidParams: [
-                        $this->fieldError(name: 'nonFieldErrors', code: 'non-concept-zaaktype', reason: $detail),
+                        $this->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-zaaktype', reason: $detail),
                     ]
                 );
             }
@@ -538,7 +538,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: $detail,
                 invalidParams: [
-                    $this->fieldError(name: 'nonFieldErrors', code: 'non-concept-object', reason: $detail),
+                    $this->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-object', reason: $detail),
                 ]
             );
         }//end if
@@ -730,7 +730,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: $detail,
                 invalidParams: [
-                    $this->fieldError(name: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
+                    $this->fieldError(fieldName: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
                 ]
             );
         }

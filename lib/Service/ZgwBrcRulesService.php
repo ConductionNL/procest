@@ -256,9 +256,9 @@ class ZgwBrcRulesService extends ZgwRulesBase
         $existBesluittype = $existingObject['decisionType'] ?? '';
 
         if ($newBesluittype !== null && $existBesluittype !== '') {
-            $newUuid = $this->extractUuid(value: $newBesluittype);
+            $newUuid = $this->extractUuid(url: $newBesluittype);
             if ($newUuid !== null && $newUuid !== $existBesluittype
-                && $this->extractUuid(value: $existBesluittype) !== $newUuid
+                && $this->extractUuid(url: $existBesluittype) !== $newUuid
             ) {
                 return $this->fieldImmutableError(fieldName: 'besluittype');
             }
@@ -432,7 +432,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Look up the zaak to get its zaaktype.
-        $zaakUuid = $this->extractUuid(value: $zaakUrl);
+        $zaakUuid = $this->extractUuid(url: $zaakUrl);
         if ($zaakUuid === null) {
             return null;
         }
@@ -448,7 +448,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Look up the besluittype to check its zaaktypen/caseTypes.
-        $btUuid = $this->extractUuid(value: $besluitTypeUrl);
+        $btUuid = $this->extractUuid(url: $besluitTypeUrl);
         if ($btUuid === null) {
             return null;
         }
@@ -458,7 +458,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
             return null;
         }
 
-        $zaakCaseTypeUuid = $this->extractUuid(value: $zaakCaseType);
+        $zaakCaseTypeUuid = $this->extractUuid(url: $zaakCaseType);
 
         // Check direction 1: BT.caseTypes contains the zaaktype UUID.
         $caseTypes = $btData['caseTypes'] ?? [];
@@ -471,7 +471,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         foreach ($caseTypes as $ct) {
-            $ctUuid = $this->extractUuid(value: (string) $ct);
+            $ctUuid = $this->extractUuid(url: (string) $ct);
             if ($ctUuid !== null && $ctUuid === $zaakCaseTypeUuid) {
                 return null;
             }
@@ -490,7 +490,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
                 foreach ($decisionTypes as $dt) {
                     $dtStr = (string) $dt;
                     // Match by omschrijving or UUID.
-                    $dtUuid = $this->extractUuid(value: $dtStr);
+                    $dtUuid = $this->extractUuid(url: $dtStr);
                     if (($dtUuid !== null && $dtUuid === $btUuid)
                         || ($btOmschrijving !== '' && $dtStr === $btOmschrijving)
                     ) {
@@ -533,7 +533,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Get the besluit to find its besluittype.
-        $besluitUuid = $this->extractUuid(value: $besluitUrl);
+        $besluitUuid = $this->extractUuid(url: $besluitUrl);
         if ($besluitUuid === null) {
             return null;
         }
@@ -549,7 +549,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Get the besluittype.
-        $btUuid = $this->extractUuid(value: $decisionTypeId);
+        $btUuid = $this->extractUuid(url: $decisionTypeId);
         if ($btUuid === null) {
             return null;
         }
@@ -582,7 +582,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Get the informatieobject to find its informatieobjecttype.
-        $ioUuid = $this->extractUuid(value: $ioUrl);
+        $ioUuid = $this->extractUuid(url: $ioUrl);
         if ($ioUuid === null) {
             return null;
         }
@@ -598,7 +598,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         }
 
         // Look up the documentType to get its name.
-        $docTypeUuid = $this->extractUuid(value: $docTypeId);
+        $docTypeUuid = $this->extractUuid(url: $docTypeId);
         if ($docTypeUuid === null) {
             return null;
         }

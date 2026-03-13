@@ -1,0 +1,1521 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Procest Case Management Register",
+    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, and their instance counterparts.",
+    "version": "0.4.0"
+  },
+  "x-openregister": {
+    "type": "application",
+    "app": "procest",
+    "openregister": "^v0.2.10",
+    "description": "Case management (zaakgericht werken) for Nextcloud"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "caseType": {
+        "slug": "caseType",
+        "icon": "BriefcaseVariantOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Project",
+        "x-zgw-equivalent": "ZaakType",
+        "title": "Case Type",
+        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this case type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of this case type"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Auto-generated identifier"
+          },
+          "catalogus": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent catalogus"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "The purpose or goal of this case type"
+          },
+          "trigger": {
+            "type": "string",
+            "description": "What triggers the creation of a case of this type"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject matter of this case type"
+          },
+          "processingDeadline": {
+            "type": "string",
+            "description": "ISO 8601 duration for the processing deadline (e.g. P30D)"
+          },
+          "confidentiality": {
+            "type": "string",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
+            "description": "Confidentiality level"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this case type is a draft (not yet published)"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Date from which this case type is valid"
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date",
+            "description": "Date until which this case type is valid (null = indefinite)"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Initiator action (e.g. indienen, aanvragen)"
+          },
+          "suspensionAllowed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether cases of this type can be suspended"
+          },
+          "extensionAllowed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the processing deadline can be extended"
+          },
+          "extensionPeriod": {
+            "type": "string",
+            "description": "ISO 8601 duration for extension period (e.g. P14D)"
+          },
+          "publicationRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether publication of the decision is required"
+          },
+          "internalOrExternal": {
+            "type": "string",
+            "enum": [
+              "intern",
+              "extern"
+            ],
+            "description": "Whether the case type is internal or external"
+          },
+          "handlerAction": {
+            "type": "string",
+            "description": "Action performed by the handler"
+          },
+          "productsOrServices": {
+            "type": "string",
+            "description": "URLs to products or services (JSON-encoded array)"
+          },
+          "selectionListProcessType": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the selection list process type"
+          },
+          "referenceProcess": {
+            "type": "string",
+            "description": "Reference process definition (JSON-encoded object)"
+          },
+          "responsible": {
+            "type": "string",
+            "description": "Responsible person or department"
+          },
+          "relatedCaseTypes": {
+            "type": "string",
+            "description": "Related case types (JSON-encoded array)"
+          },
+          "subCaseTypes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "References to sub-case types (deelzaaktypen)"
+          },
+          "decisionTypes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "References to decision types (besluittypen) linked to this case type"
+          }
+        }
+      },
+      "statusType": {
+        "slug": "statusType",
+        "icon": "ListStatus",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:ActionStatusType",
+        "x-zgw-equivalent": "StatusType",
+        "title": "Status Type",
+        "description": "Status lifecycle phase definition for a case type",
+        "type": "object",
+        "required": [
+          "name",
+          "caseType",
+          "order"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this status (e.g. Ontvangen, In behandeling)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this status phase"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "order": {
+            "type": "integer",
+            "default": 0,
+            "description": "Position in the status lifecycle (lower = earlier)"
+          },
+          "isFinal": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is a terminal/final status"
+          }
+        }
+      },
+      "resultType": {
+        "slug": "resultType",
+        "icon": "FlagOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Thing",
+        "x-zgw-equivalent": "ResultaatType",
+        "title": "Result Type",
+        "description": "Case outcome type with archival rules",
+        "type": "object",
+        "required": [
+          "name",
+          "caseType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this result type (e.g. Vergunning verleend)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description/toelichting of this result type"
+          },
+          "genericDescription": {
+            "type": "string",
+            "description": "Generic description derived from selectielijst resultaattypeomschrijving"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "archivalPeriod": {
+            "type": "string",
+            "description": "ISO 8601 duration for archival retention"
+          },
+          "archivalAction": {
+            "type": "string",
+            "enum": [
+              "bewaren",
+              "vernietigen",
+              "blijvend_bewaren"
+            ],
+            "description": "What to do after archival period: keep or destroy"
+          },
+          "sourceDateArchiveProcedure": {
+            "type": "string",
+            "description": "BrondatumArchiefprocedure configuration (JSON-encoded object with afleidingswijze, procestermijn, datumkenmerk, etc.)"
+          },
+          "selectionListClass": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the selectielijstklasse"
+          }
+        }
+      },
+      "roleType": {
+        "slug": "roleType",
+        "icon": "BadgeAccountOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Role",
+        "x-zgw-equivalent": "RolType",
+        "title": "Role Type",
+        "description": "Participant role type definition for a case type",
+        "type": "object",
+        "required": [
+          "name",
+          "caseType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this role type (e.g. Behandelaar, Adviseur)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this role type"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          }
+        }
+      },
+      "propertyDefinition": {
+        "slug": "propertyDefinition",
+        "icon": "FormatListBulletedType",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:PropertyValueSpecification",
+        "x-zgw-equivalent": "Eigenschap",
+        "title": "Property Definition",
+        "description": "Custom field definition for a case type",
+        "type": "object",
+        "required": [
+          "name",
+          "caseType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this custom property"
+          },
+          "definition": {
+            "type": "string",
+            "description": "Short definition of this property"
+          },
+          "description": {
+            "type": "string",
+            "description": "Longer explanation of this property"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "propertyType": {
+            "type": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "date",
+              "url",
+              "email"
+            ],
+            "description": "Data type of this property"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this property is required on cases"
+          },
+          "defaultValue": {
+            "type": "string",
+            "description": "Default value for this property"
+          }
+        }
+      },
+      "documentType": {
+        "slug": "documentType",
+        "icon": "FileDocumentMultipleOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "x-zgw-equivalent": "InformatieObjectType",
+        "title": "Document Type",
+        "description": "Document type requirement for a case type",
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this document type (e.g. Situatietekening)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this document type"
+          },
+          "catalogus": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent catalogus"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this document type is a draft (concept)"
+          },
+          "confidentiality": {
+            "type": "string",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
+            "description": "Confidentiality level"
+          },
+          "category": {
+            "type": "string",
+            "description": "Document type category"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this document is required for the case"
+          },
+          "allowedMimeTypes": {
+            "type": "string",
+            "description": "Allowed MIME types (JSON-encoded array)"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Date from which this document type is valid"
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date",
+            "description": "Date until which this document type is valid"
+          }
+        }
+      },
+      "decisionType": {
+        "slug": "decisionType",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:ChooseAction",
+        "x-zgw-equivalent": "BesluitType",
+        "title": "Decision Type",
+        "description": "Decision type definition for a case type",
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this decision type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this decision type"
+          },
+          "catalogus": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent catalogus"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this decision type is a draft (concept)"
+          },
+          "publicationRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this decision type requires publication"
+          },
+          "caseTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "References to case types (array of zaaktype URLs)"
+          },
+          "documentTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "References to document types (array of informatieobjecttype URLs)"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Date from which this decision type is valid"
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date",
+            "description": "Date until which this decision type is valid"
+          }
+        }
+      },
+      "case": {
+        "slug": "case",
+        "icon": "BriefcaseOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Project",
+        "x-zgw-equivalent": "Zaak",
+        "title": "Case",
+        "description": "A case instance in the case management system",
+        "type": "object",
+        "required": [
+          "title",
+          "caseType"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Title of this case"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of this case",
+            "visible": false
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Auto-generated case identifier (e.g. 2026-0042)"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type",
+            "title": "Case type",
+            "facetable": true
+          },
+          "status": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the current status type",
+            "title": "Status",
+            "facetable": true
+          },
+          "result": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the result record (set on completion)",
+            "visible": false
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the case was started",
+            "visible": false
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the case was completed",
+            "visible": false
+          },
+          "plannedEndDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Planned end date",
+            "visible": false
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Processing deadline"
+          },
+          "confidentiality": {
+            "type": "string",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
+            "description": "Confidentiality level",
+            "title": "Confidentiality",
+            "facetable": true
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Nextcloud user ID of the primary handler",
+            "title": "Assignee",
+            "facetable": true
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
+            "default": "normal",
+            "description": "Case priority",
+            "title": "Priority",
+            "facetable": true
+          },
+          "parentCase": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to parent case (for sub-cases)",
+            "visible": false
+          },
+          "relatedCases": {
+            "type": "string",
+            "description": "References to related cases (JSON-encoded array)",
+            "visible": false
+          },
+          "geometry": {
+            "type": "string",
+            "description": "GeoJSON geometry for location-based cases (JSON-encoded object)",
+            "visible": false
+          },
+          "statusHistory": {
+            "type": "string",
+            "description": "History of status changes (JSON-encoded array)",
+            "visible": false
+          },
+          "activity": {
+            "type": "string",
+            "description": "Activity log entries (JSON-encoded array)",
+            "visible": false
+          },
+          "extensionCount": {
+            "type": "integer",
+            "default": 0,
+            "description": "Number of deadline extensions applied",
+            "visible": false
+          },
+          "sourceOrganisation": {
+            "type": "string",
+            "maxLength": 9,
+            "description": "RSIN of the organization that created this case",
+            "visible": false
+          },
+          "archiveNomination": {
+            "type": "string",
+            "enum": [
+              "blijvend_bewaren",
+              "vernietigen"
+            ],
+            "description": "Whether the case should be permanently archived or destroyed",
+            "visible": false
+          },
+          "archiveActionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the archive action should be executed",
+            "visible": false
+          },
+          "archiveStatus": {
+            "type": "string",
+            "enum": [
+              "nog_te_archiveren",
+              "gearchiveerd",
+              "gearchiveerd_procestermijn_onbekend",
+              "overgedragen"
+            ],
+            "description": "Current archive status of the case",
+            "visible": false
+          },
+          "paymentIndication": {
+            "type": "string",
+            "enum": [
+              "nvt",
+              "nog_niet",
+              "gedeeltelijk",
+              "geheel"
+            ],
+            "description": "Payment status indicator",
+            "visible": false
+          },
+          "lastPaymentDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of the last payment",
+            "visible": false
+          },
+          "communicationChannel": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL reference to the communication channel",
+            "visible": false
+          }
+        }
+      },
+      "task": {
+        "slug": "task",
+        "icon": "CheckboxMarkedOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "x-zgw-equivalent": "Taak",
+        "title": "Task",
+        "description": "A task within a case",
+        "type": "object",
+        "required": [
+          "title",
+          "case"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Title of this task"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of this task",
+            "visible": false
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "active",
+              "completed",
+              "terminated",
+              "disabled"
+            ],
+            "default": "available",
+            "description": "Task status (CMMN HumanTask lifecycle)",
+            "title": "Status",
+            "facetable": true
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the parent case"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Nextcloud user ID of the assigned user",
+            "title": "Assignee",
+            "facetable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due date for this task"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
+            "default": "normal",
+            "description": "Task priority",
+            "title": "Priority",
+            "facetable": true
+          },
+          "completedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date the task was completed",
+            "visible": false
+          }
+        }
+      },
+      "role": {
+        "slug": "role",
+        "icon": "AccountHardHat",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Role",
+        "x-zgw-equivalent": "Rol",
+        "title": "Role",
+        "description": "A role assignment on a case",
+        "type": "object",
+        "required": [
+          "name",
+          "roleType",
+          "case",
+          "participant"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name for this role assignment"
+          },
+          "roleType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the role type"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "participant": {
+            "type": "string",
+            "description": "Nextcloud user ID or contact reference"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this role assignment"
+          }
+        }
+      },
+      "result": {
+        "slug": "result",
+        "icon": "FlagCheckered",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Thing",
+        "x-zgw-equivalent": "Resultaat",
+        "title": "Result",
+        "description": "A case outcome record",
+        "type": "object",
+        "required": [
+          "case",
+          "resultType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this result"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "resultType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the result type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this result"
+          }
+        }
+      },
+      "statusRecord": {
+        "slug": "statusRecord",
+        "icon": "ProgressClock",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "x-zgw-equivalent": "Status",
+        "title": "Status Record",
+        "description": "A status transition record for a case",
+        "type": "object",
+        "required": [
+          "case",
+          "statusType"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "statusType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the status type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Status transition description"
+          }
+        }
+      },
+      "decision": {
+        "slug": "decision",
+        "icon": "Gavel",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:ChooseAction",
+        "x-zgw-equivalent": "Besluit",
+        "title": "Decision",
+        "description": "A formal decision on a case",
+        "type": "object",
+        "required": [],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Title of this decision"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of this decision"
+          },
+          "decisionType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the decision type"
+          },
+          "responsibleOrganisation": {
+            "type": "string",
+            "description": "RSIN of the responsible organisation"
+          },
+          "decisionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision was made"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision takes effect"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision expires"
+          },
+          "publicationDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Publication date"
+          },
+          "deliveryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Delivery date"
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Explanation of the decision"
+          },
+          "governingBody": {
+            "type": "string",
+            "description": "The governing body that made the decision (bestuursorgaan)"
+          }
+        }
+      },
+      "document": {
+        "slug": "document",
+        "icon": "FileDocumentOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "x-zgw-equivalent": "EnkelvoudigInformatieObject",
+        "title": "Document",
+        "description": "A document (enkelvoudig informatieobject) in the document registry",
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "Auto-generated document identifier"
+          },
+          "sourceOrganisation": {
+            "type": "string",
+            "description": "RSIN of the source organisation"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the document was created"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Title of this document"
+          },
+          "confidentiality": {
+            "type": "string",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
+            "description": "Confidentiality level"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the document"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "in_bewerking",
+              "ter_vaststelling",
+              "definitief",
+              "gearchiveerd"
+            ],
+            "description": "Document status"
+          },
+          "format": {
+            "type": "string",
+            "description": "MIME type of the document (e.g. application/pdf)"
+          },
+          "language": {
+            "type": "string",
+            "default": "nld",
+            "description": "Language of the document (ISO 639-2/B)"
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Original file name"
+          },
+          "fileSize": {
+            "type": "integer",
+            "description": "File size in bytes"
+          },
+          "content": {
+            "type": "string",
+            "description": "Base64-encoded file content or file reference"
+          },
+          "link": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the document"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the document"
+          },
+          "documentType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the document type"
+          },
+          "locked": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the document is locked for editing"
+          },
+          "lockId": {
+            "type": "string",
+            "description": "Identifier of the current lock"
+          },
+          "fileParts": {
+            "type": "string",
+            "description": "References to file parts for chunked uploads (JSON-encoded array)"
+          },
+          "usageRightsIndication": {
+            "type": "boolean",
+            "nullable": true,
+            "default": null,
+            "description": "Indicates whether usage rights have been set for this document"
+          }
+        }
+      },
+      "documentLink": {
+        "slug": "documentLink",
+        "icon": "LinkVariant",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "x-zgw-equivalent": "ObjectInformatieObject",
+        "title": "Document Link",
+        "description": "A link between a document and a case or decision",
+        "type": "object",
+        "required": [
+          "document",
+          "object",
+          "objectType"
+        ],
+        "properties": {
+          "document": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI reference to the document (EnkelvoudigInformatieObject)"
+          },
+          "object": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI reference to the related object (zaak or besluit)"
+          },
+          "objectType": {
+            "type": "string",
+            "enum": [
+              "zaak",
+              "besluit"
+            ],
+            "description": "Type of the related object"
+          }
+        }
+      },
+      "kanaal": {
+        "slug": "kanaal",
+        "icon": "BellRingOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:BroadcastChannel",
+        "x-zgw-equivalent": "Kanaal",
+        "title": "Notification Channel",
+        "description": "A notification channel (kanaal) for ZGW event distribution",
+        "type": "object",
+        "required": [
+          "naam"
+        ],
+        "properties": {
+          "naam": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Name of this channel (e.g. zaken, documenten)"
+          },
+          "documentatieLink": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to API documentation for this channel"
+          },
+          "filters": {
+            "type": "string",
+            "description": "Available filter attributes for this channel (JSON-encoded array)"
+          }
+        }
+      },
+      "abonnement": {
+        "slug": "abonnement",
+        "icon": "BellPlusOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:SubscribeAction",
+        "x-zgw-equivalent": "Abonnement",
+        "title": "Notification Subscription",
+        "description": "A subscription (abonnement) for receiving ZGW notifications",
+        "type": "object",
+        "required": [
+          "callbackUrl",
+          "auth",
+          "kanalen"
+        ],
+        "properties": {
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to POST notifications to"
+          },
+          "auth": {
+            "type": "string",
+            "description": "Authorization header value for callback requests"
+          },
+          "kanalen": {
+            "type": "string",
+            "description": "Channels and filters to subscribe to (JSON-encoded array)"
+          }
+        }
+      },
+      "catalogus": {
+        "slug": "catalogus",
+        "icon": "BookOpenPageVariant",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DataCatalog",
+        "x-zgw-equivalent": "Catalogus",
+        "title": "Catalogus",
+        "description": "A catalogus groups case types, decision types, and document types",
+        "type": "object",
+        "required": [
+          "domein"
+        ],
+        "properties": {
+          "domein": {
+            "type": "string",
+            "maxLength": 5,
+            "description": "Abbreviated domain name (max 5 characters)"
+          },
+          "rsin": {
+            "type": "string",
+            "maxLength": 9,
+            "description": "RSIN of the responsible organisation"
+          },
+          "contactpersoonBeheerNaam": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Name of the management contact"
+          },
+          "contactpersoonBeheerTelefoonnummer": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Phone number of the management contact"
+          },
+          "contactpersoonBeheerEmailadres": {
+            "type": "string",
+            "maxLength": 254,
+            "description": "Email of the management contact"
+          }
+        }
+      },
+      "zaaktypeInformatieobjecttype": {
+        "slug": "zaaktypeInformatieobjecttype",
+        "icon": "LinkVariant",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Thing",
+        "x-zgw-equivalent": "ZaakTypeInformatieObjectType",
+        "title": "Zaaktype-Informatieobjecttype Relation",
+        "description": "Links a case type to a document type with direction and ordering",
+        "type": "object",
+        "required": [
+          "zaaktype",
+          "informatieobjecttype",
+          "volgnummer",
+          "richting"
+        ],
+        "properties": {
+          "zaaktype": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type"
+          },
+          "informatieobjecttype": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the document type"
+          },
+          "volgnummer": {
+            "type": "integer",
+            "description": "Ordering number"
+          },
+          "richting": {
+            "type": "string",
+            "enum": [
+              "inkomend",
+              "intern",
+              "uitgaand"
+            ],
+            "description": "Direction of the document in the case"
+          },
+          "statustype": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to a status type"
+          }
+        }
+      },
+      "caseProperty": {
+        "slug": "caseProperty",
+        "icon": "TagOutline",
+        "version": "1.0.0",
+        "x-zgw-equivalent": "ZaakEigenschap",
+        "title": "Case Property",
+        "description": "A property value on a specific case",
+        "type": "object",
+        "required": ["case", "propertyDefinition", "value"],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "propertyDefinition": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the property definition (eigenschap)"
+          },
+          "value": {
+            "type": "string",
+            "description": "The property value"
+          }
+        }
+      },
+      "caseDocument": {
+        "slug": "caseDocument",
+        "icon": "LinkVariant",
+        "version": "1.0.0",
+        "x-zgw-equivalent": "ZaakInformatieObject",
+        "title": "Case Document Link",
+        "description": "Links a document to a case",
+        "type": "object",
+        "required": ["case", "document"],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "document": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI reference to the document"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title/description of the relation"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the relation"
+          },
+          "registrationDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Registration date"
+          }
+        }
+      },
+      "caseObject": {
+        "slug": "caseObject",
+        "icon": "CubeOutline",
+        "version": "1.0.0",
+        "x-zgw-equivalent": "ZaakObject",
+        "title": "Case Object",
+        "description": "Links an external object to a case",
+        "type": "object",
+        "required": ["case", "objectType"],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "objectUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the external object"
+          },
+          "objectType": {
+            "type": "string",
+            "description": "Type of the external object"
+          },
+          "objectIdentification": {
+            "type": "string",
+            "description": "JSON identification of the object"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the relation"
+          }
+        }
+      },
+      "customerContact": {
+        "slug": "customerContact",
+        "icon": "AccountVoice",
+        "version": "1.0.0",
+        "x-zgw-equivalent": "KlantContact",
+        "title": "Customer Contact",
+        "description": "A customer contact moment for a case",
+        "type": "object",
+        "required": ["case"],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "contactDateTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date-time of the contact"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Communication channel"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Subject of the contact"
+          },
+          "initiator": {
+            "type": "string",
+            "description": "Who initiated the contact"
+          }
+        }
+      },
+      "decisionDocument": {
+        "slug": "decisionDocument",
+        "icon": "LinkVariant",
+        "version": "1.0.0",
+        "x-zgw-equivalent": "BesluitInformatieObject",
+        "title": "Decision Document Link",
+        "description": "Links a document to a decision",
+        "type": "object",
+        "required": ["decision", "document"],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "onDelete": "CASCADE",
+            "description": "Reference to the decision"
+          },
+          "document": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI reference to the document"
+          }
+        }
+      },
+      "dispatch": {
+        "slug": "dispatch",
+        "icon": "Send",
+        "version": "1.0.0",
+        "x-zgw-equivalent": "Verzending",
+        "title": "Dispatch",
+        "description": "A document dispatch record",
+        "type": "object",
+        "required": ["document", "relationshipType"],
+        "properties": {
+          "document": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI reference to the document"
+          },
+          "involvedParty": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI of the involved party"
+          },
+          "relationshipType": {
+            "type": "string",
+            "description": "Type of relationship (afzender/geadresseerde)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the dispatch"
+          },
+          "receiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date received"
+          },
+          "sendDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date sent"
+          },
+          "contactPerson": {
+            "type": "string",
+            "format": "uri",
+            "description": "Contact person URI"
+          },
+          "contactPersonName": {
+            "type": "string",
+            "description": "Name of the contact person"
+          }
+        }
+      },
+      "usageRights": {
+        "slug": "usageRights",
+        "icon": "ShieldKeyOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "x-zgw-equivalent": "GebruiksRechten",
+        "title": "Usage Rights",
+        "description": "Usage rights (gebruiksrechten) for a document",
+        "type": "object",
+        "required": [
+          "document",
+          "startDate",
+          "conditionsDescription"
+        ],
+        "properties": {
+          "document": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI reference to the document (EnkelvoudigInformatieObject)"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Start date of the usage rights"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "End date of the usage rights"
+          },
+          "conditionsDescription": {
+            "type": "string",
+            "description": "Description of the usage conditions"
+          }
+        }
+      }
+    },
+    "registers": {
+      "procest": {
+        "slug": "procest",
+        "title": "Procest",
+        "version": "1.0.0",
+        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "schemas": [
+          "caseType",
+          "statusType",
+          "resultType",
+          "roleType",
+          "propertyDefinition",
+          "documentType",
+          "decisionType",
+          "case",
+          "task",
+          "role",
+          "result",
+          "statusRecord",
+          "decision",
+          "document",
+          "documentLink",
+          "catalogus",
+          "zaaktypeInformatieobjecttype",
+          "caseProperty",
+          "caseDocument",
+          "caseObject",
+          "customerContact",
+          "decisionDocument",
+          "dispatch",
+          "usageRights",
+          "kanaal",
+          "abonnement"
+        ],
+        "tablePrefix": "",
+        "folder": "Open Registers/Procest"
+      }
+    }
+  }
+}

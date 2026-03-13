@@ -1,192 +1,210 @@
 <template>
-	<div class="case-list">
-		<div class="case-list__header">
-			<h2>{{ t('procest', 'Cases') }}</h2>
-			<NcButton type="primary" @click="createNew">
-				{{ t('procest', 'New case') }}
-			</NcButton>
-		</div>
+	<div>
+		<CaseCreateDialog
+			v-if="showCreateDialog"
+			@created="onCaseCreated"
+			@close="showCreateDialog = false" />
 
-		<div class="case-list__search">
-			<NcTextField
-				:value="searchTerm"
-				:label="t('procest', 'Search')"
-				:show-trailing-button="searchTerm !== ''"
-				@update:value="onSearch"
-				@trailing-button-click="clearSearch" />
-		</div>
+		<CnIndexPage
+			:title="t('procest', 'Cases')"
+			:description="t('procest', 'Manage cases and workflows')"
+			:schema="schema"
+			:objects="objects"
+			:pagination="pagination"
+			:loading="loading"
+			:sort-key="sortKey"
+			:sort-order="sortOrder"
+			:row-class="getRowClass"
+			:selectable="true"
+			:include-columns="visibleColumns"
+			@add="showCreateDialog = true"
+			@refresh="refresh"
+			@sort="onSort"
+			@row-click="openCase"
+			@page-changed="onPageChange">
+			<template #column-identifier="{ value }">
+				<span class="case-id">{{ value || '\u2014' }}</span>
+			</template>
 
-		<NcLoadingIcon v-if="loading" />
+			<template #column-caseType="{ value }">
+				{{ getCaseTypeName(value) }}
+			</template>
 
-		<div v-else-if="cases.length === 0" class="case-list__empty">
-			<p>{{ t('procest', 'No cases found') }}</p>
-		</div>
+			<template #column-status="{ row }">
+				<div @click.stop>
+					<QuickStatusDropdown
+						v-if="getStatusTypesForCaseType(row.caseType).length > 0"
+						:case-obj="row"
+						:status-types="getStatusTypesForCaseType(row.caseType)"
+						@changed="onQuickStatusChanged" />
+					<span v-else class="status-badge">
+						{{ getStatusName(row) }}
+					</span>
+				</div>
+			</template>
 
-		<table v-else class="case-list__table">
-			<thead>
-				<tr>
-					<th>{{ t('procest', 'Title') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
-					<th>{{ t('procest', 'Assignee') }}</th>
-					<th>{{ t('procest', 'Created') }}</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr
-					v-for="caseItem in cases"
-					:key="caseItem.id"
-					class="case-list__row"
-					@click="openCase(caseItem.id)">
-					<td>{{ caseItem.title || '-' }}</td>
-					<td>{{ caseItem.status || '-' }}</td>
-					<td>{{ caseItem.assignee || '-' }}</td>
-					<td>{{ formatDate(caseItem.created) }}</td>
-				</tr>
-			</tbody>
-		</table>
-
-		<div v-if="pagination.pages > 1" class="case-list__pagination">
-			<NcButton
-				:disabled="pagination.page <= 1"
-				@click="loadPage(pagination.page - 1)">
-				{{ t('procest', 'Previous') }}
-			</NcButton>
-			<span>{{ pagination.page }} / {{ pagination.pages }}</span>
-			<NcButton
-				:disabled="pagination.page >= pagination.pages"
-				@click="loadPage(pagination.page + 1)">
-				{{ t('procest', 'Next') }}
-			</NcButton>
-		</div>
+			<template #column-deadline="{ row }">
+				<span :class="getDeadlineClass(row)">
+					{{ getDeadlineText(row) }}
+				</span>
+			</template>
+		</CnIndexPage>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
+import { inject } from 'vue'
+import { CnIndexPage, useListView } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { formatDeadlineCountdown, isCaseOverdue } from '../../utils/caseHelpers.js'
+import CaseCreateDialog from './CaseCreateDialog.vue'
+import QuickStatusDropdown from './components/QuickStatusDropdown.vue'
 
 export default {
 	name: 'CaseList',
 	components: {
-		NcButton,
-		NcLoadingIcon,
-		NcTextField,
+		CnIndexPage,
+		CaseCreateDialog,
+		QuickStatusDropdown,
 	},
+
+	setup() {
+		const sidebarState = inject('sidebarState', null)
+		return useListView('case', {
+			sidebarState,
+			defaultSort: { key: 'deadline', order: 'asc' },
+		})
+	},
+
 	data() {
 		return {
-			searchTerm: '',
-			searchTimeout: null,
+			showCreateDialog: false,
+			caseTypeCache: {},
+			statusTypeCache: {},
 		}
 	},
-	computed: {
-		objectStore() {
-			return useObjectStore()
-		},
-		cases() {
-			return this.objectStore.getCollection('case')
-		},
-		loading() {
-			return this.objectStore.isLoading('case')
-		},
-		pagination() {
-			return this.objectStore.getPagination('case')
-		},
-	},
+
 	mounted() {
-		this.fetchCases()
+		// Load supplementary reference data (composable already handles schema + fetch)
+		this.loadCaseTypes()
+		this.loadStatusTypes()
 	},
+
 	methods: {
-		async fetchCases(params = {}) {
-			await this.objectStore.fetchCollection('case', {
-				_limit: 20,
-				_offset: 0,
-				...params,
-			})
-		},
-		openCase(id) {
-			this.$emit('navigate', 'case-detail', id)
-		},
-		createNew() {
-			this.$emit('navigate', 'case-detail', 'new')
-		},
-		onSearch(value) {
-			this.searchTerm = value
-			clearTimeout(this.searchTimeout)
-			this.searchTimeout = setTimeout(() => {
-				this.fetchCases({ _search: this.searchTerm })
-			}, 300)
-		},
-		clearSearch() {
-			this.searchTerm = ''
-			this.fetchCases()
-		},
-		loadPage(page) {
-			const offset = (page - 1) * this.pagination.limit
-			this.fetchCases({
-				_offset: offset,
-				_search: this.searchTerm || undefined,
-			})
-		},
-		formatDate(dateStr) {
-			if (!dateStr) return '-'
-			try {
-				return new Date(dateStr).toLocaleDateString()
-			} catch {
-				return dateStr
+		async loadCaseTypes() {
+			const objectStore = useObjectStore()
+			const results = await objectStore.fetchCollection('caseType', { _limit: 100 })
+			if (results) {
+				for (const ct of results) {
+					this.$set(this.caseTypeCache, ct.id, ct)
+				}
 			}
+		},
+
+		async loadStatusTypes() {
+			const objectStore = useObjectStore()
+			const results = await objectStore.fetchCollection('statusType', { _limit: 200 })
+			if (results) {
+				for (const st of results) {
+					this.$set(this.statusTypeCache, st.id, st)
+				}
+			}
+		},
+
+		getCaseTypeName(caseTypeId) {
+			if (!caseTypeId) return '\u2014'
+			return this.caseTypeCache[caseTypeId]?.title || '\u2014'
+		},
+
+		getStatusName(caseItem) {
+			if (!caseItem.status) return '\u2014'
+			return this.statusTypeCache[caseItem.status]?.name || '\u2014'
+		},
+
+		getStatusTypesForCaseType(caseTypeId) {
+			if (!caseTypeId) return []
+			return Object.values(this.statusTypeCache)
+				.filter(st => st.caseType === caseTypeId)
+				.sort((a, b) => (a.order || 0) - (b.order || 0))
+		},
+
+		getRowClass(row) {
+			const isFinal = this.isAtFinalStatus(row)
+			return isCaseOverdue(row, isFinal) ? 'row--overdue' : ''
+		},
+
+		isAtFinalStatus(caseItem) {
+			if (!caseItem.status) return false
+			const statusType = this.statusTypeCache[caseItem.status]
+			return statusType?.isFinal === true || statusType?.isFinal === 'true'
+		},
+
+		getDeadlineText(caseItem) {
+			const isFinal = this.isAtFinalStatus(caseItem)
+			return formatDeadlineCountdown(caseItem, isFinal).text
+		},
+
+		getDeadlineClass(caseItem) {
+			const isFinal = this.isAtFinalStatus(caseItem)
+			return formatDeadlineCountdown(caseItem, isFinal).style
+		},
+
+		onQuickStatusChanged() {
+			this.refresh()
+		},
+
+		onCaseCreated(caseId) {
+			this.showCreateDialog = false
+			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
+		},
+
+		openCase(row) {
+			this.$router.push({ name: 'CaseDetail', params: { id: row.id } })
 		},
 	},
 }
 </script>
 
 <style scoped>
-.case-list {
-	padding: 20px;
+.case-id {
+	font-family: monospace;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+	white-space: nowrap;
 }
 
-.case-list__header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 16px;
+.status-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: var(--border-radius-pill);
+	font-size: 12px;
+	font-weight: 500;
+	background: var(--color-background-dark);
 }
 
-.case-list__search {
-	margin-bottom: 16px;
-	max-width: 400px;
+.deadline--overdue {
+	color: var(--color-error);
+	font-weight: 500;
 }
 
-.case-list__table {
-	width: 100%;
-	border-collapse: collapse;
+.deadline--today,
+.deadline--tomorrow {
+	color: var(--color-warning);
+	font-weight: 500;
 }
 
-.case-list__table th,
-.case-list__table td {
-	padding: 8px 12px;
-	text-align: left;
-	border-bottom: 1px solid var(--color-border);
+.deadline--ok {
+	color: var(--color-success);
 }
 
-.case-list__row {
-	cursor: pointer;
-}
-
-.case-list__row:hover {
-	background: var(--color-background-hover);
-}
-
-.case-list__empty {
-	padding: 40px;
-	text-align: center;
+.deadline--final {
 	color: var(--color-text-maxcontrast);
 }
+</style>
 
-.case-list__pagination {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	margin-top: 16px;
+<style>
+/* Unscoped: rowClass applies to CnDataTable's <tr> elements */
+.row--overdue {
+	border-left: 3px solid var(--color-error);
 }
 </style>

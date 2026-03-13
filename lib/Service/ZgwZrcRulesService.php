@@ -652,7 +652,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if ($existingObject !== null && isset($body['identificatie']) === true) {
             $existingId = $existingObject['identifier'] ?? ($existingObject['identificatie'] ?? '');
             if ($existingId !== '' && $body['identificatie'] !== $existingId) {
-                return $this->fieldImmutableError(field: 'identificatie');
+                return $this->fieldImmutableError(fieldName: 'identificatie');
             }
         }
 
@@ -1061,7 +1061,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
 
             if ($existZaakId !== null && $newZaakUuid !== null && $newZaakUuid !== $existZaakId) {
-                return $this->fieldImmutableError(field: 'zaak');
+                return $this->fieldImmutableError(fieldName: 'zaak');
             }
         }
 
@@ -1076,7 +1076,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
 
             if ($existIoId !== null && $newIoUuid !== null && $newIoUuid !== $existIoId) {
-                return $this->fieldImmutableError(field: 'informatieobject');
+                return $this->fieldImmutableError(fieldName: 'informatieobject');
             }
         }
 

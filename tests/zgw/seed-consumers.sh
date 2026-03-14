@@ -10,13 +10,27 @@
 #   BASE_URL=http://localhost:80 bash seed-consumers.sh
 #
 
-set -euo pipefail
+set -uo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
 API_URL="$BASE_URL/index.php/apps/openregister/api/consumers"
 AUTH="admin:admin"
 
 echo "Seeding ZGW consumers at $API_URL ..."
+
+# Verify server and API are reachable
+echo "  Checking server status..."
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/status.php")
+echo "  Server status: HTTP $STATUS"
+
+echo "  Checking OpenRegister API..."
+LIST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -u "$AUTH" -H "OCS-APIREQUEST: true" "$API_URL")
+echo "  API GET /consumers: HTTP $LIST_STATUS"
+if [ "$LIST_STATUS" != "200" ]; then
+  echo "  Debugging: response body:"
+  curl -s -u "$AUTH" -H "OCS-APIREQUEST: true" "$API_URL" | head -5
+  echo ""
+fi
 
 # Create a consumer via the OpenRegister API.
 # Args: name, secret, superuser (true/false), scopes_json

@@ -25,4 +25,4 @@ jobs:
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
       newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister"}]'
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"feature/php-linting"}]'

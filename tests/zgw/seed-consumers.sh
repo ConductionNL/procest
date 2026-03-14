@@ -2,100 +2,81 @@
 #
 # Seed ZGW consumer applicaties for Newman tests.
 #
-# Creates JWT-authenticated consumers via the OpenRegister Consumers API.
-# These match the credentials in tests/zgw/zgw-environment.json.
+# Creates JWT-authenticated consumers directly via PHP/OCC,
+# bypassing the HTTP API which may not work with PHP's built-in server.
 #
 # Usage:
-#   bash seed-consumers.sh                  # Uses http://localhost:8080
-#   BASE_URL=http://localhost:80 bash seed-consumers.sh
+#   bash seed-consumers.sh   # Run from the Nextcloud server root (cd server)
 #
 
 set -uo pipefail
 
-BASE_URL="${BASE_URL:-http://localhost:8080}"
-API_URL="$BASE_URL/index.php/apps/openregister/api/consumers"
-AUTH="admin:admin"
+echo "Seeding ZGW consumers via OCC..."
 
-echo "Seeding ZGW consumers at $API_URL ..."
+# Use php to directly create consumers via OpenRegister's ConsumerMapper.
+# This avoids HTTP routing issues with PHP's built-in server.
+php -r '
+define("OC_CONSOLE", 1);
+require_once "lib/base.php";
 
-# Verify server and API are reachable
-echo "  Checking server status..."
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/status.php")
-echo "  Server status: HTTP $STATUS"
+$container = \OC::$server;
 
-echo "  Checking OpenRegister API..."
-LIST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -u "$AUTH" -H "OCS-APIREQUEST: true" "$API_URL")
-echo "  API GET /consumers: HTTP $LIST_STATUS"
-if [ "$LIST_STATUS" != "200" ]; then
-  echo "  Debugging: response body:"
-  curl -s -u "$AUTH" -H "OCS-APIREQUEST: true" "$API_URL" | head -5
-  echo ""
-fi
+try {
+    $mapper = $container->get("OCA\OpenRegister\Db\ConsumerMapper");
+} catch (\Throwable $e) {
+    echo "ERROR: ConsumerMapper not available: " . $e->getMessage() . "\n";
+    exit(1);
+}
 
-# Create a consumer via the OpenRegister API.
-# Args: name, secret, superuser (true/false), scopes_json
-create_consumer() {
-    local name="$1"
-    local secret="$2"
-    local superuser="$3"
-    local scopes="$4"
-    local description="${5:-$name (CI test)}"
+$consumers = [
+    [
+        "name" => "procest-admin",
+        "description" => "Procest Admin (CI test - superuser)",
+        "authorizationType" => "jwt-zgw",
+        "userId" => "admin",
+        "authorizationConfiguration" => [
+            "publicKey" => "procest-admin-secret-key-for-testing",
+            "algorithm" => "HS256",
+            "superuser" => true,
+            "scopes" => [],
+        ],
+    ],
+    [
+        "name" => "procest-limited",
+        "description" => "Procest Limited (CI test - restricted)",
+        "authorizationType" => "jwt-zgw",
+        "userId" => "admin",
+        "authorizationConfiguration" => [
+            "publicKey" => "procest-limited-secret-key-for-test",
+            "algorithm" => "HS256",
+            "superuser" => false,
+            "scopes" => [
+                ["component" => "ztc", "scopes" => ["zaaktypen.lezen"]],
+                ["component" => "zrc", "scopes" => ["zaken.lezen"], "maxVertrouwelijkheidaanduiding" => "openbaar"],
+            ],
+        ],
+    ],
+];
 
-    local payload
-    payload=$(cat <<EOJSON
-{
-    "name": "$name",
-    "description": "$description",
-    "authorizationType": "jwt-zgw",
-    "userId": "admin",
-    "authorizationConfiguration": {
-        "publicKey": "$secret",
-        "algorithm": "HS256",
-        "superuser": $superuser,
-        "scopes": $scopes
+$created = 0;
+$skipped = 0;
+
+foreach ($consumers as $data) {
+    $existing = $mapper->findAll(filters: ["name" => $data["name"]]);
+    if (count($existing) > 0) {
+        echo "  ~ Consumer already exists: " . $data["name"] . "\n";
+        $skipped++;
+        continue;
     }
-}
-EOJSON
-)
 
-    local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-        -X POST "$API_URL" \
-        -u "$AUTH" \
-        -H "Content-Type: application/json" \
-        -H "OCS-APIREQUEST: true" \
-        -d "$payload")
-
-    if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
-        echo "  + Created consumer: $name"
-    elif [ "$http_code" = "409" ]; then
-        echo "  ~ Consumer already exists: $name"
-    else
-        echo "  ! Failed to create consumer: $name (HTTP $http_code)"
-        # Show response body for debugging
-        curl -s -X POST "$API_URL" \
-            -u "$AUTH" \
-            -H "Content-Type: application/json" \
-            -H "OCS-APIREQUEST: true" \
-            -d "$payload" | head -200
-        echo ""
-    fi
+    $data["created"] = new \DateTime();
+    $data["updated"] = new \DateTime();
+    $mapper->createFromArray(object: $data);
+    echo "  + Created consumer: " . $data["name"] . "\n";
+    $created++;
 }
 
-# procest-admin: superuser with full access (matches ZGW environment)
-create_consumer \
-    "procest-admin" \
-    "procest-admin-secret-key-for-testing" \
-    true \
-    '[]' \
-    "Procest Admin (CI test - superuser)"
+echo "Consumer seeding complete: $created created, $skipped skipped.\n";
+'
 
-# procest-limited: restricted scopes for authorization tests
-create_consumer \
-    "procest-limited" \
-    "procest-limited-secret-key-for-test" \
-    false \
-    '[{"component":"ztc","scopes":["zaaktypen.lezen"]},{"component":"zrc","scopes":["zaken.lezen"],"maxVertrouwelijkheidaanduiding":"openbaar"}]' \
-    "Procest Limited (CI test - restricted)"
-
-echo "Consumer seeding complete."
+echo "Seed script done."

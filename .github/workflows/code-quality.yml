@@ -23,3 +23,4 @@ jobs:
       enable-phpunit: true
       enable-newman: true
       newman-collection-path: "data"
+      newman-environment-path: "tests/zgw/zgw-environment.json"

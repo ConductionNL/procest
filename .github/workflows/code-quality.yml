@@ -24,5 +24,5 @@ jobs:
       enable-newman: true
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
-      newman-seed-command: "php occ maintenance:repair"
+      newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
       additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister"}]'

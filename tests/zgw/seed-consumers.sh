@@ -19,13 +19,27 @@ php -r '
 define("OC_CONSOLE", 1);
 require_once "lib/base.php";
 
+// Ensure OpenRegister autoloader is loaded
+$orAutoload = __DIR__ . "/apps/openregister/vendor/autoload.php";
+if (file_exists($orAutoload)) {
+    require_once $orAutoload;
+}
+
 $container = \OC::$server;
 
 try {
     $mapper = $container->get("OCA\OpenRegister\Db\ConsumerMapper");
 } catch (\Throwable $e) {
     echo "ERROR: ConsumerMapper not available: " . $e->getMessage() . "\n";
-    exit(1);
+    echo "  Trying direct instantiation...\n";
+    try {
+        $db = $container->get(\OCP\IDBConnection::class);
+        $mapper = new \OCA\OpenRegister\Db\ConsumerMapper($db);
+        echo "  Direct instantiation succeeded.\n";
+    } catch (\Throwable $e2) {
+        echo "  Direct instantiation also failed: " . $e2->getMessage() . "\n";
+        exit(1);
+    }
 }
 
 $consumers = [

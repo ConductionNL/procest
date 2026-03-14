@@ -13,7 +13,8 @@ jobs:
     with:
       app-name: procest
       php-version: "8.3"
-      nextcloud-ref: stable32
+      php-test-versions: '["8.3", "8.4"]'
+      nextcloud-test-refs: '["stable31", "stable32"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false

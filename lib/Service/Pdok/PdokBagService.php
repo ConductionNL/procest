@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Pdok;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Support\FleetAppId;
 use OCA\Dossiq\Support\SuppressesWarnings;
 use OCP\IAppConfig;
 use OCP\ICache;
@@ -352,7 +353,12 @@ class PdokBagService {
 	 */
 	private function callViaOpenConnector(string $sourceSlug, array $params): string {
 		try {
-			$callService = $this->container->get('OCA\OpenConnector\Service\CallService');
+			// Resolved across every namespace integriq has shipped under. Pinned
+			// to 'OCA\OpenConnector\...' this threw on any current instance and
+			// the handler below logged "OpenConnector not available" and fell
+			// back to direct HTTP — bypassing the gateway silently.
+			$callService = FleetAppId::getService($this->container, 'integriq', 'Service\CallService')
+				?? throw new RuntimeException('Integriq CallService is not available under any known namespace.');
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq PDOK BAG: OpenConnector not available, falling back to direct HTTP',

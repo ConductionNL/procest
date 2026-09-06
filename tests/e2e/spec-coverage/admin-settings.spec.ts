@@ -9,8 +9,8 @@
  * The AdminRoot.vue component renders inside Nextcloud's settings framework.
  */
 
-import { test, expect, request } from '@playwright/test'
-import { BASE_URL } from '../base-url'
+import { expect, request, test } from '@playwright/test'
+import { BASE_URL } from '../base-url.ts'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 

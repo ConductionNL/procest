@@ -301,6 +301,8 @@ export default {
 		},
 	},
 
+	emits: ['update'],
+
 	data() {
 		return {
 			iv3Taakvelden: [],

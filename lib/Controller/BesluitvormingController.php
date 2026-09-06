@@ -42,6 +42,8 @@ use Throwable;
  * Controller exposing besluitvorming template-activation endpoints.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-2
  */
 class BesluitvormingController extends Controller {
 	/**

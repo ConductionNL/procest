@@ -9,17 +9,17 @@
       "processingDeadline": "P56D",
       "suspensionAllowed": true,
       "extensionAllowed": true,
-      "extensionDuration": "P42D",
+      "extensionPeriod": "P42D",
       "confidentiality": "openbaar",
       "origin": "aanvragen",
       "statusTypes": [
-        {"name": "Ontvangen", "description": "Aanvraag is ontvangen", "order": 1, "isFinal": false},
+        {"name": "Ontvangen", "description": "Aanvraag is ontvangen", "order": 1, "isFinal": false, "role": "intake"},
         {"name": "Ontvankelijkheidstoets", "description": "Controle op volledigheid van de aanvraag", "order": 2, "isFinal": false},
-        {"name": "In behandeling", "description": "Aanvraag wordt inhoudelijk beoordeeld", "order": 3, "isFinal": false},
+        {"name": "In behandeling", "description": "Aanvraag wordt inhoudelijk beoordeeld", "order": 3, "isFinal": false, "role": "in-progress"},
         {"name": "Advies", "description": "Advies wordt ingewonnen bij interne/externe partijen", "order": 4, "isFinal": false},
-        {"name": "Besluitvorming", "description": "Besluit wordt genomen over de vergunning", "order": 5, "isFinal": false},
+        {"name": "Besluitvorming", "description": "Besluit wordt genomen over de vergunning", "order": 5, "isFinal": false, "role": "review"},
         {"name": "Bekendmaking", "description": "Besluit wordt bekendgemaakt", "order": 6, "isFinal": false},
-        {"name": "Afgehandeld", "description": "Zaak is afgehandeld", "order": 7, "isFinal": true}
+        {"name": "Afgehandeld", "description": "Zaak is afgehandeld", "order": 7, "isFinal": true, "role": "closed"}
       ],
       "roleTypes": [
         {"name": "Behandelaar", "description": "Medewerker die de aanvraag behandelt"},
@@ -39,13 +39,13 @@
         {"name": "Bekendmakingstekst", "description": "Tekst voor publicatie van het besluit"}
       ],
       "propertyDefinitions": [
-        {"name": "bouwkosten", "type": "number", "description": "Geschatte bouwkosten (EUR)"},
-        {"name": "oppervlakte", "type": "number", "description": "Bouwoppervlakte in m2"},
-        {"name": "aantalBouwlagen", "type": "integer", "description": "Aantal bouwlagen"},
-        {"name": "bagObject", "type": "string", "description": "BAG object referentie"},
-        {"name": "activiteiten", "type": "array", "description": "Activiteiten uit DSO verzoek"},
-        {"name": "procedureType", "type": "string", "description": "Procedure type: regulier of uitgebreid", "enum": ["regulier", "uitgebreid"]},
-        {"name": "dsoVerzoekId", "type": "string", "description": "DSO verzoek identificatie"}
+        {"name": "bouwkosten", "propertyType": "number", "description": "Geschatte bouwkosten (EUR)"},
+        {"name": "oppervlakte", "propertyType": "number", "description": "Bouwoppervlakte in m2"},
+        {"name": "aantalBouwlagen", "propertyType": "number", "description": "Aantal bouwlagen"},
+        {"name": "bagObject", "propertyType": "string", "description": "BAG object referentie"},
+        {"name": "activiteiten", "propertyType": "json", "description": "Activiteiten uit DSO verzoek"},
+        {"name": "procedureType", "propertyType": "enum", "description": "Procedure type: regulier of uitgebreid", "enumValues": ["regulier", "uitgebreid"]},
+        {"name": "dsoVerzoekId", "propertyType": "string", "description": "DSO verzoek identificatie"}
       ]
     },
     {
@@ -57,10 +57,10 @@
       "confidentiality": "openbaar",
       "origin": "melden",
       "statusTypes": [
-        {"name": "Ontvangen", "description": "Melding ontvangen", "order": 1, "isFinal": false},
-        {"name": "Beoordeling", "description": "Melding wordt beoordeeld", "order": 2, "isFinal": false},
+        {"name": "Ontvangen", "description": "Melding ontvangen", "order": 1, "isFinal": false, "role": "intake"},
+        {"name": "Beoordeling", "description": "Melding wordt beoordeeld", "order": 2, "isFinal": false, "role": "in-progress"},
         {"name": "Akkoord", "description": "Melding akkoord bevonden", "order": 3, "isFinal": false},
-        {"name": "Afgehandeld", "description": "Zaak afgehandeld", "order": 4, "isFinal": true}
+        {"name": "Afgehandeld", "description": "Zaak afgehandeld", "order": 4, "isFinal": true, "role": "closed"}
       ],
       "roleTypes": [
         {"name": "Behandelaar", "description": "Medewerker die de melding beoordeelt"},
@@ -71,8 +71,8 @@
         {"name": "Asbestinventarisatie", "description": "Rapport asbestinventarisatie"}
       ],
       "propertyDefinitions": [
-        {"name": "asbestInventarisatie", "type": "boolean", "description": "Of asbestinventarisatie is uitgevoerd"},
-        {"name": "sloopOppervlakte", "type": "number", "description": "Oppervlakte te slopen in m2"}
+        {"name": "asbestInventarisatie", "propertyType": "boolean", "description": "Of asbestinventarisatie is uitgevoerd"},
+        {"name": "sloopOppervlakte", "propertyType": "number", "description": "Oppervlakte te slopen in m2"}
       ]
     },
     {
@@ -82,13 +82,13 @@
       "confidentiality": "intern",
       "origin": "ambtshalve",
       "statusTypes": [
-        {"name": "Gepland", "description": "Inspectie is gepland", "order": 1, "isFinal": false},
-        {"name": "Inspectie fase 1", "description": "Fundering-inspectie", "order": 2, "isFinal": false},
+        {"name": "Gepland", "description": "Inspectie is gepland", "order": 1, "isFinal": false, "role": "intake"},
+        {"name": "Inspectie fase 1", "description": "Fundering-inspectie", "order": 2, "isFinal": false, "role": "in-progress"},
         {"name": "Inspectie fase 2", "description": "Ruwbouw-inspectie", "order": 3, "isFinal": false},
         {"name": "Inspectie fase 3", "description": "Oplevering-inspectie", "order": 4, "isFinal": false},
         {"name": "Rapport", "description": "Eindrapportage wordt opgesteld", "order": 5, "isFinal": false},
         {"name": "Opvolging", "description": "Opvolging van geconstateerde afwijkingen", "order": 6, "isFinal": false},
-        {"name": "Afgehandeld", "description": "Toezichtzaak afgehandeld", "order": 7, "isFinal": true}
+        {"name": "Afgehandeld", "description": "Toezichtzaak afgehandeld", "order": 7, "isFinal": true, "role": "closed"}
       ],
       "roleTypes": [
         {"name": "Inspecteur", "description": "Toezichthouder die de inspectie uitvoert"},
@@ -101,9 +101,9 @@
         {"name": "Foto's", "description": "Foto's gemaakt tijdens inspectie"}
       ],
       "propertyDefinitions": [
-        {"name": "bouwvergunningZaak", "type": "string", "description": "Referentie naar de bouwvergunningzaak"},
-        {"name": "inspectieFases", "type": "array", "description": "Lijst van inspectiefases (fundering, ruwbouw, oplevering)"},
-        {"name": "laatsteInspectieResultaat", "type": "string", "description": "Resultaat van de laatste inspectie", "enum": ["conform", "niet_conform", "deels_conform"]}
+        {"name": "bouwvergunningZaak", "propertyType": "string", "description": "Referentie naar de bouwvergunningzaak"},
+        {"name": "inspectieFases", "propertyType": "json", "description": "Lijst van inspectiefases (fundering, ruwbouw, oplevering)"},
+        {"name": "laatsteInspectieResultaat", "propertyType": "enum", "description": "Resultaat van de laatste inspectie", "enumValues": ["conform", "niet_conform", "deels_conform"]}
       ]
     },
     {
@@ -113,11 +113,11 @@
       "confidentiality": "intern",
       "origin": "ambtshalve",
       "statusTypes": [
-        {"name": "Gepland", "description": "Inspectie gepland", "order": 1, "isFinal": false},
-        {"name": "Inspectie", "description": "Inspectie wordt uitgevoerd", "order": 2, "isFinal": false},
+        {"name": "Gepland", "description": "Inspectie gepland", "order": 1, "isFinal": false, "role": "intake"},
+        {"name": "Inspectie", "description": "Inspectie wordt uitgevoerd", "order": 2, "isFinal": false, "role": "in-progress"},
         {"name": "Rapport", "description": "Rapportage", "order": 3, "isFinal": false},
         {"name": "Opvolging", "description": "Opvolging", "order": 4, "isFinal": false},
-        {"name": "Afgehandeld", "description": "Afgehandeld", "order": 5, "isFinal": true}
+        {"name": "Afgehandeld", "description": "Afgehandeld", "order": 5, "isFinal": true, "role": "closed"}
       ],
       "roleTypes": [
         {"name": "Inspecteur", "description": "Milieu-inspecteur"},
@@ -125,9 +125,9 @@
         {"name": "Inrichtinghouder", "description": "Houder van de milieuvergunning"}
       ],
       "propertyDefinitions": [
-        {"name": "inspectieType", "type": "string", "description": "Type inspectie", "enum": ["periodiek", "incidenteel"]},
-        {"name": "risicoCategorie", "type": "string", "description": "Risicocategorie van de inrichting", "enum": ["hoog", "midden", "laag"]},
-        {"name": "voorgaandeInspecties", "type": "integer", "description": "Aantal eerdere inspecties"}
+        {"name": "inspectieType", "propertyType": "enum", "description": "Type inspectie", "enumValues": ["periodiek", "incidenteel"]},
+        {"name": "risicoCategorie", "propertyType": "enum", "description": "Risicocategorie van de inrichting", "enumValues": ["hoog", "midden", "laag"]},
+        {"name": "voorgaandeInspecties", "propertyType": "number", "description": "Aantal eerdere inspecties"}
       ]
     },
     {
@@ -137,13 +137,13 @@
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
       "statusTypes": [
-        {"name": "Constatering", "description": "Overtreding is geconstateerd", "order": 1, "isFinal": false},
-        {"name": "Vooraankondiging", "description": "Vooraankondiging verstuurd", "order": 2, "isFinal": false},
+        {"name": "Constatering", "description": "Overtreding is geconstateerd", "order": 1, "isFinal": false, "role": "intake"},
+        {"name": "Vooraankondiging", "description": "Vooraankondiging verstuurd", "order": 2, "isFinal": false, "role": "in-progress"},
         {"name": "Zienswijze", "description": "Zienswijzetermijn loopt", "order": 3, "isFinal": false},
-        {"name": "Handhavingsbesluit", "description": "Handhavingsbesluit genomen", "order": 4, "isFinal": false},
+        {"name": "Handhavingsbesluit", "description": "Handhavingsbesluit genomen", "order": 4, "isFinal": false, "role": "review"},
         {"name": "Begunstigingstermijn", "description": "Begunstigingstermijn loopt", "order": 5, "isFinal": false},
         {"name": "Hercontrole", "description": "Hercontrole wordt uitgevoerd", "order": 6, "isFinal": false},
-        {"name": "Afgehandeld", "description": "Handhavingszaak afgehandeld", "order": 7, "isFinal": true}
+        {"name": "Afgehandeld", "description": "Handhavingszaak afgehandeld", "order": 7, "isFinal": true, "role": "closed"}
       ],
       "roleTypes": [
         {"name": "Behandelaar", "description": "Handhavingsmedewerker"},
@@ -159,14 +159,14 @@
         {"name": "Hercontrolerapport", "description": "Rapport van de hercontrole"}
       ],
       "propertyDefinitions": [
-        {"name": "overtredingstype", "type": "string", "description": "Type overtreding"},
-        {"name": "ernst", "type": "string", "description": "Ernst van de overtreding (LHS)", "enum": ["gering", "aanzienlijk", "ernstig"]},
-        {"name": "gedrag", "type": "string", "description": "Gedrag van de overtreder (LHS)", "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
-        {"name": "intervention", "type": "string", "description": "Gekozen interventie (uit LHS matrix)"},
-        {"name": "penaltyPaymentAmount", "type": "number", "description": "Dwangsom per overtreding (EUR)"},
-        {"name": "penaltyPaymentMaximum", "type": "number", "description": "Maximale dwangsom (EUR)"},
-        {"name": "compliancePeriod", "type": "integer", "description": "Begunstigingstermijn in dagen"},
-        {"name": "bronInspectie", "type": "string", "description": "Referentie naar de toezichtzaak"}
+        {"name": "overtredingstype", "propertyType": "string", "description": "Type overtreding"},
+        {"name": "ernst", "propertyType": "enum", "description": "Ernst van de overtreding (LHS)", "enumValues": ["gering", "aanzienlijk", "ernstig"]},
+        {"name": "gedrag", "propertyType": "enum", "description": "Gedrag van de overtreder (LHS)", "enumValues": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
+        {"name": "intervention", "propertyType": "string", "description": "Gekozen interventie (uit LHS matrix)"},
+        {"name": "penaltyPaymentAmount", "propertyType": "number", "description": "Dwangsom per overtreding (EUR)"},
+        {"name": "penaltyPaymentMaximum", "propertyType": "number", "description": "Maximale dwangsom (EUR)"},
+        {"name": "compliancePeriod", "propertyType": "number", "description": "Begunstigingstermijn in dagen"},
+        {"name": "bronInspectie", "propertyType": "string", "description": "Referentie naar de toezichtzaak"}
       ]
     },
     {
@@ -176,68 +176,92 @@
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
       "statusTypes": [
-        {"name": "Verbeuring", "description": "Dwangsom is verbeurd", "order": 1, "isFinal": false},
-        {"name": "Invordering", "description": "Invordering is gestart", "order": 2, "isFinal": false},
+        {"name": "Verbeuring", "description": "Dwangsom is verbeurd", "order": 1, "isFinal": false, "role": "intake"},
+        {"name": "Invordering", "description": "Invordering is gestart", "order": 2, "isFinal": false, "role": "in-progress"},
         {"name": "Betaald", "description": "Dwangsom is betaald", "order": 3, "isFinal": false},
-        {"name": "Afgehandeld", "description": "Invorderingszaak afgehandeld", "order": 4, "isFinal": true}
+        {"name": "Afgehandeld", "description": "Invorderingszaak afgehandeld", "order": 4, "isFinal": true, "role": "closed"}
       ],
       "roleTypes": [
         {"name": "Behandelaar", "description": "Medewerker die invordering behandelt"},
         {"name": "Overtreder", "description": "De overtreder/schuldenaar"}
       ],
       "propertyDefinitions": [
-        {"name": "bronHandhavingszaak", "type": "string", "description": "Referentie naar de handhavingszaak"},
-        {"name": "verbeurdBedrag", "type": "number", "description": "Verbeurd bedrag (EUR)"},
-        {"name": "verbeuringsDatum", "type": "string", "description": "Datum van verbeuring"}
+        {"name": "bronHandhavingszaak", "propertyType": "string", "description": "Referentie naar de handhavingszaak"},
+        {"name": "verbeurdBedrag", "propertyType": "number", "description": "Verbeurd bedrag (EUR)"},
+        {"name": "verbeuringsDatum", "propertyType": "date", "description": "Datum van verbeuring"}
       ]
     }
   ],
   "inspectionChecklists": [
     {
       "slug": "bouwtoezicht-fase-1-fundering",
+      "seedKey": "bouwtoezicht-fase-1-fundering",
       "name": "Bouwtoezicht fase 1 - Fundering",
       "caseTypeSlug": "toezichtzaak-bouw",
       "version": 1,
       "status": "active",
-      "items": [
-        {"order": 1, "label": "Fundering conform tekening", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer of de fundering overeenkomt met de goedgekeurde bouwtekening"},
-        {"order": 2, "label": "Wapening aanwezig en correct", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer diameter, hart-op-hart afstand en dekking van de wapening"},
-        {"order": 3, "label": "Waterkering conform bestek", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer waterkeringsmaatregelen en maak foto bij afwijking"},
-        {"order": 4, "label": "Maatvoering gecontroleerd", "type": "getal", "required": true, "photoRequired": false, "helpText": "Meet de afwijking in mm ten opzichte van de tekening"}
+      "active": true,
+      "sections": [
+        {
+          "order": 1,
+          "name": "Bouwtoezicht fase 1 - Fundering",
+          "items": [
+            {"order": 1, "label": "Fundering conform tekening", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer of de fundering overeenkomt met de goedgekeurde bouwtekening"},
+            {"order": 2, "label": "Wapening aanwezig en correct", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer diameter, hart-op-hart afstand en dekking van de wapening"},
+            {"order": 3, "label": "Waterkering conform bestek", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer waterkeringsmaatregelen en maak foto bij afwijking"},
+            {"order": 4, "label": "Maatvoering gecontroleerd", "responseType": "getal", "required": true, "photoRequired": "nooit", "helpText": "Meet de afwijking in mm ten opzichte van de tekening"}
+          ]
+        }
       ]
     },
     {
       "slug": "bouwtoezicht-fase-2-ruwbouw",
+      "seedKey": "bouwtoezicht-fase-2-ruwbouw",
       "name": "Bouwtoezicht fase 2 - Ruwbouw",
       "caseTypeSlug": "toezichtzaak-bouw",
       "version": 1,
       "status": "active",
-      "items": [
-        {"order": 1, "label": "Metselwerk conform tekening", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer metselwerk op conformiteit met de bouwtekening"},
-        {"order": 2, "label": "Kozijnen correct geplaatst", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer plaatsing, waterdichtheid en isolatie van kozijnen"},
-        {"order": 3, "label": "Dakconstructie conform bestek", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer dakconstructie, gordingen en spanten"},
-        {"order": 4, "label": "Leidingen correct aangelegd", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer water-, gas- en elektriciteitsleidingen"},
-        {"order": 5, "label": "Brandwering aangebracht", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer brandwerende doorvoeringen en scheidingen"}
+      "active": true,
+      "sections": [
+        {
+          "order": 1,
+          "name": "Bouwtoezicht fase 2 - Ruwbouw",
+          "items": [
+            {"order": 1, "label": "Metselwerk conform tekening", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer metselwerk op conformiteit met de bouwtekening"},
+            {"order": 2, "label": "Kozijnen correct geplaatst", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer plaatsing, waterdichtheid en isolatie van kozijnen"},
+            {"order": 3, "label": "Dakconstructie conform bestek", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer dakconstructie, gordingen en spanten"},
+            {"order": 4, "label": "Leidingen correct aangelegd", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer water-, gas- en elektriciteitsleidingen"},
+            {"order": 5, "label": "Brandwering aangebracht", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer brandwerende doorvoeringen en scheidingen"}
+          ]
+        }
       ]
     },
     {
       "slug": "bouwtoezicht-fase-3-oplevering",
+      "seedKey": "bouwtoezicht-fase-3-oplevering",
       "name": "Bouwtoezicht fase 3 - Oplevering",
       "caseTypeSlug": "toezichtzaak-bouw",
       "version": 1,
       "status": "active",
-      "items": [
-        {"order": 1, "label": "Afwerking conform bestek", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer afwerking vloeren, wanden en plafonds"},
-        {"order": 2, "label": "Installaties werkend", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Test verwarming, ventilatie, elektra en sanitair"},
-        {"order": 3, "label": "Brandveiligheid gewaarborgd", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer rookmelders, vluchtroutes, noodverlichting"},
-        {"order": 4, "label": "Toegankelijkheid conform Bouwbesluit", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer drempels, deurbreedtes, toilet toegankelijkheid"},
-        {"order": 5, "label": "Energielabel bepaald", "type": "text", "required": true, "photoRequired": false, "helpText": "Noteer het energielabel (A++++ t/m G)"},
-        {"order": 6, "label": "As-built tekeningen ontvangen", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer of as-built tekeningen zijn aangeleverd"}
+      "active": true,
+      "sections": [
+        {
+          "order": 1,
+          "name": "Bouwtoezicht fase 3 - Oplevering",
+          "items": [
+            {"order": 1, "label": "Afwerking conform bestek", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer afwerking vloeren, wanden en plafonds"},
+            {"order": 2, "label": "Installaties werkend", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Test verwarming, ventilatie, elektra en sanitair"},
+            {"order": 3, "label": "Brandveiligheid gewaarborgd", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer rookmelders, vluchtroutes, noodverlichting"},
+            {"order": 4, "label": "Toegankelijkheid conform Bouwbesluit", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer drempels, deurbreedtes, toilet toegankelijkheid"},
+            {"order": 5, "label": "Energielabel bepaald", "responseType": "text", "required": true, "photoRequired": "nooit", "helpText": "Noteer het energielabel (A++++ t/m G)"},
+            {"order": 6, "label": "As-built tekeningen ontvangen", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer of as-built tekeningen zijn aangeleverd"}
+          ]
+        }
       ]
     }
   ],
   "lhsMatrix": {
-    "description": "Default Landelijke Handhavingsstrategie (LHS) matrix — ernst x gedrag = interventie",
+    "description": "Default Landelijke Handhavingsstrategie (LHS) matrix: ernst x gedrag = interventie",
     "ernstLevels": ["gering", "aanzienlijk", "ernstig"],
     "gedragLevels": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
     "matrix": {

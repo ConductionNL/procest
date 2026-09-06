@@ -28,11 +28,6 @@ function todayString() {
  * @param {object[]} completedCases Cases completed this month
  * @param {object[]} myTasks Tasks assigned to current user (available/active)
  * @return {object} KPI values
- */
-/**
- * @param openCases
- * @param completedCases
- * @param myTasks
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function computeKpis(openCases, completedCases, myTasks) {
@@ -90,10 +85,6 @@ export function computeKpis(openCases, completedCases, myTasks) {
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} statusTypes All status types
  * @return {Array<{ name: string, count: number, statusIds: string[] }>} Sorted by status type order
- */
-/**
- * @param openCases
- * @param statusTypes
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function aggregateByStatus(openCases, statusTypes) {
@@ -145,10 +136,6 @@ export function aggregateByStatus(openCases, statusTypes) {
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} caseTypes All case types (for name resolution)
  * @return {Array<{ id, identifier, title, caseTypeName, daysOverdue, handler }>}
- */
-/**
- * @param openCases
- * @param caseTypes
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getOverdueCases(openCases, caseTypes) {
@@ -176,10 +163,6 @@ export function getOverdueCases(openCases, caseTypes) {
  * @param {object[]} cases All visible cases (with activity arrays)
  * @param {number} limit Max entries to return
  * @return {Array<{ date, type, description, user, caseIdentifier }>}
- */
-/**
- * @param cases
- * @param limit
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getRecentActivity(cases, limit = 10) {
@@ -209,11 +192,6 @@ export function getRecentActivity(cases, limit = 10) {
  * @param {object[]} tasks Tasks assigned to current user (available/active)
  * @param {number} limit Max items to return
  * @return {Array<{ type, id, title, reference, deadline, daysText, isOverdue, priority }>}
- */
-/**
- * @param cases
- * @param tasks
- * @param limit
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getMyWorkItems(cases, tasks, limit = 5) {
@@ -306,10 +284,6 @@ function endOfWeek() {
  * @param {object[]} cases Cases assigned to current user (non-final)
  * @param {object[]} normalizedTasks Already-normalized CalDAV task work items
  * @return {{ overdue: object[], dueThisWeek: object[], upcoming: object[], noDeadline: object[], totalCount: number }}
- */
-/**
- * @param cases
- * @param normalizedTasks
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getGroupedMyWorkItems(cases, normalizedTasks) {
@@ -411,11 +385,6 @@ export const STALLED_THRESHOLD_DAYS = 7
  * @param {object[]} caseTypes All case types (for name resolution)
  * @param {number} warningDays Number of days before deadline to flag as at-risk
  * @return {{ overdue: object[], atRisk: object[] }}
- */
-/**
- * @param openCases
- * @param caseTypes
- * @param warningDays
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getDeadlineAlerts(
@@ -469,10 +438,6 @@ export function getDeadlineAlerts(
  * @param {object[]} tasks Tasks assigned to the current user
  * @param {number} warningDays Number of days before due date to flag as due-soon
  * @return {{ overdue: object[], dueSoon: object[] }}
- */
-/**
- * @param tasks
- * @param warningDays
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) {
@@ -520,11 +485,6 @@ export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) 
  * @param {object[]} caseTypes All case types (for name resolution)
  * @param {number} stalledDays Number of days without activity to consider stalled
  * @return {Array<{ id, title, identifier, caseTypeName, daysSinceActivity, handler }>}
- */
-/**
- * @param openCases
- * @param caseTypes
- * @param stalledDays
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getStalledCases(
@@ -573,9 +533,6 @@ export function getStalledCases(
  *
  * @param {string} dateString ISO date string
  * @return {string}
- */
-/**
- * @param dateString
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function formatRelativeTime(dateString) {

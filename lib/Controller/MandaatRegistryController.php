@@ -150,7 +150,7 @@ class MandaatRegistryController extends Controller {
 	 */
 	private function persist(string $schemaConfigKey, ?string $id, int $statusCode): JSONResponse {
 		$data = $this->request->getParams();
-		unset($data['_route'], $data['id']);
+		unset($data['_route'], $data['id'], $data['uuid'], $data['@self']);
 
 		try {
 			$saved = $this->registry->save(schemaConfigKey: $schemaConfigKey, data: $data, id: $id);

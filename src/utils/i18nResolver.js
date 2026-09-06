@@ -42,15 +42,10 @@ export function getUserLocale() {
  *   4. English ('en')
  *   5. First available language
  *
- * @param {*} value The field value (string or language-tagged object)
+ * @param {string|object} value The field value (string or language-tagged object)
  * @param {string} [locale] The preferred locale (defaults to user's locale)
  * @param {string} [fallbackLocale] The fallback locale (defaults to app default 'nl')
  * @return {{ text: string, lang: string|null, isFallback: boolean }}
- */
-/**
- * @param value
- * @param locale
- * @param fallbackLocale
  * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveTranslatable(value, locale, fallbackLocale) {
@@ -115,11 +110,6 @@ export function resolveTranslatable(value, locale, fallbackLocale) {
  * @param {string} field The field name to resolve
  * @param {string} [locale] The preferred locale
  * @return {{ text: string, lang: string|null, isFallback: boolean }}
- */
-/**
- * @param obj
- * @param field
- * @param locale
  * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveField(obj, field, locale) {
@@ -136,11 +126,6 @@ export function resolveField(obj, field, locale) {
  * @param {string} field The field name to resolve
  * @param {string} [locale] The preferred locale
  * @return {string} The resolved text
- */
-/**
- * @param obj
- * @param field
- * @param locale
  * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveText(obj, field, locale) {

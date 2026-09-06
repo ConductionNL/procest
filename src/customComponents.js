@@ -17,11 +17,13 @@
 //   - openspec/changes/procest-manifest-v1/design.md
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
-import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
+// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import { createApp } from 'vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
@@ -47,7 +49,6 @@ import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
-// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
@@ -64,6 +65,11 @@ import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 // Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// --- Store (ADR-080). A store item is a REMOTE object, so the manifest's
+//     object-backed index renderer — which resolves a local register+schema —
+//     cannot address it. Discovery itself is the engine's, not this file's.
+// @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+import StoreGallery from './views/store/StoreGallery.vue'
 // --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
 // Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
 // views are owned by OpenRegister.
@@ -77,64 +83,62 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
 // syncReplayService.js) are deleted; the leaf owns the planning list, checklist
 // completion, mutation queue and reconnect-replay.
-// VoorstellenView removed — the Voorstellen list page is now a declarative
-// `type:"index"` on the `voorstel` schema (formatter columns + status badge,
-// see src/manifest.json + src/services/formatters.js).
-import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
-
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
 //     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
 
 /**
- * Row-action handler for the Voorstellen index: POST a parafering-reminder
- * notification for the step the voorstel is currently waiting on. Registered
- * below as a "function" entry so the manifest action
- * `{ id: "reminder", handler: "voorstelReminder" }` can dispatch to it —
- * CnIndexPage calls a function-typed `customComponents[handler]` with
- * `{ actionId, item }` on row-action click. (Replaces the bespoke
- * `sendReminder()` that lived in the deleted VoorstelList.vue.)
+ * Bulk-action handler for the Cases index: reassign the selected cases.
  *
- * @param {object} ctx Dispatch context.
- * @param {string} ctx.actionId The action id (`"reminder"`).
- * @param {object} ctx.item The voorstel row.
- * @return {Promise<void>}
+ * CnIndexPage calls a function-typed `customComponents[handler]` with
+ * `{ actionId, selectedIds, count }`, so the SELECTION arrives as an argument.
+ * That matters: a handler that went and re-read the selection itself would be
+ * one re-render away from acting on a different set than the user saw
+ * highlighted.
+ *
+ * The dialog is mounted here rather than declared in the manifest because the
+ * library's declarative modal path emits `open-modal` and nothing consumes it.
+ *
+ * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
+ * @return {void}
  */
-async function voorstelReminder({ actionId, item }) {
-	const steps = (() => {
-		const snap = item && item.routeSnapshot
-		if (!snap) return []
-		try {
-			return typeof snap === 'string' ? JSON.parse(snap) : snap
-		} catch {
-			return []
-		}
-	})()
-	const current = steps.find((s) => s.order === item.currentStep)
-	const actor = current ? current.label || current.actor || '-' : '-'
-	try {
-		await fetch('/apps/dossiq/api/notifications/parafering-reminder', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				requesttoken: window.OC?.requestToken,
-				'OCS-APIREQUEST': 'true',
-			},
-			body: JSON.stringify({
-				voorstelId: item.id,
-				actor,
-				subject: item.subject,
-			}),
-		})
-	} catch (error) {
-		// eslint-disable-next-line no-console
-		console.error('[dossiq] parafering reminder failed', error)
+function reassignSelection({ selectedIds }) {
+	const ids = Array.isArray(selectedIds) ? selectedIds : []
+	if (ids.length === 0) {
+		return
 	}
+
+	const host = document.createElement('div')
+	document.body.appendChild(host)
+
+	const app = createApp(ReassignSelectionDialog, {
+		open: true,
+		selectedIds: ids,
+		'onUpdate:open': (open) => {
+			if (open === false) {
+				app.unmount()
+				host.remove()
+			}
+		},
+		onReassigned: () => {
+			// The index has to re-read: the rows the user just moved are no
+			// longer theirs, and leaving them on screen invites a second
+			// reassignment of cases that already moved.
+			window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+		},
+	})
+	app.mount(host)
 }
 
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
+	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
+	// manifest's declarative `handler: "open-modal"` path: that path emits an
+	// `open-modal` event and nothing in the library listens for it yet, so
+	// declaring it would ship a bulk action that does nothing when clicked.
+	reassignSelection,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
+	StoreGallery, // remote store cards — index renderer cannot address a REMOTE object
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
@@ -159,12 +163,6 @@ export default {
 	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
 	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
 
-	// --- Migration cost: deferred to a follow-up. ---
-	VoorstelDetailView, // parafeerroute multi-step approver flow
-
-	// --- Row-action handlers (function entries — dispatched by manifest `handler` id). ---
-	voorstelReminder, // Voorstellen index → POST a parafering reminder
-
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,
 	PublicStatusPage,
@@ -176,7 +174,9 @@ export default {
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id
-	CaseDecisionsTab, // decisions where decision.case === parent.id
+	// CaseDecisionsTab was retired by dossiq-decisions-to-decidiq: decisions
+	// are authored in decidiq (besluitvorming leaf); the read-only
+	// case-decisions widget displays the outcomes stored on the case.
 	CaseDocumentsTab, // documents where document.case === parent.id
 
 	// --- Deelzaak (sub-case) views (manifest /cases/:id/deelzaken[/...]). ---

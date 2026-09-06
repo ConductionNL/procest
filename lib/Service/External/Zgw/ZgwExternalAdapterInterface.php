@@ -93,6 +93,8 @@ interface ZgwExternalAdapterInterface {
 	 *
 	 * @return ZgwPushResult The dispatch outcome (status +
 	 *                       receiver-side zaak URL).
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function submitZaak(array $caseEnvelope, array $context = []): ZgwPushResult;
 
@@ -110,6 +112,8 @@ interface ZgwExternalAdapterInterface {
 	 *
 	 * @return ZgwPushResult The dispatch outcome (status +
 	 *                       receiver-side document URL).
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function submitDocument(array $documentEnvelope, array $context = []): ZgwPushResult;
 
@@ -118,6 +122,8 @@ interface ZgwExternalAdapterInterface {
 	 * any external ZGW stack.
 	 *
 	 * @return bool TRUE when the adapter is a log-only stub.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function isDormant(): bool;
 }//end interface

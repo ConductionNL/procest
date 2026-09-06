@@ -13,9 +13,19 @@
  * published rows established by `workflow-definition-model`. It NEVER
  * writes `workflowTemplate` rows directly through `ObjectService`.
  *
- * Soft-deps on `base-register-seed-data`: when a caseType slug cannot be
- * resolved, the template is logged + skipped (warning only), and the rest
- * of the catalog continues.
+ * Nothing in the catalogue is a hard dependency. An entry whose case type is
+ * absent, whose case type carries no statuses, or that names a status the case
+ * type does not have is skipped, and the rest of the catalogue continues. Every
+ * skip is named with its reason in the summary the step prints, because a count
+ * of skipped entries is what hid `toezichtbezoek` for the life of the
+ * catalogue.
+ *
+ * A template this step created but could not publish is published on the next
+ * run: an existing DRAFT is a repair, an existing published row is a no-op, and
+ * an existing DEPRECATED row is reported and left alone. Two catalogue entries
+ * may share a case type when they declare different routes (see
+ * openspec/specs/workflow-variants/spec.md); publishing one of them leaves the
+ * others backing new cases.
  *
  * This class is orchestration only. The OpenRegister reads live in
  * {@see \OCA\Dossiq\Repair\Vth\VthSeedLookup} and the steps/transitions
@@ -43,6 +53,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Vth\VthCatalogueFiles;
+use OCA\Dossiq\Repair\Vth\VthCatalogueReport;
 use OCA\Dossiq\Repair\Vth\VthSeedLookup;
 use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -57,11 +69,6 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/vth-workflow-templates/spec.md
  */
 class SeedVthWorkflowTemplates implements IRepairStep {
-
-	/**
-	 * Catalog directory relative to lib/.
-	 */
-	private const CATALOG_DIR = __DIR__ . '/../Settings/seed/vth-workflow-templates';
 
 	/**
 	 * Memoised template slug → caseType UUID map, built once per run.
@@ -79,8 +86,10 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 *
 	 * @param SettingsService $settingsService Settings service for OR access
 	 * @param WorkflowDefinitionService $definitionService Workflow lifecycle service
+	 * @param VthCatalogueFiles $files The bundled catalogue on disk
 	 * @param VthSeedLookup $lookup OpenRegister lookups for the seed
 	 * @param VthWorkflowGraphResolver $graphResolver Steps/transitions resolver
+	 * @param VthCatalogueReport $report Per-entry outcomes and the summary they print
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @return void
@@ -88,8 +97,10 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WorkflowDefinitionService $definitionService,
+		private readonly VthCatalogueFiles $files,
 		private readonly VthSeedLookup $lookup,
 		private readonly VthWorkflowGraphResolver $graphResolver,
+		private readonly VthCatalogueReport $report,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -122,29 +133,17 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return;
 		}
 
-		$summary = [
-			'seeded' => 0,
-			'skipped' => 0,
-			'crossLink' => 0,
-			'failed' => 0,
-		];
+		$this->report->reset();
 
 		$this->lookup->runElevated(
-			operation: function () use ($files, &$summary, $output): void {
+			operation: function () use ($files): void {
 				foreach ($files as $file) {
-					$result = $this->processCatalogFileSafely(file: $file, output: $output);
-					$summary[$result] = ($summary[$result] ?? 0) + 1;
+					$this->processCatalogFileSafely(file: $file);
 				}
 			}
 		);
 
-		$output->info(
-			'VTH workflow templates seed complete: '
-			. $summary['seeded'] . ' seeded, '
-			. $summary['skipped'] . ' skipped (already present or unresolved), '
-			. $summary['crossLink'] . ' cross-link entries logged, '
-			. $summary['failed'] . ' failed.'
-		);
+		$this->report->write(output: $output);
 	}//end run()
 
 	/**
@@ -165,16 +164,15 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return [];
 		}
 
-		if (is_dir(self::CATALOG_DIR) === false) {
+		if ($this->files->exists() === false) {
 			$output->warning(
-				'VTH workflow templates catalog directory not found at '
-				. self::CATALOG_DIR
+				'VTH workflow templates catalog directory not found at ' . $this->files->directory()
 			);
 			return [];
 		}
 
-		$files = glob(self::CATALOG_DIR . '/*.json');
-		if ($files === false || $files === []) {
+		$files = $this->files->paths();
+		if ($files === []) {
 			$output->warning('No VTH workflow template catalog files found.');
 			return [];
 		}
@@ -199,14 +197,9 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return $this->spawnTargets;
 		}
 
-		$files = glob(self::CATALOG_DIR . '/*.json');
-		if ($files === false) {
-			$files = [];
-		}
-
 		$map = [];
-		foreach ($files as $file) {
-			$data = $this->loadCatalogEntry(file: $file);
+		foreach ($this->files->paths() as $file) {
+			$data = $this->files->load(file: $file);
 			if ($data === null) {
 				continue;
 			}
@@ -235,15 +228,15 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 * One unusable catalog file must never abort the rest of the catalog.
 	 *
 	 * @param string $file Absolute path to the JSON catalog file.
-	 * @param IOutput $output The output interface.
 	 *
-	 * @return string One of seeded|skipped|crossLink|failed
+	 * @return void
 	 *
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
-	private function processCatalogFileSafely(string $file, IOutput $output): string {
+	private function processCatalogFileSafely(string $file): void {
 		try {
-			return $this->processCatalogFile(file: $file, output: $output);
+			$this->processCatalogFile(file: $file);
+			return;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to process VTH workflow template catalog file',
@@ -253,26 +246,43 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 					'exception' => $e->getMessage(),
 				]
 			);
-			$output->warning(
-				'Skipping catalog file ' . basename($file)
-				. ' due to processing error (see log).'
+			$this->outcome(
+				entry: basename($file),
+				outcome: 'failed',
+				reason: 'failed while being processed, see the log for the error.',
 			);
-			return 'failed';
 		}//end try
 	}//end processCatalogFileSafely()
+
+	/**
+	 * Record one entry's result for the summary.
+	 *
+	 * @param string $entry The catalogue entry, by slug or file name.
+	 * @param string $outcome One of seeded|published|present|deprecated|skipped|crossLink|failed.
+	 * @param string $reason What happened to it, in one sentence.
+	 *
+	 * @return void
+	 */
+	private function outcome(string $entry, string $outcome, string $reason): void {
+		$this->report->record(entry: $entry, outcome: $outcome, reason: $reason);
+	}//end outcome()
 
 	/**
 	 * Process a single catalog file.
 	 *
 	 * @param string $file Absolute path to the JSON catalog file
-	 * @param IOutput $output The output interface
 	 *
-	 * @return string One of seeded|skipped|crossLink|failed
+	 * @return void
 	 */
-	private function processCatalogFile(string $file, IOutput $output): string {
-		$data = $this->loadCatalogEntry(file: $file);
+	private function processCatalogFile(string $file): void {
+		$data = $this->files->load(file: $file);
 		if ($data === null) {
-			return 'failed';
+			$this->outcome(
+				entry: basename($file),
+				outcome: 'failed',
+				reason: 'unreadable, invalid JSON, or missing its slug or title.',
+			);
+			return;
 		}
 
 		$slug = (string)($data['slug'] ?? '');
@@ -282,154 +292,221 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		// workflowTemplate; they only document VTH-specific guards that
 		// a downstream change should attach to the canonical workflow.
 		if ((bool)($data['crossLink'] ?? false) === true) {
-			$this->reportCrossLink(data: $data, slug: $slug, output: $output);
-			return 'crossLink';
+			$this->reportCrossLink(data: $data, slug: $slug);
+			$this->outcome(
+				entry: $slug,
+				outcome: 'crossLink',
+				reason: 'cross-link entry, it documents guards on "'
+					. (string)($data['targetWorkflowIdentifier'] ?? '') . '" and creates no workflow.',
+			);
+			return;
 		}
 
 		// Resolve caseType slug → UUID and the statusType map (soft-fail).
-		$context = $this->resolveTemplateContext(
-			data: $data,
-			slug: $slug,
-			title: $title,
-			output: $output,
-		);
-		if ($context === null) {
-			return 'skipped';
+		$context = $this->resolveTemplateContext(data: $data, slug: $slug, title: $title);
+		if (isset($context['present']) === true) {
+			$this->outcome(entry: $slug, outcome: 'present', reason: (string)$context['present']);
+			return;
 		}
 
-		// Resolve steps and transitions. On any unresolved status, skip
-		// the entire template (no partial seed).
+		if (isset($context['deprecated']) === true) {
+			$this->outcome(entry: $slug, outcome: 'deprecated', reason: (string)$context['deprecated']);
+			return;
+		}
+
+		if (isset($context['skip']) === true) {
+			$this->outcome(entry: $slug, outcome: 'skipped', reason: (string)$context['skip']);
+			return;
+		}
+
+		if (isset($context['republish']) === true) {
+			$this->publishExistingDraft(
+				slug: $slug,
+				title: $title,
+				draftId: (string)$context['republish'],
+			);
+			return;
+		}
+
+		// Resolve steps and transitions. On any unresolved status the whole
+		// template is skipped, so nothing is ever half seeded.
 		$graph = $this->graphResolver->resolve(
 			data: $data,
 			slug: $slug,
 			statusMap: (array)$context['statusMap'],
 			spawnTargets: $this->spawnTargets(),
 		);
-		if ($graph === null) {
-			return 'skipped';
+		if ($graph['unresolved'] !== []) {
+			$this->outcome(
+				entry: $slug,
+				outcome: 'skipped',
+				reason: 'skipped, case type "' . (string)($data['caseTypeSlug'] ?? '') . '" has no status named '
+					. $this->report->quotedList(values: $graph['unresolved']) . '. It has '
+					. $this->report->quotedList(values: array_keys((array)$context['statusMap'])) . '.',
+			);
+			return;
 		}
 
-		return $this->createAndPublishTemplate(
+		$this->createAndPublishTemplate(
 			data: $data,
 			slug: $slug,
 			title: $title,
 			caseTypeId: (string)$context['caseTypeId'],
 			graph: $graph,
-			output: $output,
 		);
 	}//end processCatalogFile()
 
 	/**
-	 * Report a cross-link catalog entry — documented, never seeded.
+	 * Publish a draft an earlier run created but could not publish.
+	 *
+	 * @param string $slug The template slug.
+	 * @param string $title The template title.
+	 * @param string $draftId The existing draft's UUID.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	private function publishExistingDraft(string $slug, string $title, string $draftId): void {
+		$published = $this->definitionService->publish(id: $draftId);
+		if ($published === null) {
+			$this->logger->error(
+				'Dossiq: VTH workflow template could not be published from its existing draft',
+				['app' => Application::APP_ID, 'slug' => $slug, 'draftId' => $draftId]
+			);
+			$this->outcome(
+				entry: $slug,
+				outcome: 'failed',
+				reason: 'is present as a draft and could not be published, see the log for the reason.',
+			);
+			return;
+		}
+
+		$this->outcome(
+			entry: $slug,
+			outcome: 'published',
+			reason: 'was left as a draft by an earlier run and is now published as "' . $title . '".',
+		);
+	}//end publishExistingDraft()
+
+	/**
+	 * Report a cross-link catalog entry: documented, never seeded.
 	 *
 	 * @param array<string, mixed> $data The decoded catalog entry.
 	 * @param string $slug The template slug.
-	 * @param IOutput $output The output interface.
 	 *
 	 * @return void
 	 */
-	private function reportCrossLink(array $data, string $slug, IOutput $output): void {
+	private function reportCrossLink(array $data, string $slug): void {
 		$this->logger->info(
-			'Dossiq: VTH workflow template — cross-link entry, no new workflow created',
+			'Dossiq: VTH workflow template cross-link entry, no new workflow created',
 			[
 				'app' => Application::APP_ID,
 				'slug' => $slug,
 				'targetWorkflowIdentifier' => (string)($data['targetWorkflowIdentifier'] ?? ''),
 			]
 		);
-		$output->info(
-			'VTH catalog: cross-link entry "' . $slug . '" — no new workflow created.'
-		);
 	}//end reportCrossLink()
-
-	/**
-	 * Read and validate one catalog file, returning its decoded entry.
-	 *
-	 * Returns null on any condition that makes the file unusable (unreadable,
-	 * invalid JSON, or missing slug/title) — the caller reports those as failed.
-	 *
-	 * @param string $file Absolute path to the JSON catalog file
-	 *
-	 * @return array<string, mixed>|null The decoded catalog entry, or null when unusable
-	 */
-	private function loadCatalogEntry(string $file): ?array {
-		$raw = file_get_contents($file);
-		if ($raw === false) {
-			$this->logger->error(
-				'Dossiq: VTH workflow template — unable to read catalog file',
-				['app' => Application::APP_ID, 'file' => basename($file)]
-			);
-			return null;
-		}
-
-		$data = json_decode($raw, true);
-		if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
-			$this->logger->error(
-				'Dossiq: VTH workflow template — invalid JSON in catalog file',
-				['app' => Application::APP_ID, 'file' => basename($file)]
-			);
-			return null;
-		}
-
-		$slug = (string)($data['slug'] ?? '');
-		$title = (string)($data['title'] ?? '');
-		if ($slug === '' || $title === '') {
-			$this->logger->warning(
-				'Dossiq: VTH workflow template — missing slug or title',
-				['app' => Application::APP_ID, 'file' => basename($file)]
-			);
-			return null;
-		}
-
-		return $data;
-	}//end loadCatalogEntry()
 
 	/**
 	 * Resolve the caseType UUID and statusType map a template needs, applying
 	 * the idempotency check.
 	 *
-	 * Returns null for every soft-fail precondition — the caller reports those
-	 * as skipped.
+	 * Answers one of five things:
+	 *   `present`     this entry is already seeded and published, nothing to do.
+	 *   `deprecated`  this entry is present and retired, which is reported and never undone.
+	 *   `skip`        the reason this entry cannot be seeded, for the summary.
+	 *   `republish`   the uuid of a draft an earlier run failed to publish.
+	 *   otherwise     {caseTypeId, statusMap} to build the template from.
 	 *
 	 * @param array<string, mixed> $data The decoded catalog entry
 	 * @param string $slug The template slug
 	 * @param string $title The template title
-	 * @param IOutput $output The output interface
 	 *
-	 * @return array<string, mixed>|null {caseTypeId, statusMap}, or null when the template must be skipped
+	 * @return array<string, mixed> One of the three answers above
 	 */
-	private function resolveTemplateContext(array $data, string $slug, string $title, IOutput $output): ?array {
-		$caseTypeId = $this->resolveCaseType(data: $data, slug: $slug, output: $output);
+	private function resolveTemplateContext(array $data, string $slug, string $title): array {
+		$caseTypeSlug = (string)($data['caseTypeSlug'] ?? '');
+		$caseTypeId = $this->resolveCaseType(data: $data, slug: $slug);
 		if ($caseTypeId === '') {
-			return null;
+			if ($caseTypeSlug === '') {
+				return ['skip' => 'skipped, the catalogue entry names no case type.'];
+			}
+
+			return [
+				'skip' => 'skipped, this instance has no case type "' . $caseTypeSlug
+					. '". Create it, then run `occ maintenance:repair` again.',
+			];
 		}
 
-		// Idempotency: skip if a workflow template with the same title +
-		// caseType is already present.
-		if ($this->lookup->isAlreadySeeded(caseTypeId: $caseTypeId, title: $title) === true) {
+		// Idempotency, and the repair that goes with it: an existing published
+		// template is left alone, an existing DRAFT is one a failed publish
+		// stranded and gets published on this run.
+		$existing = $this->lookup->findSeeded(caseTypeId: $caseTypeId, title: $title);
+		if ($existing !== null) {
 			$this->logger->info(
-				'Dossiq: VTH workflow template already present, skipping',
+				'Dossiq: VTH workflow template already present',
 				[
 					'app' => Application::APP_ID,
 					'slug' => $slug,
 					'caseType' => $caseTypeId,
+					'lifecycleStatus' => (string)($existing['lifecycleStatus'] ?? ''),
 				]
 			);
-			return null;
+
+			$lifecycleStatus = (string)($existing['lifecycleStatus'] ?? '');
+			if ($lifecycleStatus === WorkflowDefinitionService::STATUS_DRAFT) {
+				return ['republish' => (string)($existing['id'] ?? ($existing['uuid'] ?? ''))];
+			}
+
+			// A retired entry is reported, never republished. See
+			// VthCatalogueReport::deprecatedReason() for why the seeder must not
+			// decide this on the administrator's behalf.
+			if ($lifecycleStatus === WorkflowDefinitionService::STATUS_DEPRECATED) {
+				return [
+					'deprecated' => $this->report->deprecatedReason(
+						title: $title,
+						variant: $this->files->variantOf(data: $data),
+					),
+				];
+			}
+
+			$named = $lifecycleStatus;
+			if ($named === '') {
+				$named = 'unknown';
+			}
+
+			return ['present' => 'already present as ' . $named . ', nothing to do.'];
 		}
 
 		// Build the name → UUID map for statusTypes belonging to this caseType.
+		// 🔑 THIS STEP READS THEM; IT HAS NEVER WRITTEN THEM. For a long time
+		// nothing did: VthSeedDataRepairStep stripped a case type's statusTypes
+		// before saving it, on the stated grounds that THIS step owned them, so
+		// a VTH case type arrived with none, every template was skipped here,
+		// and the run reported "0 seeded" with no error anywhere. Measured on a
+		// clean rig on 2026-09-04: six VTH case types, 46 statusTypes on the
+		// instance and not one of them attached to a VTH case type.
+		//
+		// VthCaseTypeChildSeeder now writes them, and info.xml runs
+		// VthSeedDataRepairStep before this step in both blocks. An empty map
+		// here therefore means a case type genuinely carries no statuses, which
+		// the message says rather than guessing at an owner.
 		$statusMap = $this->lookup->buildStatusMap(caseTypeId: $caseTypeId);
 		if ($statusMap === []) {
 			$this->logger->warning(
-				'Dossiq: VTH workflow template — no statusTypes found for caseType',
+				'Dossiq: VTH workflow template found no statusTypes for its caseType',
 				[
 					'app' => Application::APP_ID,
 					'slug' => $slug,
 					'caseType' => $caseTypeId,
+					'caseTypeSlug' => $caseTypeSlug,
 				]
 			);
-			return null;
+			return [
+				'skip' => 'skipped, case type "' . $caseTypeSlug . '" carries no statuses. '
+					. 'VthSeedDataRepairStep seeds them and runs first, so read its output above.',
+			];
 		}
 
 		return [
@@ -443,15 +520,14 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 *
 	 * @param array<string, mixed> $data The decoded catalog entry.
 	 * @param string $slug The template slug.
-	 * @param IOutput $output The output interface.
 	 *
 	 * @return string The caseType UUID, or the empty string when unresolved.
 	 */
-	private function resolveCaseType(array $data, string $slug, IOutput $output): string {
+	private function resolveCaseType(array $data, string $slug): string {
 		$caseTypeSlug = (string)($data['caseTypeSlug'] ?? '');
 		if ($caseTypeSlug === '') {
 			$this->logger->warning(
-				'Dossiq: VTH workflow template — missing caseTypeSlug',
+				'Dossiq: VTH workflow template names no caseTypeSlug',
 				['app' => Application::APP_ID, 'slug' => $slug]
 			);
 			return '';
@@ -459,20 +535,23 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 
 		$caseTypeId = $this->lookup->resolveCaseTypeId(slug: $caseTypeSlug);
 		if ($caseTypeId === '') {
-			// Expected precondition on every boot until base-register-seed-data
-			// has run (or while the anonymous repair context cannot read the
-			// caseType) — debug, not warning, so it does not spam the log.
-			$this->logger->debug(
-				'Dossiq: VTH workflow template — caseType not found, skipping',
+			// 🔴 THE OLD MESSAGE NAMED A STEP THAT DOES NOT EXIST, AND THAT IS
+			// WHY THIS TOOK SO LONG TO FIND. It read "run base-register-seed-data
+			// first", which is not a repair step, not an occ command and not a
+			// thing an operator can run. It was also the ONLY diagnosis on
+			// offer, so two real defects hid behind it: the step was registered
+			// ahead of VthSeedDataRepairStep, which provisions the case types
+			// it resolves, and the lookup could not read a case type whose slug
+			// is metadata rather than a property. Both are fixed. What is left
+			// is a genuine gap in the catalogue, and the caller names it in the
+			// per-entry summary rather than inventing a command.
+			$this->logger->warning(
+				'Dossiq: VTH workflow template skipped, its caseType is not on this instance',
 				[
 					'app' => Application::APP_ID,
 					'slug' => $slug,
 					'caseTypeSlug' => $caseTypeSlug,
 				]
-			);
-			$output->info(
-				'VTH catalog: caseType "' . $caseTypeSlug . '" not found for template "'
-				. $slug . '" — skipping (run base-register-seed-data first).'
 			);
 		}
 
@@ -487,9 +566,8 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 * @param string $title The template title
 	 * @param string $caseTypeId The resolved caseType UUID
 	 * @param array<string, mixed> $graph The resolved {steps, transitions}
-	 * @param IOutput $output The output interface
 	 *
-	 * @return string One of seeded|failed
+	 * @return void
 	 */
 	private function createAndPublishTemplate(
 		array $data,
@@ -497,15 +575,18 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		string $title,
 		string $caseTypeId,
 		array $graph,
-		IOutput $output,
-	): string {
+	): void {
+		$version = (int)($data['version'] ?? 1);
+		$variant = $this->files->variantOf(data: $data);
+
 		// Create draft via the lifecycle service.
 		$draft = $this->definitionService->createDraft(
 			payload: [
 				'title' => $title,
 				'description' => (string)($data['description'] ?? ''),
 				'caseType' => $caseTypeId,
-				'version' => (int)($data['version'] ?? 1),
+				'variant' => $variant,
+				'version' => $version,
 				'steps' => $graph['steps'],
 				'transitions' => $graph['transitions'],
 			]
@@ -513,25 +594,69 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 
 		if ($draft === null || isset($draft['id']) === false) {
 			$this->logger->error(
-				'Dossiq: VTH workflow template — createDraft returned null',
+				'Dossiq: VTH workflow template could not be created as a draft',
 				['app' => Application::APP_ID, 'slug' => $slug]
 			);
-			return 'failed';
+			$this->outcome(
+				entry: $slug,
+				outcome: 'failed',
+				reason: 'could not be created as a draft, see the log for the reason.',
+			);
+			return;
 		}
 
-		// Publish — flips to lifecycleStatus=published, isActive=true and
-		// pins caseType.workflowDefinition only when no previous definition
-		// was pinned (handled inside publish()).
+		// Read what is active ON THIS ROUTE before publishing: a publish
+		// deprecates the previous version of its own route, and this is the only
+		// moment that version can still be named. Asking without the route would
+		// name the OTHER route's definition, which this publish leaves alone.
+		// See openspec/specs/workflow-variants/spec.md.
+		$displaced = $this->definitionService->getActiveDefinitionFor(
+			caseTypeId: $caseTypeId,
+			variant: $variant,
+		);
+
+		// Publish, which flips the row to lifecycleStatus=published and
+		// isActive=true, and pins caseType.workflowDefinition when no previous
+		// definition was pinned (handled inside publish()).
 		$published = $this->definitionService->publish(id: (string)$draft['id']);
 		if ($published === null) {
 			$this->logger->error(
-				'Dossiq: VTH workflow template — publish returned null',
+				'Dossiq: VTH workflow template was created but could not be published',
 				['app' => Application::APP_ID, 'slug' => $slug, 'draftId' => (string)$draft['id']]
 			);
-			return 'failed';
+			$this->outcome(
+				entry: $slug,
+				outcome: 'failed',
+				reason: 'was created as a draft but could not be published, see the log for the reason.',
+			);
+			return;
 		}
 
-		$output->info('VTH catalog: seeded "' . $title . '" v' . (int)($data['version'] ?? 1) . '.');
-		return 'seeded';
+		// The catalogue says which route is the default, so the answer does not
+		// depend on the order glob() handed out the files. Ordering dependencies
+		// in this step are exactly what #1819 was about.
+		$isDefaultRoute = (bool)($data['isDefaultVariant'] ?? false);
+		if ($isDefaultRoute === true) {
+			$this->definitionService->setDefaultDefinition(id: (string)$draft['id']);
+		}
+
+		// The summary is the reporting channel for this step, deliberately: a
+		// count is not a report, and a second warning in the log is a second
+		// place to look. The line below names the route where the administrator
+		// is already reading.
+		$this->outcome(
+			entry: $slug,
+			outcome: 'seeded',
+			reason: $this->report->seededReason(
+				title: $title,
+				version: $version,
+				variant: $variant,
+				displacedTitle: $this->report->displacedTitle(
+					displaced: $displaced,
+					publishedId: (string)$draft['id'],
+				),
+				isDefaultRoute: $isDefaultRoute,
+			),
+		);
 	}//end createAndPublishTemplate()
 }//end class

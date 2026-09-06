@@ -45,9 +45,11 @@
                                 {
                                     "id": "open-deliberation",
                                     "type": "dossiq.askPerson",
+                                    "_note": "BOTH ASKS IN THIS FLOW USED TO NAME NOBODY, WHICH IS NOT A LOOSE END BUT A DEAD FLOW. DossiqAskPersonNode::validateConfig refuses an empty assignee outright (an unassigned task is answerable by anyone, because OpenRegister's resume guard reads silence as no restriction), so this node threw on its first execute and every bacAdviceRequest ever created failed its run at this step. The flow's own description says the secretary opens deliberation and the chair issues the advice, and both uids DO exist, on the bezwaaradviescommissie. They are not reachable from here: the item json is the bacAdviceRequest, whose `committee` is a bare reference the trigger does not expand, so `{{ committee.secretary }}` would resolve to nothing on every run and quietly mean the fallback. The group is the honest principal until the committee reference is expanded into the run.",
                                     "config": {
                                         "question": "Open de beraadslaging",
                                         "details": "De commissie heeft dit bezwaar toegewezen gekregen. Bevestig dat de beraadslaging is gestart zodra de zitting is belegd.",
+                                        "assignee": "bezwaarcommissie",
                                         "dueInDays": "14",
                                         "signalKey": "beraadslagingGestart"
                                     }
@@ -69,6 +71,7 @@
                                     "config": {
                                         "question": "Breng het advies uit",
                                         "details": "Leg de bevindingen, de juridische beoordeling en de aanbeveling vast en onderteken het advies. Awb art. 7:13 lid 7.",
+                                        "assignee": "bezwaarcommissie",
                                         "dueInDays": "84",
                                         "signalKey": "adviesUitgebracht"
                                     }

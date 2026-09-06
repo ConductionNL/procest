@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTime;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCP\Migration\IOutput;
@@ -41,8 +42,13 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ *
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class LoadDefaultZgwMappings implements IRepairStep {
+	use RunsUnderSystemIdentity;
+
 	/**
 	 * Twig template prefix: replace path segment and append UUID variable.
 	 *
@@ -71,6 +77,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getName(): string {
 		return 'Load default ZGW API mapping configurations for Dossiq';
@@ -113,11 +121,26 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		// Patch existing mappings that have known bugs (e.g., Twig renders false as "").
 		$this->patchExistingMappings(defaults: $defaults, output: $output);
 
-		// Create default test applicaties via ConsumerMapper.
-		$this->createDefaultApplicaties(output: $output);
+		// The two seeding phases below are conveniences, and a repair step
+		// that THROWS aborts the whole install. On a fresh install the schema
+		// settings this register was configured with can still be empty, and a
+		// lookup against an empty schema context throws — so each phase warns
+		// and continues instead of taking the install down with it.
+		try {
+			// Create default test applicaties via ConsumerMapper.
+			$this->createDefaultApplicaties(output: $output);
+		} catch (\Throwable $e) {
+			$output->warning('Could not create default applicaties: ' . $e->getMessage());
+			$this->logger->warning('Dossiq: default applicaties seed failed', ['exception' => $e->getMessage()]);
+		}
 
-		// Create default notification channels.
-		$this->createDefaultKanalen(output: $output);
+		try {
+			// Create default notification channels.
+			$this->createDefaultKanalen(output: $output);
+		} catch (\Throwable $e) {
+			$output->warning('Could not create default notification channels: ' . $e->getMessage());
+			$this->logger->warning('Dossiq: default kanalen seed failed', ['exception' => $e->getMessage()]);
+		}
 
 		$this->logger->info(
 			'Dossiq: Default ZGW mappings loaded',
@@ -1579,6 +1602,16 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			return;
 		}
 
+		// On a fresh install the schema settings can still be empty when this
+		// step runs; a search against an empty schema context throws and would
+		// abort the install. Skip by name instead.
+		if ((string)($channelMapping['sourceRegister'] ?? '') === ''
+			|| (string)($channelMapping['sourceSchema'] ?? '') === ''
+		) {
+			$output->info('Kanaal mapping has no register/schema configured yet. Skipping default channels.');
+			return;
+		}
+
 		try {
 			$container = \OC::$server;
 			$objectService = $container->get(
@@ -1591,25 +1624,62 @@ class LoadDefaultZgwMappings implements IRepairStep {
 
 		$defaults = $this->getDefaultKanalen();
 		$created = 0;
+		$refused = [];
 
-		foreach ($defaults as $channel) {
-			// Check if kanaal already exists.
-			$query = $objectService->buildSearchQuery(
-				requestParams: ['name' => $channel['name']],
-				register: $channelMapping['sourceRegister'],
-				schema: $channelMapping['sourceSchema']
-			);
-			$existing = $objectService->searchObjectsPaginated(query: $query);
-			if (($existing['total'] ?? 0) > 0) {
-				continue;
+		// A REPAIR STEP HAS NO SESSION, SO OPENREGISTER SEES 'Anonymous'.
+		// This loop is what the acceptance proof caught: every fresh install
+		// logged `User 'Anonymous' does not have permission to 'create' objects
+		// in schema 'Notification Channel'`, the FIRST channel threw, run()'s
+		// try/catch turned it into one warning, and the remaining three were
+		// never attempted. So the whole ZGW notification surface shipped with
+		// no channels while the step's own line never printed a zero.
+		//
+		// The elevation is the same one every other writing step already uses;
+		// the per-row try is the other half, so one refused channel no longer
+		// takes the other three with it and the count names what is missing.
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, $channelMapping, $defaults, &$created, &$refused): void {
+				foreach ($defaults as $channel) {
+					try {
+						// Check if kanaal already exists.
+						$query = $objectService->buildSearchQuery(
+							requestParams: ['name' => $channel['name']],
+							register: $channelMapping['sourceRegister'],
+							schema: $channelMapping['sourceSchema']
+						);
+						$existing = $objectService->searchObjectsPaginated(query: $query);
+						if (($existing['total'] ?? 0) > 0) {
+							continue;
+						}
+
+						$objectService->saveObject(
+							register: $channelMapping['sourceRegister'],
+							schema: $channelMapping['sourceSchema'],
+							object: $channel
+						);
+						$created++;
+					} catch (\Throwable $e) {
+						$refused[] = (string)$channel['name'];
+						$this->logger->error(
+							'Dossiq: default notification channel refused',
+							['channel' => $channel['name'], 'exception' => $e->getMessage()]
+						);
+					}//end try
+				}//end foreach
 			}
+		);
 
-			$objectService->saveObject(
-				register: $channelMapping['sourceRegister'],
-				schema: $channelMapping['sourceSchema'],
-				object: $channel
+		if ($refused !== []) {
+			$output->warning(
+				sprintf(
+					'Created %d default notification channels; %d REFUSED (%s). ZGW notifications on those channels cannot be delivered.',
+					$created,
+					count($refused),
+					implode(', ', $refused)
+				)
 			);
-			$created++;
+			return;
 		}
 
 		$output->info("Created {$created} default notification channels.");

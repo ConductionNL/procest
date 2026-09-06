@@ -324,17 +324,17 @@ export default {
 			// Fetch type data for name mapping
 			const statusTypes =
 				(await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})) || []
 			const roleTypes =
 				(await this.objectStore.fetchCollection('roleType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})) || []
 			const docTypes =
 				(await this.objectStore.fetchCollection('documentType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})) || []
 
@@ -362,7 +362,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async handleImport(event) {
@@ -376,17 +376,17 @@ export default {
 				// Fetch type data for UUID mapping
 				const statusTypes =
 					(await this.objectStore.fetchCollection('statusType', {
-						'_filters[caseType]': this.caseTypeId,
+						caseType: this.caseTypeId,
 						_limit: 100,
 					})) || []
 				const roleTypes =
 					(await this.objectStore.fetchCollection('roleType', {
-						'_filters[caseType]': this.caseTypeId,
+						caseType: this.caseTypeId,
 						_limit: 100,
 					})) || []
 				const docTypes =
 					(await this.objectStore.fetchCollection('documentType', {
-						'_filters[caseType]': this.caseTypeId,
+						caseType: this.caseTypeId,
 						_limit: 100,
 					})) || []
 

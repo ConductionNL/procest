@@ -27,7 +27,7 @@ export {
 
 /**
  *
- * @param caseId
+ * @param {string} caseId Identifier of the case id.
  */
 function base(caseId) {
 	return generateUrl(
@@ -55,8 +55,7 @@ export async function fetchRelations(caseId) {
  * @param {object} params Relation params.
  * @param {string} params.targetId Target case UUID.
  * @param {string} params.aardRelatie Relation type.
- * @param {string} [params.notes] Optional clarification.
- * @param params.toelichting
+ * @param {string} [params.toelichting] Optional clarification.
  * @return {Promise<{ok: boolean, reason?: string, detail?: string}>}
  *
  * @spec openspec/specs/related-case-linking/spec.md

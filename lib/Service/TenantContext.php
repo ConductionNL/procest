@@ -35,6 +35,8 @@ use RuntimeException;
  * Implemented as a regular service whose lifetime is bound to the request
  * scope by the NC DI container (request-scoped via `IRequest` is sufficient
  * — every HTTP request gets a fresh container child).
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
  */
 class TenantContext {
 
@@ -73,6 +75,8 @@ class TenantContext {
 	 * @param string $schemaName Tenant schema name.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function bind(array $tenant, string $schemaName): void {
 		$this->tenant = $tenant;
@@ -85,6 +89,8 @@ class TenantContext {
 	 * Whether a tenant has been bound to the request.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function isBound(): bool {
 		return $this->tenant !== null;
@@ -96,6 +102,8 @@ class TenantContext {
 	 * @return array<string,mixed>
 	 *
 	 * @throws RuntimeException When no tenant is bound.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function getTenant(): array {
 		$this->assertBound();
@@ -108,6 +116,8 @@ class TenantContext {
 	 * @return string
 	 *
 	 * @throws RuntimeException When no tenant is bound.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function getTenantId(): string {
 		$this->assertBound();
@@ -120,6 +130,8 @@ class TenantContext {
 	 * @return string
 	 *
 	 * @throws RuntimeException When no tenant is bound.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function getSlug(): string {
 		$this->assertBound();
@@ -132,6 +144,8 @@ class TenantContext {
 	 * @return string
 	 *
 	 * @throws RuntimeException When no tenant is bound.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function getSchemaName(): string {
 		$this->assertBound();
@@ -142,6 +156,8 @@ class TenantContext {
 	 * Reset the context. Used in tests + at the end of each request.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function reset(): void {
 		$this->tenant = null;

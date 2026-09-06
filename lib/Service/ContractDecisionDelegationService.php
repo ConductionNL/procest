@@ -10,10 +10,15 @@
  * - Raises a decidesk Decision by dispatching `DecisionRequestedEvent`.
  * - Reads the synchronous result the decidesk listener writes back onto the
  *   event (`isHandled()` / `getDecisionId()`).
+ * - Reads a raised Decision BACK by dispatching `DecisionStateRequestedEvent`,
+ *   for the case where the conclusion was announced and nobody heard it.
  * - FAILS CLOSED when decidesk is unavailable (never auto-approves).
  *
- * The terminal outcome is delivered separately, by decidesk dispatching a
+ * The terminal outcome is normally delivered by decidesk dispatching a
  * `DecisionConcludedEvent` consumed by {@see \OCA\Dossiq\Listener\DecisionConcludedListener}.
+ * `readDecisionState()` is NOT a second delivery mechanism: it is what a
+ * consumer consults when that announcement did not arrive, so a run waiting on
+ * a decision has something to ask instead of re-suspending forever.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -79,6 +84,79 @@ class ContractDecisionDelegationService {
 		'\\OCA\\Decidiq\\Event\\DecisionRequestedEvent',
 		'\\OCA\\Decidesk\\Event\\DecisionRequestedEvent',
 	];
+
+	/**
+	 * Every spelling of the decision-state read event FQN, newest first.
+	 *
+	 * ONE SPELLING, not two, and that is not an oversight. The read half of the
+	 * contract (decidiq#1118) was added AFTER the OCA\Decidesk -> OCA\Decidiq
+	 * rename, so `OCA\Decidesk\Event\DecisionStateRequestedEvent` has never
+	 * existed anywhere. Listing it would not be resilience — it would be this
+	 * app inventing a class name the other app never published, and a
+	 * class_exists() that can only ever answer false is dead code pretending to
+	 * be a fallback. The list stays a list because that is where a genuine
+	 * second spelling would go if decidiq ever published one.
+	 *
+	 * @var array<int, string>
+	 */
+	private const DECISION_STATE_EVENTS = [
+		'\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent',
+	];
+
+	/**
+	 * This app's id AS DECIDIQ KNOWS IT — frozen, and not our own app id.
+	 *
+	 * Decidiq matches this value exactly and echoes it back to
+	 * DecisionConcludedListener::SOURCE_APP. Renaming it silently drops every
+	 * in-flight and already-persisted decision, so it moves only in a
+	 * coordinated pass that moves emitter and receiver together.
+	 *
+	 * @var string
+	 */
+	private const SOURCE_APP = 'procest';
+
+	/**
+	 * The seam could not answer: decidiq absent, its listener unregistered, or
+	 * the read itself failed. NEVER "there is no such decision".
+	 *
+	 * @var string
+	 */
+	public const DECISION_STATE_UNREADABLE = 'unreadable';
+
+	/**
+	 * decidiq answered, and refused the read for the identity we named.
+	 *
+	 * @var string
+	 */
+	public const DECISION_STATE_REFUSED = 'refused';
+
+	/**
+	 * decidiq answered, the read was allowed, and no Decision carries that id.
+	 *
+	 * @var string
+	 */
+	public const DECISION_STATE_GONE = 'gone';
+
+	/**
+	 * The Decision exists and has not been concluded.
+	 *
+	 * @var string
+	 */
+	public const DECISION_STATE_OPEN = 'open';
+
+	/**
+	 * The Decision was concluded with an outcome: `approved` or `rejected`.
+	 *
+	 * @var string
+	 */
+	public const DECISION_STATE_DECIDED = 'decided';
+
+	/**
+	 * The Decision reached a terminal state carrying NO answer.
+	 *
+	 * @var string
+	 */
+	public const DECISION_STATE_WITHDRAWN = 'withdrawn';
 
 	/**
 	 * Constructor.
@@ -183,6 +261,147 @@ class ContractDecisionDelegationService {
 	}//end raiseDecision()
 
 	/**
+	 * Ask decidiq what became of a Decision this app raised.
+	 *
+	 * THE READ HALF OF THE SAME SEAM. `raiseDecision()` asks decidiq to decide
+	 * and the conclusion is ANNOUNCED back by `DecisionConcludedEvent`. This
+	 * method is what a consumer consults when that announcement never arrived —
+	 * the listener threw, the app was mid-upgrade, the run had already been
+	 * resumed by something else. It is deliberately the same synchronous
+	 * request/response-over-the-bus shape (ADR-041, decidiq#1118), so an app
+	 * that can raise a decision can read one back without a second mechanism.
+	 *
+	 * 🔴 IT NAMES AN IDENTITY, AND MUST. The bus carries no session — the
+	 * heartbeat that motivates this read runs under the cron worker, where
+	 * `IUserSession` holds nobody — so decidiq scopes the read to the uid the
+	 * event names and REFUSES an event naming none. Passing an empty actor is
+	 * therefore not "read as the system": it is a refusal, and this method does
+	 * not even dispatch it.
+	 *
+	 * 🔴 SIX ANSWERS, NOT A BOOLEAN. "I could not reach the seam", "you may not
+	 * read this", "there is no such decision", "still open", "decided" and
+	 * "withdrawn" are six different facts and a caller acts differently on each.
+	 * Collapsing the first three into one would let an unreachable OpenRegister
+	 * read as a vanished decision, which fails a case whose decision is sitting
+	 * there taken.
+	 *
+	 * @param string $decisionId The decidiq decision id this app holds.
+	 * @param string $actorId The Nextcloud uid the read is scoped to — never empty.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>} The state, decidiq's own status word, and the outcome envelope.
+	 *
+	 * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
+	 */
+	public function readDecisionState(string $decisionId, string $actorId): array {
+		$decisionId = trim($decisionId);
+		$actorId = trim($actorId);
+
+		$eventClass = $this->firstExistingClass(candidates: self::DECISION_STATE_EVENTS);
+		if ($eventClass === null || $decisionId === '' || $actorId === '') {
+			$reason = 'no decision id or no actor';
+			if ($eventClass === null) {
+				$reason = 'the read seam is not installed';
+			}
+
+			$this->logger->warning(
+				'ContractDecisionDelegationService: cannot read a decision state',
+				['decisionRef' => $decisionId, 'hasActor' => ($actorId !== ''), 'reason' => $reason]
+			);
+
+			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
+		}
+
+		try {
+			// Positional ctor args (decidiq contract): sourceApp, decisionId, actorId.
+			$event = new $eventClass(self::SOURCE_APP, $decisionId, $actorId);
+
+			$this->eventDispatcher->dispatchTyped($event);
+		} catch (Throwable $e) {
+			// Unreadable, NOT absent. A dispatch that blew up says nothing
+			// about whether the decision exists, and reading it as "gone"
+			// would strand a run whose decision is already taken.
+			$this->logger->error(
+				'ContractDecisionDelegationService: DecisionStateRequestedEvent dispatch failed',
+				['decisionRef' => $decisionId, 'error' => $e->getMessage()]
+			);
+
+			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
+		}//end try
+
+		// Unhandled is decidiq's own way of saying "ask me again": its listener
+		// leaves the event unhandled when the lookup could not be RESOLVED, and
+		// marks it handled for every fact it can actually report.
+		if ((bool)$event->isHandled() === false) {
+			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
+		}
+
+		if ((bool)$event->isPermitted() === false) {
+			return $this->stateAnswer(state: self::DECISION_STATE_REFUSED);
+		}
+
+		if ((bool)$event->isFound() === false) {
+			return $this->stateAnswer(state: self::DECISION_STATE_GONE);
+		}
+
+		return $this->stateFromEnvelope(envelope: (array)($event->getEnvelope() ?? []), decisionId: $decisionId);
+	}//end readDecisionState()
+
+	/**
+	 * Read the outcome envelope decidiq answered with as one of the states.
+	 *
+	 * The status vocabulary is decidiq's — `approved` / `rejected` /
+	 * `withdrawn` / `pending`, the same words `DecisionConcludedEvent` carries —
+	 * so it is mapped here once and nowhere else.
+	 *
+	 * A word this app does not recognise reads as STILL OPEN, deliberately. It
+	 * can only come from a decidiq newer than this one, and the two directions
+	 * are not symmetric: waiting through a vocabulary extension costs a
+	 * heartbeat, while guessing that an unknown word means "decided" would
+	 * advance a case on an outcome nobody here can name.
+	 *
+	 * @param array<string, mixed> $envelope The envelope from getOutcomeEnvelope().
+	 * @param string $decisionId The decision id, for the log line.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>} The resolved state.
+	 *
+	 * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
+	 */
+	private function stateFromEnvelope(array $envelope, string $decisionId): array {
+		$status = strtolower(trim((string)($envelope['status'] ?? '')));
+
+		$state = match ($status) {
+			'approved', 'rejected' => self::DECISION_STATE_DECIDED,
+			'withdrawn' => self::DECISION_STATE_WITHDRAWN,
+			'pending' => self::DECISION_STATE_OPEN,
+			default => null,
+		};
+
+		if ($state === null) {
+			$this->logger->warning(
+				'ContractDecisionDelegationService: decidiq reported a decision status this app does not know; treating it as still open',
+				['decisionRef' => $decisionId, 'status' => $status]
+			);
+
+			$state = self::DECISION_STATE_OPEN;
+		}
+
+		return $this->stateAnswer(state: $state, status: $status, envelope: $envelope);
+	}//end stateFromEnvelope()
+
+	/**
+	 * One answer shape, so no caller has to interpret an absent key.
+	 *
+	 * @param string $state One of the DECISION_STATE_* constants.
+	 * @param string $status decidiq's own status word, when there was one.
+	 * @param array<string, mixed> $envelope The outcome envelope, when there was one.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>} The answer.
+	 */
+	private function stateAnswer(string $state, string $status = '', array $envelope = []): array {
+		return ['state' => $state, 'status' => $status, 'envelope' => $envelope];
+	}//end stateAnswer()
+
+	/**
 	 * Build, dispatch and resolve a decidesk `DecisionRequestedEvent`.
 	 *
 	 * Guarded by class_exists — when decidesk is not installed the method fails
@@ -229,14 +448,11 @@ class ContractDecisionDelegationService {
 			// subjectSchema, subjectId, subjectLabel, decisionType, actorId,
 			// payload, externalReference, correlationId.
 			//
-			// sourceApp is FROZEN at `procest`: it is this app's id AS DECIDESK
-			// KNOWS IT, not our own app id. decidesk still ships
-			// `<id>decidesk</id>`, matches this value exactly, and echoes it back
-			// to DecisionConcludedListener::SOURCE_APP. Renaming it here silently
-			// drops every in-flight and already-persisted decision. It moves only
-			// in a coordinated pass that moves emitter and receiver together.
+			// sourceApp is FROZEN — see self::SOURCE_APP, which carries the
+			// reason and is the one place both halves of this contract read it
+			// from.
 			$event = new $eventClass(
-				'procest',
+				self::SOURCE_APP,
 				(string)$subject['subjectRegister'],
 				(string)$subject['subjectSchema'],
 				(string)$subject['subjectId'],
@@ -288,12 +504,26 @@ class ContractDecisionDelegationService {
 	 * @return string|null The event FQN, or null when the decision app is absent.
 	 */
 	private function resolveRequestEventClass(): ?string {
-		foreach (self::DECISION_REQUESTED_EVENTS as $candidate) {
+		return $this->firstExistingClass(candidates: self::DECISION_REQUESTED_EVENTS);
+	}//end resolveRequestEventClass()
+
+	/**
+	 * The first of these class names that actually exists.
+	 *
+	 * Shared by both halves of the contract so the raise and the read cannot
+	 * end up resolving a cross-app class name by two different rules.
+	 *
+	 * @param array<int, string> $candidates The FQNs to try, newest first.
+	 *
+	 * @return string|null The first that exists, or null when none does.
+	 */
+	private function firstExistingClass(array $candidates): ?string {
+		foreach ($candidates as $candidate) {
 			if (class_exists($candidate) === true) {
 				return $candidate;
 			}
 		}
 
 		return null;
-	}//end resolveRequestEventClass()
+	}//end firstExistingClass()
 }//end class

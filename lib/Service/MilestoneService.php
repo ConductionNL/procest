@@ -40,6 +40,8 @@ use RuntimeException;
  * Reads go through {@see MilestoneRepository} and the stalled-case report is
  * owned by {@see StalledCaseDetector}; what stays here is milestone mutation
  * (mark/reverse) and per-case progress.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class MilestoneService {
 
@@ -75,6 +77,45 @@ class MilestoneService {
 	public function getMilestones(string $caseTypeId): array {
 		return $this->repository->findDefinitions(caseTypeId: $caseTypeId);
 	}//end getMilestones()
+
+	/**
+	 * Get milestone progress for a specific case.
+	 *
+	 * @param string $caseId The case UUID
+	 * @param string $caseTypeId The case type UUID
+	 *
+	 * @return array<string, mixed> Progress data with milestones, reached count, total, percentage
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	/**
+	 * Progress for a case whose type the caller does not know.
+	 *
+	 * Resolves the case's own type, then delegates. This exists so a client does
+	 * not have to pass a value the server can read for itself: requiring it made
+	 * the caller's first render, before its record has loaded, send an empty
+	 * path segment and 404.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed> Progress data, or an empty shape when the
+	 *                              case has no resolvable type.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function getCaseProgressForCase(string $caseId): array {
+		$caseTypeId = $this->repository->findCaseTypeId(caseId: $caseId);
+		if ($caseTypeId === null) {
+			return [
+				'milestones' => [],
+				'reached' => 0,
+				'total' => 0,
+				'percentage' => 0,
+			];
+		}
+
+		return $this->getCaseProgress(caseId: $caseId, caseTypeId: $caseTypeId);
+	}//end getCaseProgressForCase()
 
 	/**
 	 * Get milestone progress for a specific case.

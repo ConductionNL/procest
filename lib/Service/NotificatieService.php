@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
  * Service for publishing ZGW notifications to subscribers.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class NotificatieService {
 

@@ -173,17 +173,35 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/case-share-via-shares-leaf/spec.md */
+		/**
+		 * Load the ketenpartners this case may be shared with.
+		 *
+		 * Reads OpenRegister's Organisation, not dossiq's retired
+		 * `partnerOrganization` schema. A ketenpartner IS an organisation, and
+		 * every instance used to hold two answers to "which organisations does
+		 * this system know about". `occ dossiq:migrate-partners` moved the rows
+		 * PRESERVING each partner's uuid, so the `partnerId` already stored on
+		 * existing caseShare objects keeps resolving.
+		 *
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
+		 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+		 *
+		 * @return {Promise<void>}
+		 */
 		async loadPartners() {
 			try {
 				const response = await axios.get(
-					generateUrl(
-						'/apps/openregister/api/objects/dossiq/partnerOrganization',
-					),
+					generateUrl('/apps/openregister/api/organisations'),
 				)
-				this.partners = response.data?.results || []
+				// A partner is somebody ELSE's organisation that this instance
+				// shares cases WITH. Without the type filter the picker would
+				// offer this municipality its own tenant to share a case with.
+				this.partners = (response.data?.results || []).filter(
+					(organisation) => organisation.type === 'partner',
+				)
 			} catch (err) {
 				this.partners = []
+				showError(t('dossiq', 'Could not load partner organisations'))
 			}
 		},
 

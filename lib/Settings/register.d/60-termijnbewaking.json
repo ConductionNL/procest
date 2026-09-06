@@ -191,6 +191,33 @@
             "title": "Notifications Sent",
             "description": "Threshold bucket numbers already notified (14/7/2/0) to prevent duplicate escalation",
             "items": { "type": "integer" }
+          },
+          "engineTimerId": {
+            "type": "string",
+            "title": "Engine Timer Id",
+            "description": "Uuid of the OpenRegister FlowTimer that measures this term"
+          },
+          "pauseTimerId": {
+            "type": "string",
+            "title": "Pause Timer Id",
+            "description": "Uuid of the advisory FlowTimer that watches the hersteltermijn while the term is suspended"
+          },
+          "pauzeStartDatum": {
+            "type": "string",
+            "format": "date",
+            "title": "Pause Start Date",
+            "description": "Date the running pause began (AWB 4:5)"
+          },
+          "pauzeDuurDagen": {
+            "type": "integer",
+            "title": "Pause Duration Days",
+            "description": "Requested duration of the running pause in days"
+          },
+          "voltooiDatum": {
+            "type": "string",
+            "format": "date",
+            "title": "Completion Date",
+            "description": "Date the term was completed by the beschikking"
           }
         }
       },

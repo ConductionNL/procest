@@ -16,15 +16,14 @@
  * @spec openspec/changes/deelzaak-support/tasks.md#T04
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { setActivePinia, createPinia } from 'pinia'
-
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-	fetchSubCases as apiFetchSubCases,
 	fetchParentCase as apiFetchParentCase,
 	fetchSubCaseCounts as apiFetchSubCaseCounts,
-	validateSubCase as apiValidateSubCase,
+	fetchSubCases as apiFetchSubCases,
 	unlinkSubCases as apiUnlinkSubCases,
+	validateSubCase as apiValidateSubCase,
 } from '../../src/services/deelzaakApi.js'
 import { useDeelzaakStore } from '../../src/store/modules/deelzaak.js'
 
@@ -204,9 +203,7 @@ describe('deelzaak store', () => {
 			// p1's cached count is dropped so the UI re-reads fresh; p2 untouched.
 			expect(store.getSubCaseCount('p1')).toBe(0)
 			expect(store.getSubCaseCount('p2')).toBe(1)
-			expect(
-				Object.prototype.hasOwnProperty.call(store.subCaseCounts, 'p1'),
-			).toBe(false)
+			expect(Object.hasOwn(store.subCaseCounts, 'p1')).toBe(false)
 		})
 
 		it('is a no-op on the cache when the parent had no cached count', async () => {

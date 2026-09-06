@@ -11,7 +11,7 @@
  *   - Delegation substitution + cycle detection on `role.delegate`.
  *   - APCu cache layer keyed by `(ruleHash, caseId)` for 60s.
  *
- * Callers: task list builder, status-transition engine, ParafeerRouteService,
+ * Callers: task list builder, status-transition engine,
  * /api/cases/{id}/reroute controller.
  *
  * @category Service

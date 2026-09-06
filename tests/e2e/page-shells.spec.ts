@@ -38,9 +38,8 @@
  * executable code rather than in a comment (hydra gate-26 / .github#358).
  */
 
-import { test, expect } from '@playwright/test'
-
-import { navToRoute, loadAllAdminSections } from './helpers/nav'
+import { expect, test } from '@playwright/test'
+import { loadAllAdminSections, navToRoute } from './helpers/nav.ts'
 import {
 	ProcessMiningDashboard,
 	PublicAppointmentPage,
@@ -48,7 +47,7 @@ import {
 	PublicStatusPage,
 	TenantOnboardingAdminSettings,
 	TermijnDashboard,
-} from './helpers/page-components'
+} from './helpers/page-components.ts'
 
 /**
  * Drive one route and assert its own heading rendered.

@@ -8,9 +8,6 @@
  *
  * @param {object} caseType Case type object
  * @return {boolean}
- */
-/**
- * @param caseType
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function isCaseTypeUsable(caseType) {
@@ -40,9 +37,6 @@ export function isCaseTypeUsable(caseType) {
  *
  * @param {object} caseType Case type object
  * @return {string|null} Reason why the case type cannot be used, or null if usable
- */
-/**
- * @param caseType
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function getCaseTypeUnusableReason(caseType) {
@@ -93,10 +87,6 @@ export function getCaseTypeUnusableReason(caseType) {
  * @param {object} form The form data with title, caseType, etc.
  * @param {object[]} caseTypes Available case types for validation context
  * @return {{ valid: boolean, errors: object }} Validation result
- */
-/**
- * @param form
- * @param caseTypes
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function validateCaseCreate(form, caseTypes = []) {
@@ -131,9 +121,6 @@ export function validateCaseCreate(form, caseTypes = []) {
  *
  * @param {object} form The form data with title
  * @return {{ valid: boolean, errors: object }} Validation result
- */
-/**
- * @param form
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function validateCaseUpdate(form) {
@@ -156,11 +143,6 @@ export function validateCaseUpdate(form) {
  * @param {object} caseObj The case object
  * @param {object[]} statusTypes Available status types for the case type
  * @return {{ valid: boolean, error: string|null }} Validation result
- */
-/**
- * @param targetStatus
- * @param caseObj
- * @param statusTypes
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function validateStatusChange(targetStatus, caseObj, statusTypes) {

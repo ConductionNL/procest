@@ -95,7 +95,7 @@ class DoorverbindingService {
 		];
 
 		try {
-			$created = $objectService->saveObject($register, $schema, $record);
+			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to initiate doorverbinding: ' . $e->getMessage(),
@@ -238,7 +238,7 @@ class DoorverbindingService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		try {
-			$updated = $objectService->saveObject($register, $schema, $patch, $doorverbindingId);
+			$updated = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: $doorverbindingId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to update doorverbinding: ' . $e->getMessage(),

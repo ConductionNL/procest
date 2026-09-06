@@ -84,6 +84,8 @@ interface KvkHandelsregisterAdapterInterface {
 	 *
 	 * @return KvkLookupResult The lookup outcome (status + entity
 	 *                         envelope + optional vestiging list).
+	 *
+	 * @spec openspec/changes/brp-kvk-register-sets/proposal.md
 	 */
 	public function lookup(string $kvkNumber, array $context = []): KvkLookupResult;
 
@@ -92,6 +94,8 @@ interface KvkHandelsregisterAdapterInterface {
 	 * the KvK Handelsregister.
 	 *
 	 * @return bool TRUE when the adapter is a log-only stub.
+	 *
+	 * @spec openspec/changes/brp-kvk-register-sets/proposal.md
 	 */
 	public function isDormant(): bool;
 }//end interface

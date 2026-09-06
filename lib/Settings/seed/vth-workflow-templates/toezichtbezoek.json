@@ -2,7 +2,8 @@
   "_format": "dossiq-vth-workflow-template-v1",
   "slug": "toezichtbezoek",
   "title": "Toezichtbezoek",
-  "description": "Workflow voor een toezichtbezoek (inspectie ter plaatse). Geen wettelijke beslistermijn. Bij constatering van een overtreding wordt een handhavingstraject gespawned via automaticAction.",
+  "description": "Workflow voor het toezicht op een bouwactiviteit, met de drie inspectiefases die de zaak kent: fundering, ruwbouw en oplevering. Geen wettelijke beslistermijn. Bij constatering van een overtreding wordt een handhavingstraject gespawned via automaticAction.",
+  "_statusNamesAreTheCaseTypes": "De statusName van elke stap is de naam van een statusType van toezichtzaak-bouw. De vorige versie noemde een stap 'Inspectie', een status die alleen toezichtzaak-milieu heeft, waardoor deze template op elke installatie werd overgeslagen.",
   "version": 1,
   "caseTypeSlug": "toezichtzaak-bouw",
   "statutoryFramework": "Awb hoofdstuk 5 (toezicht)",
@@ -18,20 +19,40 @@
       "description": "Toezichtbezoek is ingepland, datum afgestemd met contactpersoon."
     },
     {
-      "slug": "uitgevoerd",
-      "title": "Inspectie uitgevoerd",
-      "statusName": "Inspectie",
+      "slug": "inspectie-fundering",
+      "title": "Inspectie fundering",
+      "statusName": "Inspectie fase 1",
       "order": 2,
       "isInitial": false,
       "isFinal": false,
       "assigneeRole": "Inspecteur",
-      "description": "Inspectie ter plaatse is afgerond, constateringen vastgelegd."
+      "description": "Inspectie van de fundering is uitgevoerd, constateringen vastgelegd."
+    },
+    {
+      "slug": "inspectie-ruwbouw",
+      "title": "Inspectie ruwbouw",
+      "statusName": "Inspectie fase 2",
+      "order": 3,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Inspectie van de ruwbouw is uitgevoerd, constateringen vastgelegd."
+    },
+    {
+      "slug": "inspectie-oplevering",
+      "title": "Inspectie oplevering",
+      "statusName": "Inspectie fase 3",
+      "order": 4,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Opleveringsinspectie is uitgevoerd, constateringen vastgelegd."
     },
     {
       "slug": "rapport",
       "title": "Rapport opgesteld",
       "statusName": "Rapport",
-      "order": 3,
+      "order": 5,
       "isInitial": false,
       "isFinal": false,
       "assigneeRole": "Inspecteur",
@@ -41,7 +62,7 @@
       "slug": "opvolging",
       "title": "Opvolging",
       "statusName": "Opvolging",
-      "order": 4,
+      "order": 6,
       "isInitial": false,
       "isFinal": false,
       "assigneeRole": "Inspecteur",
@@ -51,7 +72,7 @@
       "slug": "afgehandeld",
       "title": "Afgehandeld",
       "statusName": "Afgehandeld",
-      "order": 5,
+      "order": 7,
       "isInitial": false,
       "isFinal": true,
       "assigneeRole": null,
@@ -60,15 +81,43 @@
   ],
   "transitions": [
     {
-      "slug": "gepland-naar-uitgevoerd",
+      "slug": "gepland-naar-fundering",
       "fromStatus": "Gepland",
-      "toStatus": "Inspectie",
-      "label": "Inspectie uitvoeren",
+      "toStatus": "Inspectie fase 1",
+      "label": "Fundering inspecteren",
       "allowedRoles": ["Inspecteur"]
     },
     {
-      "slug": "uitgevoerd-naar-rapport",
-      "fromStatus": "Inspectie",
+      "slug": "fundering-naar-ruwbouw",
+      "fromStatus": "Inspectie fase 1",
+      "toStatus": "Inspectie fase 2",
+      "label": "Ruwbouw inspecteren",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "ruwbouw-naar-oplevering",
+      "fromStatus": "Inspectie fase 2",
+      "toStatus": "Inspectie fase 3",
+      "label": "Oplevering inspecteren",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "fundering-naar-rapport",
+      "fromStatus": "Inspectie fase 1",
+      "toStatus": "Rapport",
+      "label": "Rapport opstellen na fundering",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "ruwbouw-naar-rapport",
+      "fromStatus": "Inspectie fase 2",
+      "toStatus": "Rapport",
+      "label": "Rapport opstellen na ruwbouw",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "oplevering-naar-rapport",
+      "fromStatus": "Inspectie fase 3",
       "toStatus": "Rapport",
       "label": "Rapport opstellen",
       "allowedRoles": ["Inspecteur"]
@@ -95,6 +144,13 @@
       "fromStatus": "Opvolging",
       "toStatus": "Afgehandeld",
       "label": "Afhandelen",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "rapport-naar-afgehandeld",
+      "fromStatus": "Rapport",
+      "toStatus": "Afgehandeld",
+      "label": "Afhandelen zonder opvolging",
       "allowedRoles": ["Inspecteur"]
     }
   ]

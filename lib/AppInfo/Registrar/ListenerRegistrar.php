@@ -59,6 +59,7 @@ class ListenerRegistrar {
 		(new ImmutabilityListenerRegistrar())->register(context: $context);
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
+		(new TermijnTimerRegistrar())->register(context: $context);
 
 		// ADR-065: OpenRegister owns the flow engine; dossiq contributes the six
 		// things a case can DO, because every one of OpenRegister's own nineteen
@@ -72,6 +73,20 @@ class ListenerRegistrar {
 			$context->registerEventListener(
 				\OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent::class,
 				\OCA\Dossiq\Flow\DossiqFlowNodeListener::class
+			);
+		}
+
+		// ADR-041 delivery seam: integriq concludes a besluit-publication
+		// delivery this app requested (PublicationService) with a terminal
+		// DeliveryConcludedEvent; the listener projects the outcome onto the
+		// case's publication record. FQN string, not ::class — integriq is an
+		// optional runtime dependency and a cross-app event class name is a
+		// runtime lookup this app can only follow (see the decidesk→decidiq
+		// rename incident in WorkflowListenerRegistrar).
+		if (class_exists('\\OCA\\Integriq\\Event\\DeliveryConcludedEvent') === true) {
+			$context->registerEventListener(
+				'OCA\Integriq\Event\DeliveryConcludedEvent',
+				\OCA\Dossiq\Listener\DeliveryConcludedListener::class
 			);
 		}
 	}//end register()

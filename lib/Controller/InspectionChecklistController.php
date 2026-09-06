@@ -103,7 +103,10 @@ class InspectionChecklistController extends Controller {
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function create(): JSONResponse {
 		$data = $this->request->getParams();
-		unset($data['_route']);
+		// Identity stripped on a CREATE too. `saveObject()` resolves its target
+		// from the payload (`@self.id` first, then `id`), so a create carrying
+		// either would replace an existing checklist rather than add one.
+		unset($data['_route'], $data['id'], $data['uuid'], $data['@self']);
 
 		try {
 			$result = $this->checklistService->createChecklist(data: $data);
@@ -134,7 +137,7 @@ class InspectionChecklistController extends Controller {
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function update(string $id): JSONResponse {
 		$data = $this->request->getParams();
-		unset($data['_route'], $data['id']);
+		unset($data['_route'], $data['id'], $data['uuid'], $data['@self']);
 
 		try {
 			$result = $this->checklistService->updateChecklist(id: $id, data: $data);

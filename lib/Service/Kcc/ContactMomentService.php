@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
  * validation, persistence and IDOR-scoped queries for one entity.
  * @SuppressWarnings(PHPMD.BooleanArgumentFlag)      — $isPrivileged is the standard
  * cross-agent/own-record scoping flag used across the app's controllers.
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
 class ContactMomentService {
 	/**
@@ -84,6 +86,8 @@ class ContactMomentService {
 	 * @return array<string, mixed> The sanitised contact-moment payload.
 	 *
 	 * @throws OCSBadRequestException When validation fails.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function buildPayload(array $data, string $agentId): array {
 		$channel = $this->validateEnum(value: (string)($data['channel'] ?? ''), allowed: self::CHANNELS, label: 'channel');
@@ -226,6 +230,8 @@ class ContactMomentService {
 	 * @return array<string, mixed> The updated contact moment.
 	 *
 	 * @throws OCSBadRequestException When not found or not owned.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-contactmoment-records-capture-full-interaction-context
 	 */
 	public function update(string $id, array $data, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -297,6 +303,8 @@ class ContactMomentService {
 	 * @param bool $isPrivileged Whether the caller may see all moments.
 	 *
 	 * @return array<int, array<string, mixed>> The contact moments.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function list(array $filters, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -328,6 +336,8 @@ class ContactMomentService {
 	 * @return array<string, mixed> The contact moment.
 	 *
 	 * @throws OCSBadRequestException When not found or not owned.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function get(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -349,6 +359,8 @@ class ContactMomentService {
 	 * @param bool $isPrivileged Whether the caller may see any moment.
 	 *
 	 * @return array<int, array<string, mixed>> Related contact moments.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function related(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();

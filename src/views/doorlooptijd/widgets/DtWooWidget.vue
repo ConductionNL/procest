@@ -24,6 +24,7 @@ export default {
 	methods: {
 		/**
 		 * Show every Woo case on the case index.
+		 *
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		viewAllWoo() {

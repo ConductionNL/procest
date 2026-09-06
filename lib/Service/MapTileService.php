@@ -37,6 +37,8 @@ use InvalidArgumentException;
 
 /**
  * Stateless tile-list manifest builder for offline PWA pre-caching.
+ *
+ * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-6
  */
 class MapTileService {
 	/**

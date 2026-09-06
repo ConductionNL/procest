@@ -57,7 +57,7 @@ class WorkQueueServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'dossiq',
 					'case_schema' => 'case',
-					'task_schema' => 'task',
+					'task_schema' => 'caseTask',
 					'termijn_instance_schema' => 'deadlineInstance',
 					default => '',
 				};
@@ -267,7 +267,7 @@ class WorkQueueServiceTest extends TestCase {
 			'deadline' => '2026-08-01',
 			'priority' => 'normal',
 		]);
-		$this->objects->saveObject('task', [
+		$this->objects->saveObject('caseTask', [
 			'id' => 'task-1',
 			'title' => 'Overdue task',
 			'assignee' => 'jan',
@@ -275,7 +275,7 @@ class WorkQueueServiceTest extends TestCase {
 			'dueDate' => '2026-07-01',
 			'priority' => 'normal',
 		]);
-		$this->objects->saveObject('task', [
+		$this->objects->saveObject('caseTask', [
 			'id' => 'task-2',
 			'title' => 'Completed task',
 			'assignee' => 'jan',

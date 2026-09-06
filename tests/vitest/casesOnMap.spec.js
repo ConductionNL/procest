@@ -16,14 +16,14 @@
  * @spec openspec/specs/case-map-overview/spec.md
  */
 
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 beforeAll(() => {
 	globalThis.t = (app, text, vars) => {
 		if (!vars) return text
 		return text.replace(/\{(\w+)\}/g, (_, k) =>
-			vars[k] != null ? String(vars[k]) : '',
+			vars[k] !== null && vars[k] !== undefined ? String(vars[k]) : '',
 		)
 	}
 })

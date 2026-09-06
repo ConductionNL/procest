@@ -19,6 +19,7 @@ import type { Page } from '@playwright/test'
 
 /**
  * The app's sidebar navigation container.
+ *
  * @param page
  * @return The navigation locator.
  */
@@ -47,6 +48,7 @@ async function closeModalIfOpen(page: Page, testid: string): Promise<void> {
  * Dismiss the "Support Dossiq" dialog if it is open. The dialog's
  * modal-mask intercepts pointer events on the navigation, so it must be
  * closed before any nav click.
+ *
  * @param page
  */
 export async function dismissSupportDialog(page: Page): Promise<void> {
@@ -70,6 +72,7 @@ export async function dismissSupportDialog(page: Page): Promise<void> {
  * COLLAPSED group, so they are present in the DOM but `display:none`. A
  * role/visibility-based locator cannot see them, and the old implementation
  * therefore fell through to clicking a locator that matched nothing.
+ *
  * @param page
  */
 async function readNavLinks(
@@ -100,7 +103,7 @@ async function readNavLinks(
  * The click path, by contrast, was the single largest cause of CI failure.
  * The nav renders its leaves inside COLLAPSED groups ("Work queue",
  * "Reports", "Personal settings"), so `My work`, `Workflow board`,
- * `Processing time`, `Proposals`, `Objections` and `Appeals` are all
+ * `Processing time`, `Objections` and `Appeals` are all
  * `display:none` on load. Playwright's `.click()` waits for actionability,
  * and this suite sets no `actionTimeout`, so each such click blocked for the
  * ENTIRE 60s test budget and then failed with a bare timeout that named an
@@ -110,16 +113,33 @@ async function readNavLinks(
  *
  * Resolving the label to its `href` and navigating directly is immune to
  * collapsed groups, needs no group-expansion bookkeeping, and is faster.
+ * ## Why a RegExp is accepted
+ *
+ * A pinned exact label is a standing tripwire. dossiq#1646 regrouped the work
+ * surfaces and renamed three at once — `Cases` became `All issues`, and later `All cases`, the `My
+ * work` PAGE became `Assigned to me` once the GROUP took that name, and
+ * `Voorstellen` became `Proposals` — and every call site naming the old string
+ * broke together. Three of them wrapped the call in `.catch(() => {})`, so they
+ * did not break loudly: they carried on against whatever the Dashboard renders.
+ *
+ * Passing a RegExp lets a call site accept the label in either locale, and
+ * survive a rename that keeps the meaning, without giving up the fail-fast
+ * behaviour below.
+ *
  * @param page
- * @param label exact sidebar label, e.g. 'Cases', 'My work'
+ * @param label exact sidebar label, or a RegExp matching it — e.g. 'Dashboard'
+ *              or `/^(All cases|Alle zaken)$/`
  */
-export async function navTo(page: Page, label: string): Promise<void> {
+export async function navTo(page: Page, label: string | RegExp): Promise<void> {
 	await page.goto('/index.php/apps/dossiq')
 	await dismissSupportDialog(page)
 
+	const matches = (l: string) =>
+		typeof label === 'string' ? l === label : label.test(l)
+
 	const links = await readNavLinks(page)
 	// Prefer a real navigating entry; a group header renders as href="#".
-	const target = links.find((l) => l.label === label && l.href && l.href !== '#')
+	const target = links.find((l) => matches(l.label) && l.href && l.href !== '#')
 
 	if (!target || !target.href) {
 		// Fail FAST and by NAME. The old code swallowed this into two
@@ -130,7 +150,7 @@ export async function navTo(page: Page, label: string): Promise<void> {
 			.filter((l) => l.href && l.href !== '#')
 			.map((l) => l.label)
 		throw new Error(
-			`[dossiq e2e] navTo('${label}'): no navigating sidebar link with that exact label.\n`
+			`[dossiq e2e] navTo(${String(label)}): no navigating sidebar link matches.\n`
 				+ `Available navigating labels: ${JSON.stringify(available)}`,
 		)
 	}
@@ -145,6 +165,7 @@ export async function navTo(page: Page, label: string): Promise<void> {
  * deep-link resets the history-mode router to the Dashboard, so land on a
  * resolving route first and then push the target route client-side via a
  * sidebar link is not possible — instead navigate from within the loaded SPA.
+ *
  * @param page
  * @param route in-app vue-router path, e.g. '/tasks'
  */
@@ -188,6 +209,7 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the
  * bottom in steps so every section's heading + fields are in the DOM before a
  * test asserts on them, then return to the top.
+ *
  * @param page
  */
 export async function loadAllAdminSections(page: Page): Promise<void> {
@@ -255,6 +277,7 @@ const NON_DOSSIQ_URL_NOISE = [
  * dossiq-origin errors. Filters out known Nextcloud-core / environment
  * noise so a test fails only on errors the app itself is responsible for.
  * Read the returned array AFTER the page has settled.
+ *
  * @param page
  */
 export function trackDossiqErrors(page: Page): string[] {

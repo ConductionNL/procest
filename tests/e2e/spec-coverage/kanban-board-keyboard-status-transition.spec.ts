@@ -38,24 +38,19 @@
  * reach the same board, and that test passes.
  */
 
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
+import type { StateMachine } from '../helpers/fixtures.ts'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Locator,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog } from '../helpers/nav'
-import {
-	RUN_PREFIX,
 	cleanupRunObjects,
 	getRequestToken,
+	RUN_PREFIX,
 	seedCase,
 	seedStateMachine,
-	type StateMachine,
-} from '../helpers/fixtures'
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 /** Title of the card both tests drive. Carries RUN_PREFIX for isolation. */
 const CARD_TITLE = `${RUN_PREFIX} Kanban card`
@@ -90,38 +85,28 @@ test.describe('Workflow Board keyboard status transition', () => {
 	})
 
 	test.afterAll(async () => {
-		// Any statusRecord this run produced is deletable and is swept.
-		await cleanupRunObjects(api, token, ['statusRecord'])
-
-		// ⚠️ THE SEEDED MACHINE IS DELIBERATELY LEFT IN PLACE. Deleting it
-		// breaks a LATER test, and this was MEASURED, not guessed.
+		// Everything this run produced goes, child-first: the statusRecords the
+		// transition engine wrote, then the case, then the machine it belongs to.
 		//
-		// The `case` schema is archival (`x-openregister-archival`): a
-		// user-driven DELETE is refused with a 403 ArchivalImmutableException
-		// and the record persists — `workflows/cases-crud.spec.ts:225` asserts
-		// exactly that, and it passes. `helpers/fixtures.ts#deleteObject` never
-		// inspects the response, so `cleanupRunObjects(…, ['case'])` reports
-		// success and removes NOTHING. The seeded case therefore OUTLIVES this
-		// file whatever we do.
+		// This afterAll used to leave the whole machine standing, and the note
+		// it carried was right about the cause. The `case` schema is archival
+		// (`x-openregister-archival`), so a user-driven DELETE is refused with
+		// 403 SCHEMA_ARCHIVAL_IMMUTABLE — `workflows/cases-crud.spec.ts` asserts
+		// exactly that, and it passes — while the old `deleteObject` never
+		// inspected the response and reported success on removing NOTHING.
+		// Deleting the (non-archival) caseType and statusTypes on top of that
+		// left the surviving case pointing at ids that no longer resolved:
+		// the dashboard's grouped aggregations still returned the orphan's group
+		// keys, the chart widget resolved each key by id, and those lookups
+		// 404'd. That is what reddened `spec-coverage/ui-pages.spec.ts:55`
+		// ("dashboard mounts without dossiq console errors") on a second run —
+		// a test that was doing its job.
 		//
-		// Its caseType and statusTypes are NOT archival, so the obvious
-		// child-first cleanup deletes them out from under a case that is still
-		// live — leaving a DANGLING reference. Observed in CI run
-		// 31964165472: the dashboard's grouped aggregations
-		// (`aggregations/dossiq/case/grouped?groupBy=status|caseType`) still
-		// return the orphaned case's group keys, the chart widget resolves each
-		// key by id, and two of those lookups 404. That reddened
-		// `spec-coverage/ui-pages.spec.ts:55` ("dashboard mounts without
-		// dossiq console errors"), which is a test that was doing its job.
-		//
-		// So the referential integrity of the surviving case is what has to be
-		// preserved. The residue is small, RUN_PREFIX-tagged and consistent,
-		// and CI builds a throwaway instance per run.
-		//
-		// 📌 workflows/case-lifecycle.spec.ts carries the SAME latent defect —
-		// it deletes `sm.created` while its own cases survive. It is invisible
-		// today only because `workflows/` sorts after every spec that would
-		// notice. Recorded on the fleet board rather than changed here.
+		// `helpers/fixtures.ts#purgeObject` removes the case for real, through
+		// the sanctioned `occ openregister:objects:purge --force --apply`, so
+		// there is no longer a surviving parent whose references have to be
+		// preserved, and no residue to carry into the next run.
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 
@@ -132,6 +117,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 	 * instance that already holds cases, `.first()` would drive somebody
 	 * else's card and the test would be asserting about data it did not
 	 * create.
+	 *
 	 * @param page The page.
 	 * @return The `.case-card` element rendering the seeded case.
 	 */

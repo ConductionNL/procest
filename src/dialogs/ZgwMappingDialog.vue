@@ -145,7 +145,7 @@ export default {
 		open: {
 			immediate: true,
 			/**
-			 * @param value
+			 * @param {string|number|boolean|object} value The new value.
 			 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 			 */
 			handler(value) {

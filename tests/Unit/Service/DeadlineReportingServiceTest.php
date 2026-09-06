@@ -52,7 +52,7 @@ class DeadlineReportingServiceTest extends TestCase {
 
 		// Seed 5 instances spread across Q2-2026 for one zaaktype.
 		for ($i = 1; $i <= 5; $i++) {
-			$this->objects->saveObject('dossiq', 'deadlineInstance', [
+			$this->objects->seed('deadlineInstance', [
 				'id' => 'ti-q2-' . $i,
 				'caseType' => 'omgevingsvergunning-regulier',
 				'case' => 'Z/2026/' . (400 + $i),
@@ -113,7 +113,7 @@ class DeadlineReportingServiceTest extends TestCase {
 	 */
 	public function testDwangsomAuditReportFiltersByYear(): void {
 		// Seed two uitbetalingen, one in 2026 one in 2025.
-		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
+		$this->objects->seed('dwangsomUitbetaling', [
 			'id' => 'u-1',
 			'reference' => 'REF-1',
 			'amount' => 35700,
@@ -123,7 +123,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			'wettelijkeGrondslag' => 'AWB 4:17',
 			'iban' => 'NL91ABNA0417164300',
 		]);
-		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
+		$this->objects->seed('dwangsomUitbetaling', [
 			'id' => 'u-2',
 			'reference' => 'REF-2',
 			'amount' => 50000,

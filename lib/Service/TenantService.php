@@ -48,6 +48,8 @@ use Throwable;
  * `Organisation.groups` array carries the NC group IDs used by dossiq for
  * tenant routing; `Organisation.status` carries the lifecycle state enforced
  * by `TenantMiddleware`.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class TenantService {
 	/**
@@ -234,6 +236,8 @@ class TenantService {
 	 * @param string $userId The Nextcloud user ID.
 	 *
 	 * @return bool True when the user is in the NC admin group.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isPlatformAdmin(string $userId): bool {
 		return $this->groupManager->isAdmin($userId);

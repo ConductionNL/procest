@@ -37,14 +37,14 @@ By the end you will have opened My Work, used the tabs to switch between cases a
 
 ## Verification
 
-You are set up correctly when: the My Work page shows counts on each tab, the *Show completed* toggle changes what is listed, and the *Ter parafering* panel is present at the bottom (empty is fine).
+You are set up correctly when: the My Work page shows counts on each tab, and the *Show completed* toggle changes what is listed.
 
 ## Common issues
 
 | Symptom | Fix |
 |---|---|
 | All tabs read `(0)` even though cases exist | The case is not assigned to your user: open the case and add yourself to a role from **Participants**. |
-| *Ter parafering* shows "Geen voorstellen ter parafering" but you expect items | The paraferingsroute step has not been triggered, or your user is not on the step's role; ask an admin to check the route under **Parafeerroutes**. |
+| A sign-off you expect is not listed | Sign-offs run in Decidiq, not here. Open the case, then the **Besluitvorming** panel, to see where the decision stands. |
 | Tabs render but never load | Hard-reload the page; if the issue persists check the browser console for OpenRegister fetch errors. |
 
 ## Reference

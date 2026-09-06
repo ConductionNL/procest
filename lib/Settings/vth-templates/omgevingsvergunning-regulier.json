@@ -1,7 +1,7 @@
 {
   "_format": "dossiq-workflow-v1",
   "title": "Omgevingsvergunning Bouwactiviteit (regulier)",
-  "description": "Workflow voor reguliere omgevingsvergunning bouwactiviteit — 8 weken beslistermijn, verlengbaar met 6 weken. Omvat ontvankelijkheidstoets, inhoudelijke toets, advies, besluitvorming en bekendmaking.",
+  "description": "Workflow voor reguliere omgevingsvergunning bouwactiviteit: 8 weken beslistermijn, verlengbaar met 6 weken. Omvat ontvankelijkheidstoets, inhoudelijke toets, advies, besluitvorming en bekendmaking.",
   "version": 1,
   "steps": [
     {
@@ -16,10 +16,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Nieuwe vergunningaanvraag ontvangen",
-            "targetRole": "Behandelaar"
-          }
+          "message": "Nieuwe vergunningaanvraag ontvangen",
+          "targetRole": "Behandelaar"
         }
       ]
     },
@@ -90,10 +88,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Besluit gepubliceerd — bezwaartermijn gestart",
-            "targetRole": "Teamleider"
-          }
+          "message": "Besluit gepubliceerd — bezwaartermijn gestart",
+          "targetRole": "Teamleider"
         }
       ]
     },
@@ -133,9 +129,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Alle vereiste documenten moeten aanwezig zijn"
-          }
+          "message": "Alle vereiste documenten moeten aanwezig zijn"
         }
       ],
       "actions": []
@@ -173,10 +167,8 @@
       "guards": [
         {
           "type": "requiredField",
-          "config": {
-            "field": "inhoudelijkeToets",
-            "message": "Inhoudelijke toets moet zijn afgerond"
-          }
+          "field": "inhoudelijkeToets",
+          "message": "Inhoudelijke toets moet zijn afgerond"
         }
       ],
       "actions": []
@@ -192,9 +184,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Alle adviezen moeten zijn ontvangen"
-          }
+          "message": "Alle adviezen moeten zijn ontvangen"
         }
       ],
       "actions": []
@@ -210,11 +200,9 @@
       ],
       "guards": [
         {
-          "type": "role",
-          "config": {
-            "requiredRole": "Behandelaar",
-            "message": "Alleen de behandelaar kan het besluit bekendmaken"
-          }
+          "type": "roleGuard",
+          "allowedRoles": ["Behandelaar"],
+          "message": "Alleen de behandelaar kan het besluit bekendmaken"
         }
       ],
       "actions": []

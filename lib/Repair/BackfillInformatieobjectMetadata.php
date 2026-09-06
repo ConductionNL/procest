@@ -46,6 +46,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Repair step that back-fills informatieobject metadata for existing files.
+ *
+ * @spec openspec/changes/document-zaakdossier/tasks.md#T09
  */
 class BackfillInformatieobjectMetadata implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -74,6 +76,8 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 * Get the repair-step display name.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
 	 */
 	public function getName(): string {
 		return 'Back-fill ZGW informatieobject metadata for existing Dossiq dossier files';

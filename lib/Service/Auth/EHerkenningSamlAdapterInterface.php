@@ -65,6 +65,8 @@ interface EHerkenningSamlAdapterInterface {
 	 * @return BrokerAssertionResult Decoded assertion containing the supplier KvK number.
 	 *
 	 * @throws RuntimeException When the broker is not configured, the signature is invalid, or no KvK claim is present.
+	 *
+	 * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
 	 */
 	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult;
 
@@ -72,6 +74,8 @@ interface EHerkenningSamlAdapterInterface {
 	 * Whether the live eHerkenning broker is enabled by the operator.
 	 *
 	 * @return bool True when `eherkenning.feature_flag` is `1`.
+	 *
+	 * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
 	 */
 	public function isActive(): bool;
 }//end interface

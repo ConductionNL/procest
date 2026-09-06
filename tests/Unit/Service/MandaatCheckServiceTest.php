@@ -67,7 +67,7 @@ class MandaatCheckServiceTest extends TestCase {
 		//   - m-consulent: rol=consulent, decisionType=wmo-toekenning, plafond €5000
 		//   - m-manager:   rol=afdelingsmanager, decisionType=wmo-toekenning, plafond €25000, subdelegatie=true
 		//   - m-bestuurder: rol=bestuurder, decisionType=omgevingsvergunning, plafond=infinity
-		$this->objects->saveObject('dossiq', 'mandate', [
+		$this->objects->seed('mandate', [
 			'id' => 'm-consulent',
 			'mandaatNummer' => 'WMO-1',
 			'mandateeRole' => 'rol-consulent',
@@ -78,7 +78,7 @@ class MandaatCheckServiceTest extends TestCase {
 			'validFrom' => '2026-01-01',
 			'status' => 'active',
 		]);
-		$this->objects->saveObject('dossiq', 'mandate', [
+		$this->objects->seed('mandate', [
 			'id' => 'm-manager',
 			'mandaatNummer' => 'WMO-2',
 			'mandateeRole' => 'rol-afdelingsmanager',
@@ -92,20 +92,20 @@ class MandaatCheckServiceTest extends TestCase {
 		]);
 
 		// Seed users: alice = consulent (primair), bob = consulent (waarnemer), eve = nobody.
-		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
+		$this->objects->seed('medewerkerRolToewijzing', [
 			'userId' => 'alice',
 			'roleId' => 'rol-consulent',
 			'allocationType' => 'primair',
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
+		$this->objects->seed('medewerkerRolToewijzing', [
 			'userId' => 'bob',
 			'roleId' => 'rol-consulent',
 			'allocationType' => 'observer',
 			'validFrom' => '2026-01-01',
 			'observerFor' => 'alice',
 		]);
-		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
+		$this->objects->seed('medewerkerRolToewijzing', [
 			'userId' => 'carol',
 			'roleId' => 'rol-afdelingsmanager',
 			'allocationType' => 'primair',

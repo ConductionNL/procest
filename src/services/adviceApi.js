@@ -51,9 +51,6 @@ function actionUrl(path) {
  *
  * @param {string} caseId Case UUID
  * @return {Promise<Array>} List of advice records
- */
-/**
- * @param caseId
  * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
  */
 export async function getAdviceForCase(caseId) {
@@ -85,10 +82,6 @@ export async function getAdviceForCase(caseId) {
  * @param {string} id   Advice UUID
  * @param {object} body Transition payload (to, adviesDocument, ...)
  * @return {Promise<object>} Updated record
- */
-/**
- * @param id
- * @param body
  * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
  */
 export async function transitionStatus(id, body) {
@@ -101,9 +94,6 @@ export async function transitionStatus(id, body) {
  *
  * @param {string} id Advice UUID
  * @return {Promise<object>} Server confirmation
- */
-/**
- * @param id
  * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
  */
 export async function dispatchReminder(id) {

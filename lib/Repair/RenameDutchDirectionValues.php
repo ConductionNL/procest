@@ -135,6 +135,8 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 * Step name shown by `occ maintenance:repair`.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md
 	 */
 	public function getName(): string {
 		return 'Dossiq: rewrite Dutch direction values (inkomend/uitgaand/intern) to English';

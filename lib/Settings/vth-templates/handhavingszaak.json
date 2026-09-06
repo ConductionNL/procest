@@ -32,10 +32,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Vooraankondiging verstuurd — zienswijzetermijn 2 weken",
-            "targetRole": "Teamleider"
-          }
+          "message": "Vooraankondiging verstuurd — zienswijzetermijn 2 weken",
+          "targetRole": "Teamleider"
         }
       ]
     },
@@ -74,15 +72,13 @@
       "isInitial": false,
       "isFinal": false,
       "assigneeRole": null,
-      "description": "Begunstigingstermijn loopt — overtreder heeft tijd om overtreding op te heffen",
+      "description": "Begunstigingstermijn loopt: overtreder heeft tijd om overtreding op te heffen",
       "checklist": [],
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Begunstigingstermijn verlopen — hercontrole uitvoeren",
-            "targetRole": "Behandelaar"
-          }
+          "message": "Begunstigingstermijn verlopen — hercontrole uitvoeren",
+          "targetRole": "Behandelaar"
         }
       ]
     },
@@ -125,9 +121,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "LHS classificatie moet zijn ingevuld"
-          }
+          "message": "LHS classificatie moet zijn ingevuld"
         }
       ],
       "actions": []
@@ -154,9 +148,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Vooraankondigingsbrief moet zijn verstuurd"
-          }
+          "message": "Vooraankondigingsbrief moet zijn verstuurd"
         }
       ],
       "actions": []
@@ -173,9 +165,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Zienswijze moet zijn beoordeeld"
-          }
+          "message": "Zienswijze moet zijn beoordeeld"
         }
       ],
       "actions": []
@@ -203,9 +193,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Handhavingsbesluit moet zijn opgesteld"
-          }
+          "message": "Handhavingsbesluit moet zijn opgesteld"
         }
       ],
       "actions": []
@@ -232,16 +220,14 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Hercontrole-inspectie moet zijn uitgevoerd"
-          }
+          "message": "Hercontrole-inspectie moet zijn uitgevoerd"
         }
       ],
       "actions": []
     },
     {
       "id": "tr-6b",
-      "label": "Overtreding voortdurend — dwangsom verbeuren",
+      "label": "Overtreding voortdurend: dwangsom verbeuren",
       "fromStatus": "Hercontrole",
       "toStatus": "Begunstigingstermijn",
       "allowedRoles": [
@@ -252,10 +238,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Dwangsom verbeurd — overtreding voortdurend",
-            "targetRole": "Teamleider"
-          }
+          "message": "Dwangsom verbeurd — overtreding voortdurend",
+          "targetRole": "Teamleider"
         }
       ]
     }

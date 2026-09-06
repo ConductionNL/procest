@@ -399,7 +399,7 @@ export default {
 	watch: {
 		step: {
 			/**
-			 * @param newStep
+			 * @param {object} newStep The new step.
 			 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 			 */
 			handler(newStep) {
@@ -420,7 +420,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param config
+		 * @param {object} config The config.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseConfig(config) {
@@ -534,7 +534,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeRequiredField(index) {
@@ -548,7 +548,7 @@ export default {
 		},
 
 		/**
-		 * @param checklist
+		 * @param {object} checklist The checklist.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseChecklist(checklist) {
@@ -564,7 +564,7 @@ export default {
 		},
 
 		/**
-		 * @param actions
+		 * @param {Array} actions The actions.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseActions(actions) {
@@ -606,7 +606,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeChecklistItem(index) {
@@ -615,8 +615,8 @@ export default {
 		},
 
 		/**
-		 * @param index
-		 * @param event
+		 * @param {number} index Index of the row in the list.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDragStart(index, event) {
@@ -625,8 +625,8 @@ export default {
 		},
 
 		/**
-		 * @param targetIndex
-		 * @param event
+		 * @param {number} targetIndex The target index.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDrop(targetIndex, event) {
@@ -648,7 +648,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeAction(index) {

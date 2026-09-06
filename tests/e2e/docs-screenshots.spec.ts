@@ -41,9 +41,11 @@
  * Pattern reference: ADR-030 (hydra/openspec/architecture/).
  */
 
-import { test, expect, type Page } from '@playwright/test'
-import * as path from 'path'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 import * as fs from 'fs'
+import * as path from 'path'
 
 const SHOT_ROOT = path.resolve(
 	__dirname,
@@ -242,9 +244,10 @@ test.describe('docs: user track', () => {
 	})
 
 	test('U5 record-decision', async ({ page }) => {
-		// docs/tutorials/user/05-record-decision.md — Advice / Decision
-		// objects don't exist yet; the standalone lists stand in.
-		await go(page, '/advice')
+		// docs/tutorials/user/05-record-decision.md — the standalone /advice
+		// index was retired on 2026-09-02: decision-making moved to decidesk and
+		// dossiq keeps the per-case view, so the case list stands in.
+		await go(page, '/cases')
 		await shoot(page, 'user', '05-record-decision-01.png')
 		const hadAdvice = await captureCreateDialog(
 			page,
@@ -275,11 +278,10 @@ test.describe('docs: user track', () => {
 
 	test('U7 handle-objection', async ({ page }) => {
 		// docs/tutorials/user/07-handle-objection.md — the standalone BAC
-		// (/bezwaar-advice-requests) and beslissing-op-bezwaar
-		// (/bezwaar-decisions) index pages were retired by
-		// case-type-navigation; objection handling now lives on the bezwaar
-		// index and the case's own tabs, so all captures target /bezwaren.
-		await go(page, '/bezwaren')
+		// (/bezwaar-advice-requests), beslissing-op-bezwaar (/bezwaar-decisions)
+		// and objections (/bezwaren) index pages are all retired now; objections
+		// are cases, so the captures target the case list and its own tabs.
+		await go(page, '/cases')
 		await shoot(page, 'user', '07-handle-objection-01.png')
 		await shoot(page, 'user', '07-handle-objection-02.png')
 	})
@@ -289,7 +291,14 @@ test.describe('docs: user track', () => {
 		// configuration + recommendations live under settings; cases need
 		// an LHS-enabled type. Capture the settings + recommendations
 		// surfaces as structural stand-ins until seed data lands.
-		await go(page, '/settings/lhs-matrices')
+		//
+		// The matrix's own settings page is RETIRED: the LHS matrix is a
+		// decision table, OpenRegister evaluates it, and authoring moved to the
+		// Decision Tables (DMN) section of the ADMIN settings — which is a
+		// Nextcloud core route, not an app route, so it cannot go through go().
+		await page.goto('/index.php/settings/admin/dossiq', {
+			waitUntil: 'domcontentloaded',
+		})
 		await shoot(page, 'user', '08-inspection-checklist-01.png')
 		await shoot(page, 'user', '08-inspection-checklist-02.png')
 		await shoot(page, 'user', '08-inspection-checklist-03.png')

@@ -152,7 +152,7 @@ class TermijnDefinitieController extends Controller {
 	 */
 	private function persist(?string $id, int $statusCode): JSONResponse {
 		$data = $this->request->getParams();
-		unset($data['_route'], $data['id']);
+		unset($data['_route'], $data['id'], $data['uuid'], $data['@self']);
 
 		try {
 			$saved = $this->registry->save(

@@ -124,6 +124,8 @@ export default {
 		},
 	},
 
+	emits: ['dirty'],
+
 	data() {
 		return {
 			/** @type {Array} Status type objects for the case type */
@@ -234,7 +236,7 @@ export default {
 			// Load status types for this case type
 			this.statusNodes =
 				(await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 					_order: { order: 'asc' },
 				})) || []
@@ -242,14 +244,14 @@ export default {
 			// Load role types
 			this.roleTypes =
 				(await this.objectStore.fetchCollection('roleType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})) || []
 
 			// Load document types
 			this.documentTypes =
 				(await this.objectStore.fetchCollection('documentType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})) || []
 
@@ -282,7 +284,7 @@ export default {
 		},
 
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		getStepsForStatus(statusId) {
@@ -292,7 +294,7 @@ export default {
 		},
 
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		getNodeCenter(statusId) {
@@ -306,7 +308,7 @@ export default {
 
 		// --- Selection ---
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		selectNode(statusId) {
@@ -316,7 +318,7 @@ export default {
 		},
 
 		/**
-		 * @param transitionId
+		 * @param {string} transitionId Identifier of the transition id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		selectTransition(transitionId) {
@@ -326,7 +328,7 @@ export default {
 		},
 
 		/**
-		 * @param transitionId
+		 * @param {string} transitionId Identifier of the transition id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		editTransition(transitionId) {
@@ -334,7 +336,7 @@ export default {
 		},
 
 		/**
-		 * @param step
+		 * @param {object} step The step.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepClick(step) {
@@ -345,8 +347,8 @@ export default {
 
 		// --- Node drag ---
 		/**
-		 * @param statusId
-		 * @param event
+		 * @param {string} statusId Identifier of the status id.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onNodeDragStart(statusId, event) {
@@ -358,7 +360,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onCanvasMouseMove(event) {
@@ -400,7 +402,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onCanvasMouseDown(event) {
@@ -421,7 +423,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onCanvasWheel(event) {
@@ -432,8 +434,8 @@ export default {
 
 		// --- Connection drawing ---
 		/**
-		 * @param statusId
-		 * @param event
+		 * @param {string} statusId Identifier of the status id.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionStart(statusId, event) {
@@ -448,7 +450,7 @@ export default {
 		},
 
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionEnd(statusId) {
@@ -467,7 +469,7 @@ export default {
 
 		// --- Palette drag & drop ---
 		/**
-		 * @param type
+		 * @param {string} type The type.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onPaletteDragStart(type) {
@@ -475,7 +477,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async onCanvasDrop(event) {
@@ -539,10 +541,6 @@ export default {
 		 *
 		 * @param {string} fromStatusId Source status UUID
 		 * @param {string} toStatusId   Target status UUID
-		 */
-		/**
-		 * @param fromStatusId
-		 * @param toStatusId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		onConnectionKeyboard(fromStatusId, toStatusId) {
@@ -558,9 +556,6 @@ export default {
 		 * selected.
 		 *
 		 * @param {string} transitionId UUID of the transition to remove
-		 */
-		/**
-		 * @param transitionId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		onDisconnectionKeyboard(transitionId) {
@@ -579,9 +574,6 @@ export default {
 		 * the working copy via `workflowStore.removeStatusNode()`.
 		 *
 		 * @param {string} statusId UUID of the status to delete
-		 */
-		/**
-		 * @param statusId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
 		 */
 		async onDeleteStatusNode(statusId) {
@@ -643,9 +635,6 @@ export default {
 		 * never called from any component.
 		 *
 		 * @param {string} stepId UUID of the step to delete
-		 */
-		/**
-		 * @param stepId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
 		 */
 		onStepDelete(stepId) {
@@ -656,7 +645,7 @@ export default {
 
 		// --- Step management ---
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onAddStep(statusId) {
@@ -666,7 +655,7 @@ export default {
 		},
 
 		/**
-		 * @param updatedStep
+		 * @param {object} updatedStep The updated step.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepUpdate(updatedStep) {
@@ -677,7 +666,7 @@ export default {
 
 		// --- Transition management ---
 		/**
-		 * @param updatedTransition
+		 * @param {object} updatedTransition The updated transition.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onTransitionUpdate(updatedTransition) {
@@ -689,7 +678,7 @@ export default {
 		},
 
 		/**
-		 * @param transitionId
+		 * @param {string} transitionId Identifier of the transition id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onTransitionDelete(transitionId) {

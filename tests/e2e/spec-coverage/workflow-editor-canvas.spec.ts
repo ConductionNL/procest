@@ -37,7 +37,7 @@
  * lives under Nextcloud's own /settings/admin/dossiq page.
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { becomesVisible } from '../helpers/becomes-visible.js'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'

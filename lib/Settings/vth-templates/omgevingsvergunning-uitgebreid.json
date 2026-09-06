@@ -1,7 +1,7 @@
 {
   "_format": "dossiq-workflow-v1",
   "title": "Omgevingsvergunning Bouwactiviteit (uitgebreid)",
-  "description": "Workflow voor uitgebreide omgevingsvergunning — 26 weken beslistermijn. Bevat extra stappen voor ontwerp-besluit en zienswijzetermijn conform Omgevingswet uitgebreide procedure.",
+  "description": "Workflow voor uitgebreide omgevingsvergunning: 26 weken beslistermijn. Bevat extra stappen voor ontwerp-besluit en zienswijzetermijn conform Omgevingswet uitgebreide procedure.",
   "version": 1,
   "steps": [
     {
@@ -16,10 +16,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Nieuwe vergunningaanvraag (uitgebreid) ontvangen",
-            "targetRole": "Behandelaar"
-          }
+          "message": "Nieuwe vergunningaanvraag (uitgebreid) ontvangen",
+          "targetRole": "Behandelaar"
         }
       ]
     },
@@ -76,10 +74,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Ontwerp-besluit ter inzage — zienswijzetermijn 6 weken",
-            "targetRole": "Teamleider"
-          }
+          "message": "Ontwerp-besluit ter inzage — zienswijzetermijn 6 weken",
+          "targetRole": "Teamleider"
         }
       ]
     },
@@ -155,9 +151,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Alle documenten moeten aanwezig zijn"
-          }
+          "message": "Alle documenten moeten aanwezig zijn"
         }
       ],
       "actions": []
@@ -206,9 +200,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Zienswijzetermijn moet zijn verstreken"
-          }
+          "message": "Zienswijzetermijn moet zijn verstreken"
         }
       ],
       "actions": []

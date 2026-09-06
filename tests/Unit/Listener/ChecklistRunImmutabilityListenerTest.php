@@ -80,7 +80,7 @@ class ChecklistRunImmutabilityListenerTest extends TestCase {
 	private function entity(array $payload, string $schemaId = self::SCHEMA): ObjectEntity {
 		$entity = new ObjectEntity();
 		$entity->setObject($payload);
-		$entity->setSchemaId($schemaId);
+		$entity->setSchema($schemaId);
 		$entity->setUuid('33333333-3333-3333-3333-333333333333');
 
 		return $entity;

@@ -62,10 +62,6 @@ export default {
 
 	props: {
 		/** Case UUID — kept for parent contract; the leaf tabs use the object context. */
-		caseId: {
-			type: String,
-			default: null,
-		},
 	},
 }
 </script>

@@ -50,6 +50,8 @@ class SubsidieRegisterExporter {
 	 * @param array<string, mixed> $request The application record.
 	 *
 	 * @return string The display name for the public register.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function publicOntvanger(array $request): string {
 		$kvk = (string)($request['applicantKvkRef'] ?? '');
@@ -69,6 +71,8 @@ class SubsidieRegisterExporter {
 	 * @param array<string, mixed> $decision The (latest) decision record.
 	 *
 	 * @return array<string, mixed> The feed entry.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function toFeedEntry(array $request, array $regeling, array $decision): array {
 		$determined = (string)($decision['beschikkingtype'] ?? '') === 'vaststellingsbeschikking';
@@ -100,6 +104,8 @@ class SubsidieRegisterExporter {
 	 * @param int $offset Page offset.
 	 *
 	 * @return array<string, mixed> The feed document.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function buildFeed(array $entries, int $limit = 100, int $offset = 0): array {
 		$limit = max(1, $limit);

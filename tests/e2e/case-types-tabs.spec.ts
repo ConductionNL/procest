@@ -11,7 +11,7 @@
  * this spec covers the data-independent shell.
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 

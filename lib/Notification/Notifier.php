@@ -39,6 +39,8 @@ use OCP\Notification\UnknownNotificationException;
 
 /**
  * Parses Dossiq notifications into localised, rendered form.
+ *
+ * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 class Notifier implements INotifier {
 
@@ -67,6 +69,8 @@ class Notifier implements INotifier {
 	 * Identifier of the notifier, only use [a-z0-9_].
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	public function getID(): string {
 		return Application::APP_ID;
@@ -76,6 +80,8 @@ class Notifier implements INotifier {
 	 * Human-readable name describing the notifier.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	public function getName(): string {
 		return 'Dossiq';
@@ -90,6 +96,8 @@ class Notifier implements INotifier {
 	 * @return INotification The prepared notification.
 	 *
 	 * @throws UnknownNotificationException When the notification is not a Dossiq one.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	public function prepare(INotification $notification, string $languageCode): INotification {
 		if ($notification->getApp() !== Application::APP_ID) {

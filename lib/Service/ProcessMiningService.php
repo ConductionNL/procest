@@ -56,6 +56,8 @@ use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
 
 /**
  * Computes process-mining bottleneck metrics from recorded status history.
+ *
+ * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
  */
 class ProcessMiningService {
 	/**

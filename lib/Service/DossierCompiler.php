@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -47,6 +48,9 @@ use RuntimeException;
  * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
 class DossierCompiler {
+
+	use SearchesObjects;
+
 	/**
 	 * AWB-conventional ordering of dossier document categories. Keys are
 	 * normalised (lower-case) document-type fragments; the value is the
@@ -123,8 +127,13 @@ class DossierCompiler {
 			throw new RuntimeException('Case or document schema is not configured');
 		}
 
-		$case = $objectService->find($caseId, register: $register, schema: $caseSchema);
-		if (is_array($case) === false) {
+		$case = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			id: $caseId
+		);
+		if ($case === null) {
 			throw new RuntimeException('Case not found');
 		}
 

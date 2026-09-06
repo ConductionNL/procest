@@ -83,7 +83,7 @@ export default {
 	methods: {
 		t,
 		/**
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/enforce-dwangsom-callback-signature/tasks.md#task-2
 		 */
 		async onSecretInput(value) {
@@ -103,7 +103,7 @@ export default {
 		},
 
 		/**
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/enforce-dwangsom-callback-signature/tasks.md#task-2
 		 */
 		async persist(value) {

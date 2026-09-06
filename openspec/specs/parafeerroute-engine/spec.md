@@ -55,18 +55,27 @@ The system SHALL execute parafeerroute steps in sequential order. Each step SHAL
 - **AND** the step 4 actor SHALL receive a Nextcloud notification
 - **AND** the voorstel updatedAt SHALL be refreshed
 
-### Requirement: Admin Parafeerroute Configuration
+### Requirement: Admin parafeerroute configuration
 
-The system SHALL provide an admin UI for creating and managing parafeerroutes. Routes SHALL be linkable to case types and voorstel types.
+Approval routes SHALL be authored in the decision app. dossiq raises a voorstel's
+chain there and records the outcome, and SHALL NOT offer a local authoring surface.
+
+AMENDED 2026-09-02. dossiq#1666 moved the parafering RUNTIME to decidiq and retired
+the local engine with no facade, including the dossiq-side flow projection that
+dossiq#1632 had introduced. So there is no dossiq authoring surface left to keep,
+and the `/settings/parafeerroutes` index page is retired with it: editing a route
+object here would reach nothing that runs. `/settings/parafeerroutes/:id` stays
+registered so a reader can still open a legacy route object, and so the frozen
+`procest.parafering.*` audit trail that names `parafeerrouteId` keeps resolving.
 
 **Feature tier**: V1
 
-#### Scenario: Create a new parafeerroute
+#### Scenario: Create a new approval route
 
-- **WHEN** the beheerder navigates to admin settings and opens the "Parafeerroutes" tab
+- **WHEN** the beheerder authors the approval route in the decision app
 - **THEN** the beheerder SHALL be able to create a new route with a name
 - **AND** the beheerder SHALL be able to add steps with: step type (advies/parafering/accordering), actor type (user/group/role), actor selection, mandatory flag
-- **AND** the beheerder SHALL be able to reorder steps via drag-and-drop
+- **AND** the beheerder SHALL be able to reorder steps on the canvas
 
 #### Scenario: Link route to case type
 

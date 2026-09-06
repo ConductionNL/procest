@@ -23,7 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 
 use OCA\Dossiq\Service\Stuf\ContactBetrokkeneMapper;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Unit\Fixtures\SchemaAwareStufRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -33,46 +33,41 @@ use Psr\Log\LoggerInterface;
 class ContactBetrokkeneMapperTest extends TestCase {
 	private ContactBetrokkeneMapper $mapper;
 
-	/**
-	 * @var StufRegisterAccess&MockObject
-	 */
-	private StufRegisterAccess $register;
-
-	/**
-	 * Existing mapping returned by findOne.
-	 *
-	 * @var array|null
-	 */
-	private ?array $existingMapping = null;
-
-	/**
-	 * Saved mappings (last writes win).
-	 *
-	 * @var array
-	 */
-	private array $saved = [];
+	private SchemaAwareStufRegister $register;
 
 	/**
 	 * Set up.
 	 *
+	 * WHY THIS IS NOT A createMock(). The mock this test used to carry echoed
+	 * the payload straight back, so every assertion below read the value the
+	 * mapper had just written and none of them could ever fail. That is how
+	 * `$saved['bronEntiteit']` stayed green for three weeks while live dropped
+	 * the property on every save: the schema declares `sourceEntity`, and
+	 * OpenRegister gives an undeclared property no column at all.
+	 *
+	 * {@see SchemaAwareStufRegister} reads the SHIPPED schema fragment and
+	 * reproduces both live behaviours — the drop on save, and the `1 = 0` clamp
+	 * on a filter it cannot resolve — so this file now reds against the code it
+	 * used to pass on.
+	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$logger = $this->createMock(LoggerInterface::class);
-		$this->register = $this->createMock(StufRegisterAccess::class);
-		$this->register->method('findOne')->willReturnCallback(
-			fn () => $this->existingMapping
+		$this->register = new SchemaAwareStufRegister();
+		$this->mapper = new ContactBetrokkeneMapper(
+			$this->register,
+			$this->createMock(LoggerInterface::class)
 		);
-		$captures = &$this->saved;
-		$this->register->method('saveObject')->willReturnCallback(
-			function (string $schema, array $data) use (&$captures): array {
-				$data['id'] = $data['id'] ?? 'map-test';
-				$captures[$schema][] = $data;
-				return $data;
-			}
-		);
-		$this->mapper = new ContactBetrokkeneMapper($this->register, $logger);
 	}//end setUp()
+
+	/**
+	 * The mappings this test's fake has stored.
+	 *
+	 * @return array<int, array<string, mixed>> The stored mapping rows.
+	 */
+	private function storedMappings(): array {
+		return array_values(($this->register->store[StufRegisterAccess::SCHEMA_MAPPING] ?? []));
+	}//end storedMappings()
 
 	/**
 	 * @return void
@@ -87,7 +82,16 @@ class ContactBetrokkeneMapperTest extends TestCase {
 	 * @return void
 	 */
 	public function testFindOrCreateReusesExistingMapping(): void {
-		$this->existingMapping = ['id' => 'm-1', 'externalIdentification' => 'NPS-999'];
+		$this->register->seed(
+			StufRegisterAccess::SCHEMA_MAPPING,
+			[
+				'id' => 'm-1',
+				'sourceEntity' => 'contact',
+				'sourceId' => 'c-1',
+				'endpointId' => 'ep-1',
+				'externalIdentification' => 'NPS-999',
+			]
+		);
 		$bsn = $this->mapper->findOrCreateBetrokkene(
 			contact: ['id' => 'c-1', 'bsn' => '111111111'],
 			endpoint: ['id' => 'ep-1'],
@@ -106,12 +110,15 @@ class ContactBetrokkeneMapperTest extends TestCase {
 			lookupCallable: fn (string $b, array $ep) => 'NPS-FROM-LOOKUP'
 		);
 		$this->assertSame('NPS-FROM-LOOKUP', $bsn);
-		$this->assertNotEmpty($this->saved[StufRegisterAccess::SCHEMA_MAPPING] ?? []);
-		$saved = end($this->saved[StufRegisterAccess::SCHEMA_MAPPING]);
+		$stored = $this->storedMappings();
+		$this->assertNotEmpty($stored);
+		$saved = end($stored);
 		$this->assertSame('NPS-FROM-LOOKUP', $saved['externalIdentification']);
-		// De-pipelinq'd mapping keys.
-		$this->assertSame('contact', $saved['bronEntiteit']);
-		$this->assertSame('c-2', $saved['sourceId']);
+		// The identity keys, read back out of the store rather than out of the
+		// payload: these are the two the schema must declare for the mapping to
+		// be findable again.
+		$this->assertSame('contact', ($saved['sourceEntity'] ?? null));
+		$this->assertSame('c-2', ($saved['sourceId'] ?? null));
 	}//end testFindOrCreateUsesLookupResult()
 
 	/**
@@ -124,7 +131,8 @@ class ContactBetrokkeneMapperTest extends TestCase {
 			lookupCallable: fn () => null
 		);
 		$this->assertSame('333333333', $bsn);
-		$saved = end($this->saved[StufRegisterAccess::SCHEMA_MAPPING]);
+		$stored = $this->storedMappings();
+		$saved = end($stored);
 		$this->assertSame('333333333', $saved['externalIdentification']);
 	}//end testFindOrCreateFallbackOnLookupMissReusesBsn()
 

@@ -331,21 +331,21 @@ class ProcessMiningServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetReportOrchestratesFullPayload(): void {
-		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-1', 'title' => 'Omgevingsvergunning']);
-		$this->objects->saveObject('dossiq', 'statusType', ['id' => 'st-intake', 'name' => 'Intake']);
-		$this->objects->saveObject('dossiq', 'statusType', ['id' => 'st-review', 'name' => 'Review']);
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Omgevingsvergunning']);
+		$this->objects->seed('statusType', ['id' => 'st-intake', 'name' => 'Intake']);
+		$this->objects->seed('statusType', ['id' => 'st-review', 'name' => 'Review']);
 
-		$this->objects->saveObject('dossiq', 'case', [
+		$this->objects->seed('case', [
 			'id' => 'case-1',
 			'caseType' => 'ct-1',
 			'startDate' => '2026-06-01',
 			'endDate' => '2026-06-05',
 		]);
 
-		$this->objects->saveObject('dossiq', 'statusRecord', [
+		$this->objects->seed('statusRecord', [
 			'id' => 'sr-1', 'case' => 'case-1', 'statusType' => 'st-intake', 'createdAt' => '2026-06-01T09:00:00+00:00',
 		]);
-		$this->objects->saveObject('dossiq', 'statusRecord', [
+		$this->objects->seed('statusRecord', [
 			'id' => 'sr-2', 'case' => 'case-1', 'statusType' => 'st-review', 'createdAt' => '2026-06-02T09:00:00+00:00',
 		]);
 
@@ -366,10 +366,10 @@ class ProcessMiningServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetReportFiltersByCaseType(): void {
-		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-1', 'title' => 'Type A']);
-		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-2', 'title' => 'Type B']);
-		$this->objects->saveObject('dossiq', 'case', ['id' => 'case-1', 'caseType' => 'ct-1', 'endDate' => null]);
-		$this->objects->saveObject('dossiq', 'case', ['id' => 'case-2', 'caseType' => 'ct-2', 'endDate' => null]);
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Type A']);
+		$this->objects->seed('caseType', ['id' => 'ct-2', 'title' => 'Type B']);
+		$this->objects->seed('case', ['id' => 'case-1', 'caseType' => 'ct-1', 'endDate' => null]);
+		$this->objects->seed('case', ['id' => 'case-2', 'caseType' => 'ct-2', 'endDate' => null]);
 
 		$report = $this->service->getReport(['caseType' => 'ct-1']);
 

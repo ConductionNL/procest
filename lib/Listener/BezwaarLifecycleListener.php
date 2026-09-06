@@ -49,6 +49,8 @@ use Psr\Log\LoggerInterface;
  * status-transition-engine without owning any transition logic itself.
  *
  * @template-implements IEventListener<Event>
+ *
+ * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 class BezwaarLifecycleListener implements IEventListener {
 

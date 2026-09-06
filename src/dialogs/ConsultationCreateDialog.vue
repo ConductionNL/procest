@@ -180,7 +180,7 @@ export default {
 
 	watch: {
 		/**
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		open(value) {

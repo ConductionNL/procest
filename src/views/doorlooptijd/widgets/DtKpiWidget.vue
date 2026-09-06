@@ -121,6 +121,7 @@ export default {
 		t,
 		/**
 		 * Send the user to the app's administration surface.
+		 *
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		goToSettings() {

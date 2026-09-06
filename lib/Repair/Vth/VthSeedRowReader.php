@@ -48,8 +48,29 @@ class VthSeedRowReader {
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function firstId(mixed $rows): string {
-		if (is_array($rows) === false) {
+		$row = $this->firstRow(rows: $rows);
+		if ($row === null) {
 			return '';
+		}
+
+		return $this->rowId(row: $row);
+	}//end firstId()
+
+	/**
+	 * Extract the first usable row from an OpenRegister result set.
+	 *
+	 * A row without an id is skipped: it cannot be acted on, and treating it as
+	 * a hit is how an unusable row passes for a real one.
+	 *
+	 * @param mixed $rows Raw result from searchObjectsAsArrays()
+	 *
+	 * @return array<string, mixed>|null The first row carrying an id, or null
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	public function firstRow(mixed $rows): ?array {
+		if (is_array($rows) === false) {
+			return null;
 		}
 
 		// Handle paginated `{ results: [...] }` shape.
@@ -58,14 +79,14 @@ class VthSeedRowReader {
 		}
 
 		foreach ($rows as $row) {
-			$id = $this->rowId(row: $row);
-			if ($id !== '') {
-				return $id;
+			$normalized = $this->normalizeRow(row: $row);
+			if ($normalized !== null && $this->rowId(row: $normalized) !== '') {
+				return $normalized;
 			}
 		}
 
-		return '';
-	}//end firstId()
+		return null;
+	}//end firstRow()
 
 	/**
 	 * Reduce statusType rows to a name → UUID map, dropping unusable rows.

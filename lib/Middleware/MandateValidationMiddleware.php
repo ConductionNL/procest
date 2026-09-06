@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Mandate-matrix middleware. Audit-logs every decision (allow + deny).
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 class MandateValidationMiddleware extends Middleware {
 	/**
@@ -87,6 +89,8 @@ class MandateValidationMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::beforeController(); this middleware
 	 * dispatches on the request URI instead.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		if ($this->context->isBound() === false) {
@@ -137,6 +141,8 @@ class MandateValidationMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
 	 * inspected.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		if ($exception instanceof MandateDeniedException) {
@@ -156,6 +162,8 @@ class MandateValidationMiddleware extends Middleware {
 	 * @param string $path Request URI.
 	 *
 	 * @return string|null Action or null when no mandate gate applies.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function resolveAction(string $verb, string $path): ?string {
 		foreach (self::STATUS_PATH_HINTS as $hint) {

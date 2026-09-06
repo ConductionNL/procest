@@ -9,9 +9,6 @@ import { validateTransition } from './taskLifecycle.js'
  *
  * @param {object} form The form data
  * @return {{ valid: boolean, errors: object }} Validation result
- */
-/**
- * @param form
  * @spec openspec/specs/task-management/spec.md
  */
 export function validateTaskCreate(form) {
@@ -36,9 +33,6 @@ export function validateTaskCreate(form) {
  *
  * @param {object} form The form data
  * @return {{ valid: boolean, errors: object }} Validation result
- */
-/**
- * @param form
  * @spec openspec/specs/task-management/spec.md
  */
 export function validateTaskUpdate(form) {
@@ -60,10 +54,6 @@ export function validateTaskUpdate(form) {
  * @param {string} from Current status
  * @param {string} to Target status
  * @return {{ valid: boolean, error: string|null }} Validation result
- */
-/**
- * @param from
- * @param to
  * @spec openspec/specs/task-management/spec.md
  */
 export function validateTaskTransition(from, to) {

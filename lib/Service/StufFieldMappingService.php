@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
  * (YYYYMMDD <-> ISO 8601) and enum value transformation.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class StufFieldMappingService {
 	/**

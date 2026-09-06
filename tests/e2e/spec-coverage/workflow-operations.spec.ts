@@ -10,11 +10,11 @@
  * primary control) independently of seeded data.
  */
 
-import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 // Routes named after the component that renders them, so this spec states
 // WHICH screen it covers in executable code rather than in a comment.
-import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components'
+import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components.ts'
 
 test.describe('Workflow Board page', () => {
 	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-renders-kanban-shell
@@ -168,7 +168,11 @@ test.describe('Features & roadmap page', () => {
 			page.getByRole('button', { name: 'Show roadmap' }),
 		).toBeVisible()
 		await expect(
-			page.getByRole('button', { name: 'Suggest feature' }),
+			// A LINK, not a button. nextcloud-vue 2.36.4 removed the in-product
+			// suggestion modal (team decision 2026-09-04: the forge is where the
+			// conversation happens), and the CTA is an anchor to the forge's
+			// feature-request issue form now. An `<a href>` has role `link`.
+			page.getByRole('link', { name: 'Suggest feature' }),
 		).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])

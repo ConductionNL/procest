@@ -101,6 +101,66 @@ class MilestoneRepository {
 	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
+	/**
+	 * The case type a case belongs to.
+	 *
+	 * Exists so a caller can ask for a case's progress WITHOUT already knowing
+	 * its type. Making the client supply it created a race: the manifest tile
+	 * built its URL from the loaded record, and on the first render the record
+	 * is not there yet, so the type resolved to an empty path segment and the
+	 * request 404'd before the corrected one followed.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return string|null The case type UUID, or null when it cannot be read.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function findCaseTypeId(string $caseId): ?string {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
+
+		try {
+			$objectService->setRegister($register);
+			$objectService->setSchema($schema);
+			$objectService->setObject($caseId);
+			$case = $objectService->getObject();
+		} catch (\Throwable $e) {
+			return null;
+		}
+
+		if ($case === null) {
+			return null;
+		}
+
+		$data = $case->getObject();
+		$caseTypeId = ($data['caseType'] ?? null);
+
+		if (is_string($caseTypeId) === false || $caseTypeId === '') {
+			return null;
+		}
+
+		return $caseTypeId;
+	}//end findCaseTypeId()
+
+	/**
+	 * Get the milestone records recorded against a case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> Milestone records.
+	 *
+	 * @spec openspec/specs/milestone-tracking/spec.md
+	 */
 	public function findRecords(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {

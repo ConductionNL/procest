@@ -17,16 +17,16 @@
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	FEDERATION_ALLOWED_FIELDS,
-	federatedSharesListEndpoint,
 	createFederatedShareEndpoint,
-	revokeFederatedShareEndpoint,
 	federatedActivityEndpoint,
-	publicFederatedTransferEndpoint,
-	shapeFederatedSharePayload,
+	federatedSharesListEndpoint,
+	FEDERATION_ALLOWED_FIELDS,
 	isFederatedShareFormValid,
+	publicFederatedTransferEndpoint,
+	revokeFederatedShareEndpoint,
+	shapeFederatedSharePayload,
 } from '../../src/utils/federatedShareHelpers.js'
 
 describe('FEDERATION_ALLOWED_FIELDS', () => {

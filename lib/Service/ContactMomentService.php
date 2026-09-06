@@ -109,7 +109,7 @@ class ContactMomentService {
 		}
 
 		try {
-			$created = $objectService->saveObject($register, $schema, $record);
+			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to create contactmoment: ' . $e->getMessage(),
@@ -269,7 +269,7 @@ class ContactMomentService {
 				'timestamp' => date('c'),
 			];
 
-			$objectService->saveObject($register, $caseSchema, ['activity' => $activity], $caseId);
+			$objectService->saveObject(object: ['activity' => $activity], register: $register, schema: $caseSchema, uuid: $caseId);
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -304,14 +304,14 @@ class ContactMomentService {
 
 		try {
 			$updated = $objectService->saveObject(
-				$register,
-				$schema,
-				[
+				object: [
 					'geidentificeerdeBurgerId' => $burgerId,
 					'identificationMethod' => $method,
 					'identificationScore' => round($score, 2),
 				],
-				$interactionId,
+				register: $register,
+				schema: $schema,
+				uuid: $interactionId,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

@@ -33,6 +33,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Pre-controller quota enforcement.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 class QuotaEnforcementMiddleware extends Middleware {
 	/**
@@ -62,6 +64,8 @@ class QuotaEnforcementMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::beforeController(); this middleware
 	 * dispatches on the request URI instead.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		if ($this->context->isBound() === false) {
@@ -115,6 +119,8 @@ class QuotaEnforcementMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
 	 * inspected.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		if ($exception instanceof QuotaExceededException) {
@@ -134,6 +140,8 @@ class QuotaEnforcementMiddleware extends Middleware {
 	 * @param string $path URI.
 	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
 	 */
 	public function resolveQuotaType(string $verb, string $path): ?string {
 		if ($verb === 'POST' && (str_contains($path, '/api/case') === true || str_contains($path, '/api/cases') === true)) {

@@ -28,17 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Dossiq\Event\ParafeerTransitionEvent;
-use OCA\Dossiq\Listener\ApprovalStepNotificationListener;
 use OCA\Dossiq\Listener\BezwaarAdviceRequestedListener;
 use OCA\Dossiq\Listener\BezwaarDecisionListener;
 use OCA\Dossiq\Listener\BezwaarHearingScheduledListener;
-use OCA\Dossiq\Listener\ParaferingAuditListener;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
- * Registers the unnarrowed bezwaar and parafering-audit event listeners.
+ * Registers the unnarrowed bezwaar event listeners.
  *
  * @psalm-suppress UnusedClass
  *
@@ -46,7 +43,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  */
 class BezwaarListenerRegistrar {
 	/**
-	 * Register the parafering and bezwaar listeners.
+	 * Register the bezwaar listeners.
 	 *
 	 * @param IRegistrationContext $context The registration context.
 	 *
@@ -55,45 +52,8 @@ class BezwaarListenerRegistrar {
 	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		$this->registerParaferingListeners(context: $context);
 		$this->registerObjectionStatusListeners(context: $context);
 	}//end register()
-
-	/**
-	 * Register the parafering audit trail and approval-step notification listeners.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
-	 */
-	private function registerParaferingListeners(IRegistrationContext $context): void {
-		// Parafering audit trail: one listener emits an OR audit-trail entry
-		// (hash-chained, natively immutable) for every parafeerroute transition.
-		// Per ADR-022 + consume-or-audit-trail-fleet-wide (migrate-parafering-to-or-audit),
-		// there is no parallel paraferingAuditEntry write path and no in-app
-		// append-only validator — OR's audit trail rejects PUT/DELETE natively.
-		$context->registerEventListener(
-			event: ParafeerTransitionEvent::class,
-			listener: ParaferingAuditListener::class
-		);
-
-		// Parafering notifications now observe OpenRegister's approval-workflow
-		// step events (ADR-022 / migrate-parafering-to-or-approval-workflow):
-		// when a step is approved the next parafeerder is notified; when a step
-		// is rejected (terugsturen) the steller is notified. The OpenRegister
-		// event classes are registered by FQN string so dossiq carries no
-		// hard compile-time dependency on the optional OpenRegister app.
-		$context->registerEventListener(
-			event: 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent',
-			listener: ApprovalStepNotificationListener::class
-		);
-		$context->registerEventListener(
-			event: 'OCA\OpenRegister\Event\ApprovalStepRejectedEvent',
-			listener: ApprovalStepNotificationListener::class
-		);
-	}//end registerParaferingListeners()
 
 	/**
 	 * Register the bezwaar status-driven listeners.

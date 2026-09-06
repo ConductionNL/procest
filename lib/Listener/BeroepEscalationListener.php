@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -52,6 +53,9 @@ use Throwable;
  * @spec openspec/specs/beroep-escalation/spec.md
  */
 class BeroepEscalationListener implements IEventListener {
+
+	use SearchesObjects;
+
 	/**
 	 * Status values that close a bezwaar (terminal per bezwaar-lifecycle).
 	 *
@@ -157,8 +161,13 @@ class BeroepEscalationListener implements IEventListener {
 			return;
 		}
 
-		$objection = $objectService->find($sourceObjectionId, register: $register, schema: $objectionSchema);
-		if (is_array($objection) === false) {
+		$objection = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $objectionSchema,
+			id: $sourceObjectionId
+		);
+		if ($objection === null) {
 			return;
 		}
 

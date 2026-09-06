@@ -34,6 +34,8 @@ use Throwable;
 
 /**
  * Billing event service.
+ *
+ * @spec openspec/specs/tenant-billing/spec.md
  */
 class TenantBillingService {
 	/**
@@ -215,6 +217,8 @@ class TenantBillingService {
 	 * @return array{eventCount:int, totalAmount:float, byType:array<string, array{count:float, amount:float}>}
 	 *
 	 * @throws InvalidArgumentException When month is malformed.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-billing-event-emission-on-case-lifecycle-req-007-a
 	 */
 	public function getMonthBilling(string $tenantId, string $month): array {
 		if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
@@ -231,6 +235,8 @@ class TenantBillingService {
 	 * @param array<int, array<string,mixed>> $events Event rows.
 	 *
 	 * @return array{eventCount:int, totalAmount:float, byType:array<string, array{count:float, amount:float}>}
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-billing-event-emission-on-case-lifecycle-req-007-a
 	 */
 	public function aggregate(array $events): array {
 		$byType = [];
@@ -306,6 +312,8 @@ class TenantBillingService {
 	 * @param string $month YYYY-MM.
 	 *
 	 * @return array<int, array<string,mixed>>
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
 	 */
 	public function fetchEventsForMonth(string $tenantId, string $month): array {
 		$objectService = $this->getObjectService();

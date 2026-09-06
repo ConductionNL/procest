@@ -33,6 +33,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Daily timed job that polls Berichtenbox read status for sent messages.
+ *
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 class BerichtenboxReadStatusJob extends TimedJob {
 	/**

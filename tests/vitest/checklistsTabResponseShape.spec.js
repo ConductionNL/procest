@@ -41,10 +41,10 @@
  * @spec openspec/changes/vth-module/tasks.md#task-5
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { h } from 'vue'
-import { mount, flushPromises } from '@vue/test-utils'
 import axios from '@nextcloud/axios'
+import { flushPromises, mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 
 // `@nextcloud/dialogs` reaches for a live Nextcloud runtime (toast container,
 // CSS side effects) at import time and has nothing to do with what is asserted
@@ -57,12 +57,14 @@ vi.mock('@nextcloud/dialogs', () => ({
 // Stub only the presentational children. `NcButton` is kept as a REAL <button>
 // element rather than a bare div: the defect's signature is button count, and a
 // stub that rendered no button would hide exactly the thing under test.
-const stub = (tag) => ({
-	name: 'Stub' + tag,
-	render() {
-		return h(tag, this.$slots.default ? this.$slots.default() : [])
-	},
-})
+function stub(tag) {
+	return {
+		name: 'Stub' + tag,
+		render() {
+			return h(tag, this.$slots.default ? this.$slots.default() : [])
+		},
+	}
+}
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: {
 		name: 'NcButton',

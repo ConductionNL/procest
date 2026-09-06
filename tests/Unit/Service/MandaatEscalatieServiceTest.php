@@ -55,9 +55,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 		$this->service = new MandaatEscalatieService($settings, $this->createMock(LoggerInterface::class));
 
 		// Seed mandates + assignments.
-		$this->objects->saveObject(
-			'dossiq',
-			'mandate',
+		$this->objects->seed('mandate',
 			[
 				'id' => 'm-low',
 				'mandateeRole' => 'rol-consulent',
@@ -65,9 +63,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 				'status' => 'active',
 			]
 		);
-		$this->objects->saveObject(
-			'dossiq',
-			'mandate',
+		$this->objects->seed('mandate',
 			[
 				'id' => 'm-high',
 				'mandateeRole' => 'rol-manager',
@@ -75,9 +71,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 				'status' => 'active',
 			]
 		);
-		$this->objects->saveObject(
-			'dossiq',
-			'medewerkerRolToewijzing',
+		$this->objects->seed('medewerkerRolToewijzing',
 			[
 				'userId' => 'carol',
 				'roleId' => 'rol-manager',

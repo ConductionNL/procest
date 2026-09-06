@@ -6,9 +6,9 @@
  * Seeds the pre-configured bestuurlijke-besluitvorming zaaktype bundles
  * (College-besluit, Raadsbesluit, Mandaatbesluit) into OpenRegister. Each
  * bundle activates a caseType plus its statusType, propertyDefinition,
- * roleType, documentType, resultType, workflowTemplate, and default
- * parafeerroute records. Activation is idempotent — re-running it does not
- * duplicate records (existing caseTypes are detected by identifier).
+ * roleType, documentType, resultType and workflowTemplate records.
+ * Activation is idempotent — re-running it does not duplicate records
+ * (existing caseTypes are detected by identifier).
  *
  * This class is the activation orchestrator only: which slugs exist, which
  * bundle file backs each one, which schemas the write needs, and the
@@ -123,6 +123,7 @@ class BesluitvormingTemplateService {
 		}
 
 		$bundle = $this->loadBundle(slug: $slug);
+		$this->warnOnStepLevelActions(bundle: $bundle, slug: $slug);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -148,7 +149,7 @@ class BesluitvormingTemplateService {
 		// otherwise fail-closed by OpenRegister RBAC (#1955) on every boot.
 		return $this->runAsSystemIfAvailable(
 			objectService: $objectService,
-			operation: function () use ($objectService, $register, $schemas, $slug, $caseTypeData, $bundle, $identifier): array {
+			operation: function () use ($objectService, $register, $schemas, $slug, $caseTypeData, $identifier): array {
 				// Idempotency: skip if a caseType with this identifier already exists.
 				$existing = $this->seeder->findByIdentifier(
 					objectService: $objectService,
@@ -164,18 +165,12 @@ class BesluitvormingTemplateService {
 					return ['success' => true, 'skipped' => true, 'slug' => $slug];
 				}
 
-				// The default parafeerroute lives either at the bundle top level or
-				// nested under caseType; accept both shapes.
-				$parafeerroute = (array)($bundle['parafeerroute'] ?? ($caseTypeData['parafeerroute'] ?? []));
-				unset($caseTypeData['parafeerroute']);
-
 				return $this->seeder->seedBundle(
 					objectService: $objectService,
 					register: $register,
 					schemas: $schemas,
 					slug: $slug,
 					caseTypeData: $caseTypeData,
-					parafeerroute: $parafeerroute,
 				);
 			}
 		);
@@ -210,6 +205,49 @@ class BesluitvormingTemplateService {
 	}//end loadBundle()
 
 	/**
+	 * Warn loudly when a bundle declares actions where the engine never reads.
+	 *
+	 * The transition engine dispatches ONLY the automaticActions declared on a
+	 * TRANSITION (TransitionSpecReader::extractActions() is its sole action
+	 * source). An action declared on a step is silently inert: the transition
+	 * succeeds, `dispatchedActions` stays empty and nothing is logged — which
+	 * is exactly how a shipped besluitvormingActivate never armed anything on
+	 * any fresh install. This makes the no-op loud at activation time.
+	 *
+	 * @param array<string, mixed> $bundle The decoded template bundle.
+	 * @param string $slug The template slug (for logging).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	private function warnOnStepLevelActions(array $bundle, string $slug): void {
+		$workflow = (array)(((array)($bundle['caseType'] ?? []))['workflowTemplate'] ?? []);
+		foreach ((array)($workflow['steps'] ?? []) as $index => $step) {
+			if (is_array($step) === false) {
+				continue;
+			}
+
+			foreach (['automaticActions', 'actions'] as $key) {
+				if (isset($step[$key]) === true && is_array($step[$key]) === true && $step[$key] !== []) {
+					$this->logger->warning(
+						'Dossiq: besluitvorming template declares automatic actions on a STEP, a position the '
+						. 'transition engine never reads; these actions will never run. Move them to the '
+						. 'transition entering the step\'s status.',
+						[
+							'slug' => $slug,
+							'step' => (int)$index,
+							'statusName' => (string)($step['statusName'] ?? ''),
+							'key' => $key,
+							'app' => Application::APP_ID,
+						],
+					);
+				}
+			}
+		}
+	}//end warnOnStepLevelActions()
+
+	/**
 	 * Resolve the schema ids needed to seed a bundle.
 	 *
 	 * @return array<string, string> Map of schema-key => configured schema id.
@@ -223,7 +261,6 @@ class BesluitvormingTemplateService {
 			'documentType' => $this->settingsService->getConfigValue(key: 'document_type_schema'),
 			'resultType' => $this->settingsService->getConfigValue(key: 'result_type_schema'),
 			'workflowTemplate' => $this->settingsService->getConfigValue(key: 'workflow_template_schema'),
-			'parafeerroute' => $this->settingsService->getConfigValue(key: 'parafeerroute_schema'),
 		];
 	}//end resolveSchemas()
 }//end class

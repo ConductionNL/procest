@@ -16,8 +16,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Throwable;
@@ -49,6 +51,8 @@ use Throwable;
  * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
  */
 class MigrateAiOversightToHermiq implements IRepairStep {
+	use RunsUnderSystemIdentity;
+
 
 	/**
 	 * How many entries to pull per page.
@@ -70,12 +74,14 @@ class MigrateAiOversightToHermiq implements IRepairStep {
 	 *
 	 * @param AiAuditLog $audit Reads procest's own oversight log.
 	 * @param AiOversightDelegationService $oversight Sends a decision to hermiq.
+	 * @param SettingsService|null $settings Resolves OpenRegister for the system identity.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly AiAuditLog $audit,
 		private readonly AiOversightDelegationService $oversight,
+		private readonly ?SettingsService $settings=null,
 	) {
 
 	}//end __construct()
@@ -101,6 +107,34 @@ class MigrateAiOversightToHermiq implements IRepairStep {
 	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
 	 */
 	public function run(IOutput $output): void {
+		// THE READ IS FAIL-CLOSED TOO, AND A REFUSED READ LOOKS LIKE AN EMPTY
+		// LOG. A repair step has no session, so OpenRegister resolves the actor
+		// as 'Anonymous' and refuses reads on any schema without an explicit
+		// `public` grant. `AiAuditLog::list()` degrades gracefully to an empty
+		// page on failure — correct for the oversight surface, wrong here,
+		// because "the log is empty" and "the log was refused" then produce the
+		// same "no audit entries to consider" line while the Art. 14 evidence
+		// silently fails to move. The whole replay runs under the same system
+		// identity the writing steps use.
+		$this->withSystemIdentity(
+			objectService: $this->settings?->getObjectService(),
+			work: function () use ($output): void {
+				$this->replayAll(output: $output);
+			}
+		);
+
+	}//end run()
+
+	/**
+	 * Page through the audit log and replay every decision.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	private function replayAll(IOutput $output): void {
 		$sent = 0;
 		$skipped = 0;
 		$offset = 0;
@@ -136,7 +170,7 @@ class MigrateAiOversightToHermiq implements IRepairStep {
 
 		$this->report(output: $output, sent: $sent, skipped: $skipped);
 
-	}//end run()
+	}//end replayAll()
 
 	/**
 	 * Delegate one page of audit entries.

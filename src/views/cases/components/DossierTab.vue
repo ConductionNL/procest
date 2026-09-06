@@ -8,7 +8,7 @@
 		@drop.prevent="onDrop">
 		<div class="dossier-tab__header">
 			<h3 class="dossier-tab__title">
-				{{ t('dossiq', 'Dossier') }} ({{ total }})
+				{{ t('dossiq', 'Documents') }} ({{ total }})
 			</h3>
 			<div class="dossier-tab__controls">
 				<NcSelect

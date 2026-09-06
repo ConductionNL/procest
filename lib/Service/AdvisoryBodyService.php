@@ -38,6 +38,8 @@ use RuntimeException;
  * Advisory bodies are departments (internal) or organizations (external) that
  * can be consulted during case processing. This service exposes CRUD, weighted
  * specialization search, and secure-token issuance for external notification.
+ *
+ * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
  */
 class AdvisoryBodyService {
 	use SearchesObjects;
@@ -108,18 +110,15 @@ class AdvisoryBodyService {
 			return null;
 		}
 
-		$results = $this->searchObjectsAsArrays(
+		// A top-level `['id' => $id]` filter does not resolve in OpenRegister
+		// (ids are metadata, not schema properties) and silently matches
+		// nothing. The get-by-uuid path resolves the id directly.
+		return $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['id' => $id, '_limit' => 1],
+			id: $id
 		);
-
-		if (empty($results) === false) {
-			return $results[0];
-		}
-
-		return null;
 	}//end findById()
 
 	/**

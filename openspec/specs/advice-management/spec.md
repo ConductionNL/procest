@@ -12,22 +12,21 @@ Advice management lets behandelaars request, track, and process internal and ext
 
 ## Requirements
 
-**Advice Page Render (UI surface)**
+**Advice surface (UI surface)**
 
-### Requirement: Advice index page render
+### Requirement: Advice surface
 
-The Advice (adviezen) index page (`CnIndexPage`, route `/advice`) SHALL mount and
-render its stable list shell on navigation — the Cards/Table view toggle, an "Add"
-create button, a per-row "Actions" control, and an empty-state message when no
-advice requests are visible — independently of whether the OpenRegister collection
-returns rows.
+Per-case advice SHALL reach the user through the `besluitvorming` leaf on
+CaseDetail and the `case-decidesk-decisions` widget. `/advice/:id` SHALL stay
+registered so every advice detail link keeps resolving.
 
-#### Scenario: Advice index page renders list shell
-- **GIVEN** an authenticated user on the Dossiq app
-- **WHEN** they navigate to the Advice page
-- **THEN** the Cards/Table view-mode toggle MUST be visible
-- **AND** an "Add" create button MUST be visible
-- **AND** the page MUST NOT show an Internal Server Error
+REPLACED 2026-09-02. The standalone `/advice` index page is retired, not hidden.
+`consume-decidesk-besluitvorming-leaf` moved decision-making to decidesk, which
+owns the `adviesAanvraag` model and the CROSS-CASE advice queue by design. dossiq
+keeps the per-case view and the detail route. A dossiq-side list over a model
+dossiq no longer owns is the duplication that change set out to remove.
+
+@e2e exclude The per-case surface is covered by the besluitvorming leaf specs; the cross-case queue is decidesk's and is not a dossiq surface to test.
 
 **ADDED Requirements**
 

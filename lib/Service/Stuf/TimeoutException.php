@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Synchronous vraag/antwoord exceeded the configured timeout.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 class TimeoutException extends StufException {
 }//end class

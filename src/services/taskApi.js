@@ -43,9 +43,6 @@ function mapCalDavPriority(icalPriority) {
  *
  * @param {object} task CalDAV task object from API
  * @return {object} Normalized work item
- */
-/**
- * @param task
  * @spec openspec/specs/task-management/spec.md
  */
 export function normalizeCalDavTask(task) {
@@ -102,11 +99,6 @@ export function normalizeCalDavTask(task) {
  * @param {string|number} schemaId The schema (schema ID)
  * @param {string} objectId The object UUID
  * @return {Promise<object[]>} Array of normalized task work items
- */
-/**
- * @param registerId
- * @param schemaId
- * @param objectId
  * @spec openspec/specs/task-management/spec.md
  */
 export async function fetchTasksForObject(registerId, schemaId, objectId) {
@@ -140,9 +132,6 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
  *
  * @param {object[]} cases Array of case objects (must have id property)
  * @return {Promise<object[]>} Array of normalized task work items
- */
-/**
- * @param cases
  * @spec openspec/specs/task-management/spec.md
  */
 export async function fetchTasksForCases(cases) {

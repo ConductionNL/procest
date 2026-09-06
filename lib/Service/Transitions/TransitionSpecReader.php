@@ -66,12 +66,64 @@ class TransitionSpecReader {
 		$list = [];
 		foreach ($guards as $guard) {
 			if (is_array($guard) === true) {
-				$list[] = $guard;
+				$list[] = $this->normaliseGuard(guard: $guard);
 			}
 		}
 
 		return $list;
 	}//end extractGuards()
+
+	/**
+	 * Translate one guard entry into the spelling the evaluators read.
+	 *
+	 * Every evaluator reads its parameters from the TOP LEVEL of the guard
+	 * entry, and that is the position the whole system already writes: the
+	 * visual workflow editor stores `{type, fieldName}` flat on the
+	 * transition, `extractGuards()` itself promotes `allowedRoles` into a flat
+	 * roleGuard, and the frontend's own evaluator reads flat. What the editor
+	 * does NOT share is the engine's spelling: it stores `fieldName`,
+	 * `documentTypeName` and `roleTypeId` where the evaluators read `field`,
+	 * `documentType` and `allowedRoles`. Those guards are stored data on
+	 * existing installs, so the engine translates them here rather than asking
+	 * administrators to re-author their workflows.
+	 *
+	 * A parameter block nested under `config` is NOT translated. The engine
+	 * has one position for guard parameters; teaching it a second would make
+	 * two files that look different behave the same, and the next author would
+	 * have no way to tell which one the engine actually reads.
+	 * {@see GuardRegistry::evaluateAll()} reports such an entry so the no-op is
+	 * loud rather than silent.
+	 *
+	 * @param array<string, mixed> $guard One guard entry.
+	 *
+	 * @return array<string, mixed> The guard entry in the engine's spelling.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function normaliseGuard(array $guard): array {
+		// The visual editor's spellings, mapped onto the engine's.
+		foreach (['field' => 'fieldName', 'documentType' => 'documentTypeName'] as $canonical => $editorKey) {
+			if (isset($guard[$canonical]) === false && isset($guard[$editorKey]) === true) {
+				$guard[$canonical] = $guard[$editorKey];
+			}
+		}
+
+		$allowed = ($guard['allowedRoles'] ?? null);
+		if (is_array($allowed) === true && $allowed !== []) {
+			return $guard;
+		}
+
+		// A single role, however it is spelled, is a one-entry allow-list.
+		foreach (['roleTypeId', 'roleName', 'role', 'requiredRole'] as $singleKey) {
+			$single = trim((string)($guard[$singleKey] ?? ''));
+			if ($single !== '') {
+				$guard['allowedRoles'] = [$single];
+				break;
+			}
+		}
+
+		return $guard;
+	}//end normaliseGuard()
 
 	/**
 	 * Extract automaticActions[] from a transition definition.

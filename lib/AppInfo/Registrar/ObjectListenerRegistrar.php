@@ -4,9 +4,9 @@
  * Dossiq object-lifecycle listener registrar.
  *
  * The notifier plus the OpenRegister object-lifecycle listeners that are not
- * scoped to a single subsystem: KPI cache invalidation, role-routing cache
- * invalidation, DSO vergunningaanvraag intake and BAG location validation.
- * Subsystem-scoped listeners live in their own registrars.
+ * scoped to a single subsystem: KPI cache invalidation and role-routing
+ * cache invalidation. Subsystem-scoped listeners live in their own
+ * registrars ({@see IntakeListenerRegistrar}, {@see TermijnTimerRegistrar}).
  *
  * @category AppInfo
  * @package  OCA\Dossiq\AppInfo\Registrar
@@ -30,15 +30,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
-use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
-use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -65,7 +61,7 @@ class ObjectListenerRegistrar {
 		$context->registerNotifierService(Notifier::class);
 
 		$this->registerCacheInvalidationListeners(context: $context);
-		$this->registerIntakeListeners(context: $context);
+		(new IntakeListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**
@@ -107,33 +103,4 @@ class ObjectListenerRegistrar {
 			listener: RoleMutationListener::class
 		);
 	}//end registerCacheInvalidationListeners()
-
-	/**
-	 * Register the DSO intake and BAG location-validation listeners.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/beschikking-generatie/spec.md
-	 */
-	private function registerIntakeListeners(IRegistrationContext $context): void {
-		// DSO Omgevingsloket: create a Dossiq zaak when a vergunningaanvraag is
-		// written by OpenRegister.
-		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: VergunningaanvraagCreatedListener::class
-		);
-
-		// Bag-location-save-validation: pre-persist location source=bag
-		// enforcement (closes bag-register-adapter tasks.md item 4.1).
-		$context->registerEventListener(
-			event: ObjectCreatingEvent::class,
-			listener: LocationBagValidationListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatingEvent::class,
-			listener: LocationBagValidationListener::class
-		);
-	}//end registerIntakeListeners()
 }//end class

@@ -317,11 +317,7 @@
               "type": "object",
               "properties": {
                 "level": { "type": "string", "title": "Level", "description": "Approval level (e.g. consulent, afdelingsmanager, directeur)" },
-                "to_amount": {
-                  "type": [
-                    "number",
-                    "null"
-                  ], "title": "Up To Amount", "description": "Upper bedrag limit; null means unlimited" },
+                "to_amount": { "type": "number", "title": "Up To Amount", "description": "Upper bedrag limit; omit the property for unlimited" },
                 "caseTypes": { "type": "array", "title": "Case Types", "description": "Case types for which this authorization level applies", "items": { "type": "string" } },
                 "decisionTypes": { "type": "array", "title": "Decision Types", "description": "Decision types for which this authorization level applies", "items": { "type": "string" } }
               }
@@ -345,7 +341,7 @@
         "mandateGroups": [
           { "level": "consulent", "to_amount": 5000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning"] },
           { "level": "afdelingsmanager", "to_amount": 25000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing"] },
-          { "level": "directeur", "to_amount": null, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing", "wijziging"] }
+          { "level": "directeur", "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing", "wijziging"] }
         ]
       },
       {

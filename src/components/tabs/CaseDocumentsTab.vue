@@ -179,6 +179,16 @@ export default {
 
 	methods: {
 		formatDate,
+		/**
+		 * Load the documents belonging to THIS case.
+		 *
+		 * Filters on a bare `case` field name: the `_filters[case]` form this
+		 * used is inert, so the tab was reading every case's documents.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-001-zaak-objects-must-support-linked-documents-via-zgw-informatieobject-and-zaakinformatieobject
+		 */
 		async reload() {
 			if (!this.resolvedCaseId) {
 				this.loading = false
@@ -189,7 +199,7 @@ export default {
 				const results = await this.objectStore.fetchCollection(
 					'caseDocument',
 					{
-						'_filters[case]': this.resolvedCaseId,
+						case: this.resolvedCaseId,
 						_limit: 100,
 					},
 				)

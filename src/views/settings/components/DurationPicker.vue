@@ -51,6 +51,8 @@ export default {
 		},
 	},
 
+	emits: ['input'],
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		daysInput() {
@@ -98,7 +100,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param val
+		 * @param {string|number|boolean|object} val The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
 		 */
 		onDaysChange(val) {
@@ -111,7 +113,7 @@ export default {
 		},
 
 		/**
-		 * @param preset
+		 * @param {object} preset The preset.
 		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
 		 */
 		selectPreset(preset) {

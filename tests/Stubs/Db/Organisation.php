@@ -49,6 +49,52 @@ class Organisation {
 	/** @var int|null */
 	private ?int $storageQuota = null;
 
+	/**
+	 * 🔴 THE STUB HAS TO MIRROR THE REAL CLASS, FIELD FOR FIELD.
+	 *
+	 * The real Organisation extends Entity, whose `__call` synthesises a
+	 * setter for every declared property. This stub has no parent and no
+	 * `__call`, so it answers ONLY to what it declares. A field the real class
+	 * carries and the stub does not is one that fatals here while working in
+	 * production, and one no test can reach.
+	 *
+	 * These seven were added for the partner migration, each verified present
+	 * on OCA\OpenRegister\Db\Organisation.
+	 *
+	 * @var string|null
+	 */
+	private ?string $type = 'organisation';
+
+	/**
+	 * @var boolean|null
+	 */
+	private ?bool $isLocalTenant = true;
+
+	/**
+	 * @var string|null
+	 */
+	private ?string $oin = null;
+
+	/**
+	 * @var string|null
+	 */
+	private ?string $contactEmail = null;
+
+	/**
+	 * @var string|null
+	 */
+	private ?string $defaultPermissionLevel = null;
+
+	/**
+	 * @var integer|null
+	 */
+	private ?int $qualityScore = null;
+
+	/**
+	 * @var string|null
+	 */
+	private ?string $qualityStatus = null;
+
 	// phpcs:disable Squiz.Commenting.FunctionComment.Missing
 
 	public function getUuid(): ?string {
@@ -115,6 +161,118 @@ class Organisation {
 
 	public function setStorageQuota(?int $storageQuota): void {
 		$this->storageQuota = $storageQuota;
+	}
+
+	/**
+	 * @return string|null The organisation type.
+	 */
+	public function getType(): ?string {
+		return $this->type;
+	}
+
+	/**
+	 * @param string|null $type The organisation type.
+	 *
+	 * @return void
+	 */
+	public function setType(?string $type): void {
+		$this->type = $type;
+	}
+
+	/**
+	 * @return boolean|null Whether this is a tenant of this instance.
+	 */
+	public function getIsLocalTenant(): ?bool {
+		return $this->isLocalTenant;
+	}
+
+	/**
+	 * @param boolean|null $isLocalTenant Whether this is a local tenant.
+	 *
+	 * @return void
+	 */
+	public function setIsLocalTenant(?bool $isLocalTenant): void {
+		$this->isLocalTenant = $isLocalTenant;
+	}
+
+	/**
+	 * @return string|null The OIN.
+	 */
+	public function getOin(): ?string {
+		return $this->oin;
+	}
+
+	/**
+	 * @param string|null $oin The OIN.
+	 *
+	 * @return void
+	 */
+	public function setOin(?string $oin): void {
+		$this->oin = $oin;
+	}
+
+	/**
+	 * @return string|null The contact email.
+	 */
+	public function getContactEmail(): ?string {
+		return $this->contactEmail;
+	}
+
+	/**
+	 * @param string|null $contactEmail The contact email.
+	 *
+	 * @return void
+	 */
+	public function setContactEmail(?string $contactEmail): void {
+		$this->contactEmail = $contactEmail;
+	}
+
+	/**
+	 * @return string|null The default permission level.
+	 */
+	public function getDefaultPermissionLevel(): ?string {
+		return $this->defaultPermissionLevel;
+	}
+
+	/**
+	 * @param string|null $defaultPermissionLevel The default permission level.
+	 *
+	 * @return void
+	 */
+	public function setDefaultPermissionLevel(?string $defaultPermissionLevel): void {
+		$this->defaultPermissionLevel = $defaultPermissionLevel;
+	}
+
+	/**
+	 * @return integer|null The quality score.
+	 */
+	public function getQualityScore(): ?int {
+		return $this->qualityScore;
+	}
+
+	/**
+	 * @param integer|null $qualityScore The quality score.
+	 *
+	 * @return void
+	 */
+	public function setQualityScore(?int $qualityScore): void {
+		$this->qualityScore = $qualityScore;
+	}
+
+	/**
+	 * @return string|null The quality status.
+	 */
+	public function getQualityStatus(): ?string {
+		return $this->qualityStatus;
+	}
+
+	/**
+	 * @param string|null $qualityStatus The quality status.
+	 *
+	 * @return void
+	 */
+	public function setQualityStatus(?string $qualityStatus): void {
+		$this->qualityStatus = $qualityStatus;
 	}
 
 	// phpcs:enable

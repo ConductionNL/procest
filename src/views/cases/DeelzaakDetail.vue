@@ -373,6 +373,7 @@ export default {
 		 * @param {boolean} [options.background] When true (live-update
 		 *   refresh), don't toggle `loading` — the template blanks the
 		 *   whole view for a spinner on it.
+		 *
 		 * @return {Promise<void>}
 		 */
 		async reload({ background = false } = {}) {

@@ -71,8 +71,10 @@ class VerwerkingsactiviteitMapper {
 	 */
 	public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
 		if ($entity->getStatus() === null || $entity->getStatus() === '') {
-			$entity->setStatus('draft');
+			$entity->setStatus('concept');
 		}
+
+		$this->validate(entity: $entity);
 
 		$this->store[(string)$entity->getCode()] = $entity;
 		$this->inserts++;
@@ -87,8 +89,60 @@ class VerwerkingsactiviteitMapper {
 	 * @return Verwerkingsactiviteit
 	 */
 	public function update(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
+		$this->validate(entity: $entity);
+
 		$this->store[(string)$entity->getCode()] = $entity;
 		$this->updates++;
 		return $entity;
 	}//end update()
+
+	/**
+	 * Refuse what the real mapper refuses.
+	 *
+	 * A STUB THAT ACCEPTS EVERYTHING CANNOT FAIL. This one used to store any
+	 * entity it was handed, so the seed step's tests could not tell a catalogue
+	 * OpenRegister accepts from one it rejects — and the shipped catalogue was
+	 * the second kind. The messages are the real mapper's, so a failure here
+	 * reads the same as the one an operator sees.
+	 *
+	 * Mirrors openregister `lib/Db/VerwerkingsactiviteitMapper::validate()`.
+	 *
+	 * @param Verwerkingsactiviteit $entity Entity to validate.
+	 *
+	 * @return void
+	 *
+	 * @throws \InvalidArgumentException When the entity would be refused by OR.
+	 */
+	private function validate(Verwerkingsactiviteit $entity): void {
+		if ($entity->getName() === null || trim((string)$entity->getName()) === '') {
+			throw new \InvalidArgumentException('Verwerkingsactiviteit MUST have a name (AVG Art 30 §1(a))');
+		}
+
+		if ($entity->getPurpose() === null || trim((string)$entity->getPurpose()) === '') {
+			throw new \InvalidArgumentException('Verwerkingsactiviteit MUST have a purpose (AVG Art 30 §1(b))');
+		}
+
+		if (in_array($entity->getLegalBasis(), Verwerkingsactiviteit::LEGAL_BASIS_VOCABULARY, true) === false) {
+			throw new \InvalidArgumentException(
+				sprintf(
+					'Invalid legalBasis "%s"; expected one of: %s (AVG Art 6)',
+					(string)$entity->getLegalBasis(),
+					implode(', ', Verwerkingsactiviteit::LEGAL_BASIS_VOCABULARY)
+				)
+			);
+		}
+
+		if ($entity->getStatus() !== null
+			&& $entity->getStatus() !== ''
+			&& in_array($entity->getStatus(), Verwerkingsactiviteit::STATUS_VOCABULARY, true) === false
+		) {
+			throw new \InvalidArgumentException(
+				sprintf(
+					'Invalid status "%s"; expected one of: %s',
+					(string)$entity->getStatus(),
+					implode(', ', Verwerkingsactiviteit::STATUS_VOCABULARY)
+				)
+			);
+		}
+	}//end validate()
 }//end class

@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Handler for `callWebhook` automatic actions.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class CallWebhookHandler implements ActionHandlerInterface {
 	use HandlesTemplates;

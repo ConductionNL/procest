@@ -191,4 +191,84 @@ class StatusTypeLookupTest extends TestCase {
 
 		self::assertSame(['s-1' => 'Real'], $lookup->statusesOf(caseTypeId: 'ct-1'));
 	}//end testRowsWithoutAnIdOrNameAreSkipped()
+
+	/**
+	 * 🔴 THE DEFECT THIS DIRECTION EXISTS FOR.
+	 *
+	 * Two case types, each with a working phase, each calling it something
+	 * else. Matching the literal "In behandeling" — which is what the shipped
+	 * flow did — finds the permit's and misses the subsidy's, and that single
+	 * miss is what killed 8 of 18 demo runs. Asserted over BOTH case types in
+	 * one test, because the property is that ONE instruction reaches both.
+	 */
+	public function testOneRoleReachesCaseTypesThatNameTheirPhasesDifferently(): void {
+		$lookup = $this->lookup([
+			['id' => 'perm-2', 'name' => 'In behandeling', 'role' => 'in-progress', 'order' => 2, 'caseType' => 'permit'],
+			['id' => 'subs-2', 'name' => 'Beoordeling', 'role' => 'in-progress', 'order' => 2, 'caseType' => 'subsidy'],
+		]);
+
+		self::assertSame('perm-2', $lookup->idForRole(caseTypeId: 'permit', role: 'in-progress'));
+		self::assertSame('subs-2', $lookup->idForRole(caseTypeId: 'subsidy', role: 'in-progress'));
+
+		// And the literal that used to be the contract reaches only one of them,
+		// which is the whole reason the role direction had to exist.
+		self::assertSame('perm-2', $lookup->idForName(caseTypeId: 'permit', statusName: 'In behandeling'));
+		self::assertSame('', $lookup->idForName(caseTypeId: 'subsidy', statusName: 'In behandeling'));
+	}//end testOneRoleReachesCaseTypesThatNameTheirPhasesDifferently()
+
+	/**
+	 * A case type that models no such phase resolves to nothing, so the caller
+	 * decides whether that is a skip or a refusal.
+	 */
+	public function testARoleTheCaseTypeDoesNotModelResolvesToNothing(): void {
+		$lookup = $this->lookup([
+			['id' => 's-1', 'name' => 'Ontvangen', 'role' => 'intake', 'order' => 1, 'caseType' => 'ct-1'],
+		]);
+
+		self::assertSame('', $lookup->idForRole(caseTypeId: 'ct-1', role: 'review'));
+		self::assertSame('', $lookup->idForRole(caseTypeId: 'ct-1', role: '  '));
+		self::assertSame('', $lookup->idForRole(caseTypeId: '', role: 'intake'));
+	}//end testARoleTheCaseTypeDoesNotModelResolvesToNothing()
+
+	/**
+	 * A role on ANOTHER case type is not a match, exactly as a name is not.
+	 */
+	public function testARoleOnADifferentCaseTypeIsNotMatched(): void {
+		$lookup = $this->lookup([
+			['id' => 'other', 'name' => 'Onderzoek', 'role' => 'in-progress', 'order' => 2, 'caseType' => 'ct-OTHER'],
+		]);
+
+		self::assertSame('', $lookup->idForRole(caseTypeId: 'ct-1', role: 'in-progress'));
+	}//end testARoleOnADifferentCaseTypeIsNotMatched()
+
+	/**
+	 * Two statuses sharing a role resolve to the EARLIEST, deterministically.
+	 *
+	 * A three-phase inspection legitimately has three working statuses. Taking
+	 * "whichever the store listed first" would land a case on a different phase
+	 * between two runs of the same case type, which nobody reproduces.
+	 */
+	public function testTheEarliestStatusWinsWhenARoleIsSharedAndOrderIsIgnoredByTheStore(): void {
+		$lookup = $this->lookup([
+			['id' => 'fase-3', 'name' => 'Inspectie fase 3', 'role' => 'in-progress', 'order' => 4, 'caseType' => 'ct-1'],
+			['id' => 'fase-1', 'name' => 'Inspectie fase 1', 'role' => 'in-progress', 'order' => 2, 'caseType' => 'ct-1'],
+			['id' => 'fase-2', 'name' => 'Inspectie fase 2', 'role' => 'in-progress', 'order' => 3, 'caseType' => 'ct-1'],
+		]);
+
+		self::assertSame('fase-1', $lookup->idForRole(caseTypeId: 'ct-1', role: 'in-progress'));
+	}//end testTheEarliestStatusWinsWhenARoleIsSharedAndOrderIsIgnoredByTheStore()
+
+	/**
+	 * The role match is trimmed and case-insensitive, like the name match, and
+	 * a status carrying no role is never a candidate.
+	 */
+	public function testTheRoleMatchIsTrimmedAndAnUnannotatedStatusNeverMatches(): void {
+		$lookup = $this->lookup([
+			['id' => 's-1', 'name' => 'Ontvangen', 'role' => ' In-Progress ', 'order' => 1, 'caseType' => 'ct-1'],
+			['id' => 's-2', 'name' => 'Iets anders', 'caseType' => 'ct-1'],
+		]);
+
+		self::assertSame('s-1', $lookup->idForRole(caseTypeId: 'ct-1', role: 'in-progress'));
+		self::assertSame('', $lookup->idForRole(caseTypeId: 'ct-1', role: 'closed'));
+	}//end testTheRoleMatchIsTrimmedAndAnUnannotatedStatusNeverMatches()
 }//end class

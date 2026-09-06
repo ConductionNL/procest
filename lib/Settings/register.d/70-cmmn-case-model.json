@@ -15,7 +15,7 @@
         "x-schema-org": "schema:HowTo",
         "x-cmmn-equivalent": "CasePlanModel",
         "title": "Case Model",
-        "description": "CMMN adaptive case-plan definition for a case type — a tree of stages, human tasks and milestones made adaptive through discretionary items and entry/exit sentries. Complements (does not replace) workflowTemplate: a caseType is driven by exactly one of the two, selected via caseType.handlingModel. See openspec/specs/cmmn-adaptive-case/spec.md.",
+        "description": "CMMN adaptive case-plan definition for a case type: a tree of stages, human tasks and milestones made adaptive through discretionary items and entry/exit sentries. Complements (does not replace) workflowTemplate: a caseType is driven by exactly one of the two, selected via caseType.handlingModel. See openspec/specs/cmmn-adaptive-case/spec.md.",
         "type": "object",
         "required": ["title", "caseType"],
         "properties": {
@@ -41,7 +41,7 @@
           "planItems": {
             "type": "array",
             "title": "Plan Items",
-            "description": "The case-plan tree: stages (nestable via parentId), human tasks, and milestones. Each item's lifecycle is tracked at runtime in case.casePlanState — the definition here is immutable data.",
+            "description": "The case-plan tree: stages (nestable via parentId), human tasks, and milestones. Each item's lifecycle is tracked at runtime in case.casePlanState: the definition here is immutable data.",
             "items": {
               "type": "object",
               "required": ["id", "type", "name"],

@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Seeds three demo TermijnDefinitie rows into OpenRegister.
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 class DeadlineMonitoringSeedDataService {
 	use SearchesObjects;
@@ -113,7 +115,7 @@ class DeadlineMonitoringSeedDataService {
 		array $data,
 		array $existingIds,
 	): array {
-		$counts = ['definities' => 0, 'skipped' => 0];
+		$counts = ['definities' => 0, 'skipped' => 0, 'failed' => 0];
 
 		foreach (($data['termijnDefinities'] ?? []) as $row) {
 			$rowId = (string)($row['id'] ?? '');
@@ -123,9 +125,14 @@ class DeadlineMonitoringSeedDataService {
 			}
 
 			try {
-				$objectService->saveObject($register, $schema, $row);
+				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row);
 				$counts['definities']++;
 			} catch (\Throwable $e) {
+				// COUNTED, not merely logged. A refused row that only logs
+				// leaves the summary success-shaped, which is how a fresh
+				// install shipped zero TermijnDefinities while reporting
+				// "0 definities (0 overgeslagen)" as if that were fine.
+				$counts['failed']++;
 				$this->logger->warning(
 					'Dossiq termijnbewaking seed: row failed',
 					['id' => $rowId, 'error' => $e->getMessage()]

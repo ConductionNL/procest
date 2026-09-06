@@ -86,12 +86,12 @@ class CaseEmailRepository {
 			return null;
 		}
 
-		$result = $objectService->find($templateId, register: $register, schema: $schema);
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		return null;
+		return $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $templateId
+		);
 	}//end findTemplate()
 
 	/**

@@ -15,9 +15,6 @@ import { translate as t } from '@nextcloud/l10n'
  *
  * @param {string} duration ISO 8601 duration (e.g., "P30D")
  * @return {number|null} Number of days, or null if unparseable
- */
-/**
- * @param duration
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function parseDurationToDays(duration) {
@@ -40,9 +37,6 @@ export function parseDurationToDays(duration) {
  *
  * @param {object} caseObj Case object with startDate and endDate
  * @return {number|null} Processing days, or null if dates are missing
- */
-/**
- * @param caseObj
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function getProcessingDays(caseObj) {
@@ -63,10 +57,6 @@ export function getProcessingDays(caseObj) {
  * @param {object} caseObj Case object with caseType field
  * @param {Map<string, object>} caseTypeMap Map of caseType id to caseType object
  * @return {number|null} Target days from processingDeadline, or null
- */
-/**
- * @param caseObj
- * @param caseTypeMap
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function getSlaTargetDays(caseObj, caseTypeMap) {
@@ -80,9 +70,6 @@ export function getSlaTargetDays(caseObj, caseTypeMap) {
  *
  * @param {object[]} caseTypes Array of case type objects
  * @return {Map<string, object>}
- */
-/**
- * @param caseTypes
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function buildCaseTypeMap(caseTypes) {
@@ -99,10 +86,6 @@ export function buildCaseTypeMap(caseTypes) {
  * @param {object[]} completedCases Cases with final status and endDate
  * @param {object[]} caseTypes All case types
  * @return {{ overallRate: number|null, withinSla: number, total: number, excluded: number, byType: Array<{ id, name, total, withinSla, rate, avgActual, targetDays }> }}
- */
-/**
- * @param completedCases
- * @param caseTypes
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function computeSlaCompliance(completedCases, caseTypes) {
@@ -194,9 +177,9 @@ const DEFAULT_BINS = [
  * @return {{ bins: Array<{ label, count }>, slaTargetDays: number|null }}
  */
 /**
- * @param completedCases
- * @param caseTypes
- * @param bins
+ * @param {Array} completedCases The completed cases.
+ * @param {Array} caseTypes The case types.
+ * @param {Array} bins The bins.
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function computeProcessingTimeDistribution(completedCases, caseTypes, bins) {
@@ -246,11 +229,6 @@ export function computeProcessingTimeDistribution(completedCases, caseTypes, bin
  * @param {object[]} caseTypes All case types
  * @param {number} [months] Number of months to look back (defaults to 12)
  * @return {Array<{ month: string, rate: number|null, withinSla: number, total: number }>}
- */
-/**
- * @param completedCases
- * @param caseTypes
- * @param months
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function computeMonthlyTrend(completedCases, caseTypes, months) {
@@ -300,11 +278,6 @@ export function computeMonthlyTrend(completedCases, caseTypes, months) {
  * @param {object[]} caseTypes All case types
  * @param {number} [thresholdPct] Threshold as fraction (defaults to 0.25 = 25%)
  * @return {Array<{ id, title, identifier, caseTypeName, targetDays, elapsedDays, remainingDays, percentUsed, isOverdue }>}
- */
-/**
- * @param openCases
- * @param caseTypes
- * @param thresholdPct
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function getAtRiskCases(openCases, caseTypes, thresholdPct) {
@@ -359,10 +332,6 @@ export function getAtRiskCases(openCases, caseTypes, thresholdPct) {
  * @param {object[]} completedCases Completed cases
  * @param {object[]} caseTypes All case types
  * @return {Array<{ id, name, targetDays, avgActualDays, complianceRate, total, withinSla, status: 'good'|'warning'|'critical'|'no-target' }>}
- */
-/**
- * @param completedCases
- * @param caseTypes
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function computePerformanceTable(completedCases, caseTypes) {

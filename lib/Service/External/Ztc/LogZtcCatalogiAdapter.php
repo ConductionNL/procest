@@ -120,6 +120,8 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
 	 * @inheritDoc
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-ztc-catalogi-api-resources-must-be-fully-mappable
 	 */
 	public function isDormant(): bool {
 		return true;

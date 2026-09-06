@@ -59,7 +59,6 @@
 					<label for="etpl-subject">{{ t('dossiq', 'Subject') }}</label>
 					<NcInputField
 						id="etpl-subject"
-						ref="subjectField"
 						v-model="draft.subject"
 						@focus="activeField = 'subject'" />
 				</div>
@@ -68,7 +67,6 @@
 					<label for="etpl-body">{{ t('dossiq', 'Body') }}</label>
 					<NcTextArea
 						id="etpl-body"
-						ref="bodyField"
 						v-model="draft.body"
 						rows="8"
 						@focus="activeField = 'body'" />
@@ -77,9 +75,14 @@
 				<!-- Live preview -->
 				<div class="setting-row">
 					<label>{{ t('dossiq', 'Preview') }}</label>
+					<!-- renderPreview() escapes &, < and > in the body and emits
+					     only its own fixed-class <span> and <br>, so no
+					     caller-supplied markup can reach the DOM. -->
+					<!-- eslint-disable vue/no-v-html -->
 					<div
 						class="email-template-admin__preview"
 						v-html="previewHtml" />
+					<!-- eslint-enable vue/no-v-html -->
 					<p
 						v-if="unresolved.length > 0"
 						class="email-template-admin__warning">
@@ -231,7 +234,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param name
+		 * @param {string} name The name.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		varToken(name) {
@@ -239,7 +242,7 @@ export default {
 		},
 
 		/**
-		 * @param group
+		 * @param {object} group The group.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		groupLabel(group) {
@@ -301,7 +304,7 @@ export default {
 		},
 
 		/**
-		 * @param tpl
+		 * @param {object} tpl The tpl.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		selectTemplate(tpl) {
@@ -320,7 +323,7 @@ export default {
 		},
 
 		/**
-		 * @param name
+		 * @param {string} name The name.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		insertVariable(name) {

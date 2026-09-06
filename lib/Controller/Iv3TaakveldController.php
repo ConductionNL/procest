@@ -46,6 +46,8 @@ use OCP\IUserSession;
 
 /**
  * Read-only access to the IV3/BBV taakveld reference list.
+ *
+ * @spec openspec/specs/iv3-taakveld-2023-refinement/spec.md
  */
 class Iv3TaakveldController extends Controller {
 	/**
@@ -70,6 +72,8 @@ class Iv3TaakveldController extends Controller {
 	 * is a public CBS classification, not report data).
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/iv3-taakveld-2023-refinement/spec.md
 	 */
 	#[NoAdminRequired]
 	public function taakvelden(): JSONResponse {

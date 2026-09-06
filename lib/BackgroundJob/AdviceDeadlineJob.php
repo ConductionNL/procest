@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Daily timed job that processes advice request deadlines and reminders.
+ *
+ * @spec openspec/specs/advice-management/spec.md
  */
 class AdviceDeadlineJob extends TimedJob {
 	/**

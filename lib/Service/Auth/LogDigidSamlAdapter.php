@@ -40,6 +40,8 @@ use RuntimeException;
 
 /**
  * Default DigiD adapter — logs + refuses.
+ *
+ * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
  */
 final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
 	/**
@@ -100,6 +102,8 @@ final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
 	 * Whether the live broker is enabled.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
 	 */
 	public function isActive(): bool {
 		$raw = $this->config->getValueString(self::APP_ID, self::FLAG_KEY, '0');

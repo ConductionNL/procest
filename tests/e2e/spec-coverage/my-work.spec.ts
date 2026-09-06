@@ -12,11 +12,11 @@
  * so the Vue history-mode router can resolve the route correctly.
  */
 
-import { test, expect } from '@playwright/test'
-import { dismissSupportDialog } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 // Route named after the component that renders it, so this spec states WHICH
 // screen it covers in executable code rather than in a comment.
-import { MyWorkCards } from '../helpers/page-components'
+import { MyWorkCards } from '../helpers/page-components.ts'
 
 test.describe('My Work spec coverage', () => {
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view

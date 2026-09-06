@@ -72,16 +72,6 @@
     "docsUrl": "openspec/specs/leges-heffingen/spec.md"
   },
   {
-    "slug": "parafeerroute-engine",
-    "title": "Parafering en mandaat",
-    "title_nl": "Parafering en mandaat",
-    "summary": "You route sign-offs along the mandate matrix with a hash-chained audit trail.",
-    "summary_nl": "Je routeert paraferingen langs de mandaatmatrix met een hash-geketende audittrail.",
-    "status": "stable",
-    "providedBy": "openregister",
-    "docsUrl": "openspec/specs/parafeerroute-engine/spec.md"
-  },
-  {
     "slug": "archief-edepot-handover",
     "title": "Archivering naar e-Depot",
     "title_nl": "Archivering naar e-Depot",

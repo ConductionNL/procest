@@ -57,6 +57,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -69,6 +70,9 @@ use Throwable;
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
 class DecisionService {
+
+	use SearchesObjects;
+
 	/**
 	 * Canonical Awb art. 7:11 disposition values (REQ-BD-2).
 	 *
@@ -170,11 +174,12 @@ class DecisionService {
 		unset($record['publishedAt'], $record['notifiedRecipients']);
 
 		try {
-			return $objectService->saveObject(
-				object: $record,
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
 				register: $register,
-				schema: $decisionSchema
-			);
+				schema: $decisionSchema,
+				object: $record
+			) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq bezwaar-decision: failed to draft: ' . $e->getMessage()
@@ -224,8 +229,8 @@ class DecisionService {
 			);
 		}
 
-		$current = $objectService->find($decisionId, register: $register, schema: $decisionSchema);
-		if (is_array($current) === false) {
+		$current = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $decisionSchema, id: $decisionId);
+		if ($current === null) {
 			throw new RuntimeException('BezwaarDecision not found');
 		}
 
@@ -286,12 +291,13 @@ class DecisionService {
 		}
 
 		try {
-			$saved = $objectService->saveObject(
-				object: $patch,
+			$saved = ($this->saveObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $decisionSchema,
+				object: $patch,
 				uuid: (string)$decisionId
-			);
+			) ?? array_merge($current, $patch));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq bezwaar-decision: failed to persist decisionRef: '
@@ -332,8 +338,13 @@ class DecisionService {
 			return;
 		}
 
-		$objection = $objectService->find($objectionId, register: $register, schema: $objectionSchema);
-		if (is_array($objection) === false) {
+		$objection = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $objectionSchema,
+			id: $objectionId
+		);
+		if ($objection === null) {
 			return;
 		}
 

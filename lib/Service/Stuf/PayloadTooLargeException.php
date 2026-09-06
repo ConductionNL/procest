@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Pre-send domain error: payload too large for StUF envelope.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 class PayloadTooLargeException extends StufException {
 }//end class

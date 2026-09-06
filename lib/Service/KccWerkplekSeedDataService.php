@@ -89,7 +89,7 @@ class KccWerkplekSeedDataService {
 			return ['success' => false, 'message' => 'Invalid seed JSON'];
 		}
 
-		$counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0];
+		$counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0, 'failed' => 0];
 
 		// This service is only ever invoked from boot-time repair steps
 		// (SeedKccWerkplekData, SeedDeadlineMonitoringData) — never from a live
@@ -118,6 +118,24 @@ class KccWerkplekSeedDataService {
 				);
 			}
 		);
+
+		// A SEED THAT SEEDED NOTHING MUST NOT REPORT SUCCESS. Every row failure
+		// below is counted rather than only logged, and one failure makes the
+		// whole call unsuccessful — otherwise "five quick-actions refused" and
+		// "five quick-actions already present" produce the same
+		// `success: true, quickActions: 0` line, and only one of them means the
+		// install is healthy.
+		if ($counts['failed'] > 0) {
+			$this->logger->error('Dossiq KCC-werkplek: seed refused rows', $counts);
+
+			return array_merge(
+				[
+					'success' => false,
+					'message' => $counts['failed'] . ' row(s) refused; see the log for each refusal',
+				],
+				$counts
+			);
+		}
 
 		$this->logger->info('Dossiq KCC-werkplek: seed complete', $counts);
 
@@ -167,7 +185,8 @@ class KccWerkplekSeedDataService {
 				$objectService->saveObject(object: $row, register: $register, schema: $schema);
 				$counts[$counterKey]++;
 			} catch (Throwable $e) {
-				$this->logger->warning(
+				$counts['failed']++;
+				$this->logger->error(
 					'Dossiq KCC-werkplek seed: row failed',
 					['id' => $rowId, 'schema' => $schema, 'error' => $e->getMessage()]
 				);
@@ -188,6 +207,13 @@ class KccWerkplekSeedDataService {
 		try {
 			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
 		} catch (Throwable $e) {
+			// An unreadable schema is reported, not assumed empty: "no rows
+			// exist" and "the read was refused" both returned [], and the second
+			// one makes the seed re-insert every row it already holds.
+			$this->logger->warning(
+				'Dossiq KCC-werkplek seed: could not read existing rows; treating the schema as empty',
+				['schema' => $schema, 'error' => $e->getMessage()]
+			);
 			return [];
 		}
 

@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Controller;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\NoticeOfDefaultService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -39,8 +40,13 @@ use Throwable;
  * REST surface for ingebrekestelling registration.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 class NoticeOfDefaultController extends Controller {
+
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -150,12 +156,12 @@ class NoticeOfDefaultController extends Controller {
 		}
 
 		try {
-			$row = $objectService->find($id, register: $register, schema: $schema);
+			$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if (is_array($row) === false) {
+		if ($row === null) {
 			return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
 

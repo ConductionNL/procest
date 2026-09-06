@@ -31,6 +31,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Suspension / reactivation / termination orchestration.
+ *
+ * @spec openspec/specs/tenant-lifecycle/spec.md#requirement-tenant-suspension-and-reactivation-req-008-a
  */
 class TenantLifecycleControlService {
 	/**
@@ -139,6 +141,8 @@ class TenantLifecycleControlService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return int
+	 *
+	 * @spec openspec/specs/tenant-lifecycle/spec.md#requirement-tenant-termination-and-data-archival-req-008-b
 	 */
 	public function countUnsettledEvents(string $tenantId): int {
 		$events = $this->billingService->fetchEventsForMonth(

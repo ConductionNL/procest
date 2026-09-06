@@ -35,6 +35,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CreateSubCaseHandler
  *
+ *
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
 class CreateSubCaseHandlerTest extends TestCase {

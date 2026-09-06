@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import path from 'path'
+import { BASE_URL } from './tests/e2e/base-url.ts'
 
 const STORAGE_STATE = path.join(__dirname, 'tests/e2e/.auth/user.json')
 
@@ -32,7 +33,13 @@ export default defineConfig({
 	globalSetup: './tests/e2e/global-setup.ts',
 
 	use: {
-		baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+		// ONE resolver (tests/e2e/base-url.ts). This line used to read
+		// `NEXTCLOUD_URL || 'http://localhost:8080'` on its own, so a run with
+		// only PLAYWRIGHT_BASE_URL set (the variable every runbook uses) went to
+		// the SHARED dev container: global-setup takes the first project's
+		// baseURL, and the suite logged in and read from 8080 while reporting
+		// on the instance the operator named. Measured 2026-09-01.
+		baseURL: BASE_URL,
 		storageState: STORAGE_STATE,
 		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure',
@@ -43,8 +50,32 @@ export default defineConfig({
 		// PR pipelines don't reshoot screenshots on every push.
 		{
 			name: 'chromium',
-			testIgnore: ['**/docs-screenshots.spec.ts', '**/visual/**'],
+			testIgnore: [
+				'**/docs-screenshots.spec.ts',
+				'**/visual/**',
+				// Needs the case flow ENABLED, which the shared instance must never be.
+				'**/case-flow-live-journeys.spec.ts',
+			],
 			use: { ...devices['Desktop Chrome'] },
+		},
+
+		// Live case-flow journeys (case-flow-human-steps tasks 7.1/7.2). Opt-in,
+		// for a DISPOSABLE instance on which the operator enabled the flow:
+		//
+		//   PLAYWRIGHT_BASE_URL=http://localhost:8614 \
+		//   FLOW_WORKER_CMD='docker exec -u www-data <container> php occ background-job:execute <id> --force-execute' \
+		//   npx playwright test --project live-journeys
+		//
+		// Never part of the default project: it creates cases that start runs.
+		{
+			name: 'live-journeys',
+			testMatch: /case-flow-live-journeys\.spec\.ts$/,
+			use: {
+				...devices['Desktop Chrome'],
+				viewport: { width: 1280, height: 800 },
+			},
+			timeout: 180_000,
+			retries: 0,
 		},
 
 		// Documentation capture project (ADR-030). Opt-in run:

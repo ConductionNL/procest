@@ -227,7 +227,7 @@ export default {
 			try {
 				const objectStore = useObjectStore()
 				const results = await objectStore.fetchCollection('decisionType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})
 				this.items = results || []

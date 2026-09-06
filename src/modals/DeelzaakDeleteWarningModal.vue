@@ -114,7 +114,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param open
+		 * @param {boolean} open Whether the open is set.
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
 		 */
 		onDialogClose(open) {

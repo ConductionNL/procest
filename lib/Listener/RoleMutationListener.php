@@ -9,8 +9,8 @@
  * role-based-step-routing spec.
  *
  * Eager recomputation of `case.assignedTo` is intentionally NOT performed
- * here: callers (task list, transition engine, parafeerroute) hit the
- * resolver lazily and benefit from the freshly invalidated cache.
+ * here: callers (task list, transition engine) hit the resolver lazily and
+ * benefit from the freshly invalidated cache.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener

@@ -134,7 +134,7 @@ class WorkflowEngineSchemaTest extends TestCase {
 	 */
 	public function testCoreSchemasPresentAfterWorkflowEngineMigration(): void {
 		$schemas = $this->registerData['components']['schemas'];
-		$required = ['case', 'task', 'caseType', 'statusType', 'roleType', 'workflowTemplate'];
+		$required = ['case', 'caseTask', 'caseType', 'statusType', 'roleType', 'workflowTemplate'];
 
 		foreach ($required as $schemaName) {
 			$this->assertArrayHasKey(

@@ -15,14 +15,14 @@
  * Runs in Vitest's `node` environment.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	buildDonutSeries,
 	buildDonutLabels,
+	buildDonutSeries,
 	buildHistogramSeries,
-	findHistogramTargetBinIndex,
-	buildTrendSeries,
 	buildThroughputSeries,
+	buildTrendSeries,
+	findHistogramTargetBinIndex,
 	sortPerformanceRows,
 } from '../../src/views/doorlooptijd/components/chartShaping.js'
 

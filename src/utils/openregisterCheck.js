@@ -48,7 +48,7 @@ export async function checkOpenRegisterStatus() {
  * @return {string}
  */
 /**
- * @param status
+ * @param {string} status The status.
  * @spec openspec/specs/openregister-integration/spec.md
  */
 export function getStatusMessage(status) {

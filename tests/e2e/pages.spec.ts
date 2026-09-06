@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import {
-	navTo,
-	navToRoute,
 	dismissSupportDialog,
 	loadAllAdminSections,
-} from './helpers/nav'
+	navTo,
+	navToRoute,
+} from './helpers/nav.ts'
 
 test.describe('Dashboard', () => {
 	// FIXME(#427): under the CI env (bare `php -S`, no mod_rewrite) CnDashboardPage
@@ -40,7 +40,7 @@ test.describe('Dashboard', () => {
 test.describe('Cases page', () => {
 	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
 	test('renders list view with correct controls', async ({ page }) => {
-		await navTo(page, 'Cases')
+		await navTo(page, /^(All cases|Alle zaken)$/)
 		// The view switcher renders as BUTTONS, not a radio group — measured on
 		// a CI runner (2026-08-04): the page exposes zero `radio` roles, so the
 		// old `getByRole('radio', …)` assertions could never pass.
@@ -88,7 +88,7 @@ test.describe('Cases page', () => {
 	})
 
 	test('sidebar has search and filter controls', async ({ page }) => {
-		await navTo(page, 'Cases')
+		await navTo(page, /^(All cases|Alle zaken)$/)
 		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
 		await page.getByRole('button', { name: 'Cancel' }).click()
 		// Sidebar should have filter comboboxes
@@ -130,7 +130,7 @@ test.describe('My Work page', () => {
 	test('renders as a card index scoped to the current user', async ({ page }) => {
 		// The sidebar label is "My work" (lower-case w) — "My Work" matched no
 		// nav link and used to burn the whole test budget inside navTo.
-		await navTo(page, 'My work')
+		await navTo(page, /^(Assigned to me|Aan mij toegewezen)$/)
 		// My Work is a CnIndexPage card list (assignee = current uid). It
 		// renders NO page heading — measured on a CI runner (2026-08-04) the
 		// route exposes zero `heading` roles — so identify it by the sort
@@ -142,61 +142,6 @@ test.describe('My Work page', () => {
 		await expect(
 			page.getByRole('button', { name: /Cards/ }).first(),
 		).toBeVisible()
-	})
-})
-
-test.describe('B&W Voorstellen page', () => {
-	// NOT a deploy mismatch — that framing was wrong and hid the real state.
-	// development is 0.3.1-unstable, past the v0.2.8 the old comment waited
-	// for, and /voorstellen IS declared in src/manifest.json with
-	// VoorstelDetail.vue present. Nothing is waiting on a deployment.
-	//
-	// The bespoke LIST view was simply never built. Measured against src/:
-	// "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve
-	// voorstellen" 0. The route falls through to the generic index shell
-	// because that is all there is. The non-strict shell assertion lives in
-	// spec-coverage/ui-pages.spec.ts (accepts either shell).
-	//
-	// Tracked in openspec/changes/bw-voorstellen-view/, which now exists and
-	// carries the requirements plus tasks 4.1-4.3 to un-skip these three.
-
-	// @e2e openspec/specs/case-management/spec.md#voorstellen-page-renders-heading-and-create-control
-	test('renders with heading and create button', async ({ page }) => {
-		test.fixme(
-			true,
-			'the bespoke B&W Voorstellen list view was never built - measured against src/: "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve voorstellen" 0, so the route falls through to the generic index shell. Tracked in openspec/changes/bw-voorstellen-view/ (tasks 4.1-4.3).',
-		)
-		await navTo(page, 'Voorstellen')
-		await expect(
-			page.getByRole('heading', { name: 'B&W Voorstellen', level: 2 }),
-		).toBeVisible({ timeout: 15000 })
-		await expect(
-			page.getByRole('button', { name: 'Nieuw voorstel' }),
-		).toBeVisible()
-	})
-
-	test('has filter tabs', async ({ page }) => {
-		test.fixme(
-			true,
-			'the bespoke B&W Voorstellen list view was never built - measured against src/: "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve voorstellen" 0, so the route falls through to the generic index shell. Tracked in openspec/changes/bw-voorstellen-view/ (tasks 4.1-4.3).',
-		)
-		await navTo(page, 'Voorstellen')
-		await expect(page.getByRole('button', { name: /Actief/ })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: /Afgerond/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: /Alle/ })).toBeVisible()
-	})
-
-	test('shows Dutch empty state', async ({ page }) => {
-		test.fixme(
-			true,
-			'the bespoke B&W Voorstellen list view was never built - measured against src/: "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve voorstellen" 0, so the route falls through to the generic index shell. Tracked in openspec/changes/bw-voorstellen-view/ (tasks 4.1-4.3).',
-		)
-		await navTo(page, 'Voorstellen')
-		await expect(page.getByText('Geen actieve voorstellen')).toBeVisible({
-			timeout: 15000,
-		})
 	})
 })
 

@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Seed the canonical bezwaar workflow definition (published, version 1).
+ *
+ * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 class SeedBezwaarWorkflowDefinition implements IRepairStep {
 
@@ -78,6 +80,8 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
 	 */
 	public function getName(): string {
 		return 'Seed canonical bezwaar workflow definition (AWB-compliant state machine)';

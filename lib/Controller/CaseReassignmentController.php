@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Service\SelectionReassignmentService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -56,7 +57,8 @@ class CaseReassignmentController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param CaseReassignmentService $reassignmentService Bulk reassignment.
+	 * @param CaseReassignmentService      $reassignmentService Bulk reassignment.
+	 * @param SelectionReassignmentService $selectionService    Reassignment of a hand-picked selection.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager Group manager (admin checks).
 	 * @param LoggerInterface $logger The logger.
@@ -67,6 +69,7 @@ class CaseReassignmentController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly CaseReassignmentService $reassignmentService,
+		private readonly SelectionReassignmentService $selectionService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
@@ -137,6 +140,54 @@ class CaseReassignmentController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end reassignExecute()
+
+	/**
+	 * Reassign an explicitly selected set of cases.
+	 *
+	 * This is what the Cases page's bulk action calls. It differs from
+	 * {@see self::reassignExecute()} in the question it answers: that one moves
+	 * everything belonging to one handler, this one moves the rows a user
+	 * ticked, whose assignees may differ.
+	 *
+	 * @return JSONResponse The per-case outcome.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 */
+	public function reassignSelection(): JSONResponse {
+		$guard = $this->requireCoordinator();
+		if ($guard !== null) {
+			return $guard;
+		}
+
+		$user = $this->userSession->getUser();
+		$actorId = '';
+		if ($user !== null) {
+			$actorId = $user->getUID();
+		}
+
+		$caseIds = $this->request->getParam('caseIds', []);
+		if (is_array($caseIds) === false) {
+			return new JSONResponse(['error' => 'caseIds must be an array'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			$result = $this->selectionService->executeForCases(
+				caseIds: $caseIds,
+				toUser: (string)$this->request->getParam('toUser', ''),
+				actorId: $actorId
+			);
+
+			return new JSONResponse($result);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		} catch (\Throwable $e) {
+			$this->logger->error('Reassignment of a selection failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}//end try
+	}//end reassignSelection()
 
 	/**
 	 * Build the optional reassignment filter from request params.

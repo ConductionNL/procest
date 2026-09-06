@@ -24,17 +24,17 @@
 						<template v-if="editingId !== pd.id">
 							<span class="property-row__name">{{ pd.name }}</span>
 							<span class="property-row__format">{{
-								pd.format || 'text'
+								pd.propertyType || 'string'
 							}}</span>
 							<span v-if="pd.maxLength" class="property-row__max">
 								{{ t('dossiq', 'max {n}', { n: pd.maxLength }) }}
 							</span>
 							<span class="property-row__required">
-								{{ pd.requiredAtStatus || t('dossiq', 'Optional') }}
+								{{ requiredLabel(pd) }}
 							</span>
 							<div class="property-row__actions">
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('dossiq', 'Edit {name}', {
 											name: pd.name,
@@ -46,7 +46,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('dossiq', 'Delete {name}', {
 											name: pd.name,
@@ -84,25 +84,40 @@
 								<div class="edit-row">
 									<div class="edit-field">
 										<label class="field-label">{{
-											t('dossiq', 'Format')
+											t('dossiq', 'Type')
 										}}</label>
 										<select
-											:value="editForm.format"
+											:value="editForm.propertyType"
 											class="format-select"
 											@change="
-												editForm.format = $event.target.value
+												editForm.propertyType =
+													$event.target.value
 											">
-											<option value="text">
+											<option value="string">
 												{{ t('dossiq', 'Text') }}
 											</option>
 											<option value="number">
 												{{ t('dossiq', 'Number') }}
 											</option>
+											<option value="boolean">
+												{{ t('dossiq', 'Yes or no') }}
+											</option>
 											<option value="date">
 												{{ t('dossiq', 'Date') }}
 											</option>
-											<option value="datetime">
-												{{ t('dossiq', 'Date & Time') }}
+											<option value="email">
+												{{ t('dossiq', 'Email address') }}
+											</option>
+											<option value="url">
+												{{ t('dossiq', 'Link') }}
+											</option>
+											<option value="enum">
+												{{
+													t('dossiq', 'Choice from a list')
+												}}
+											</option>
+											<option value="json">
+												{{ t('dossiq', 'Structured data') }}
 											</option>
 										</select>
 									</div>
@@ -122,9 +137,20 @@
 										" />
 								</div>
 								<div class="edit-row">
+									<NcCheckboxRadioSwitch
+										:modelValue="!!editForm.isRequired"
+										type="switch"
+										class="edit-field"
+										@update:modelValue="
+											(v) => (editForm.isRequired = v)
+										">
+										{{ t('dossiq', 'Always required') }}
+									</NcCheckboxRadioSwitch>
+								</div>
+								<div class="edit-row">
 									<div class="edit-field">
 										<label class="field-label">{{
-											t('dossiq', 'Required at status')
+											t('dossiq', 'Required from status')
 										}}</label>
 										<select
 											:value="editForm.requiredAtStatus || ''"
@@ -139,7 +165,7 @@
 											<option
 												v-for="st in statusTypes"
 												:key="st.id"
-												:value="st.name">
+												:value="st.id">
 												{{ st.name }}
 											</option>
 										</select>
@@ -150,12 +176,12 @@
 								}}</span>
 								<div class="edit-row edit-row--actions">
 									<NcButton
-										type="primary"
+										variant="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
 										{{ t('dossiq', 'Save') }}
 									</NcButton>
-									<NcButton type="tertiary" @click="cancelEdit">
+									<NcButton variant="tertiary" @click="cancelEdit">
 										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
@@ -190,23 +216,37 @@
 						<div class="add-form__row">
 							<div class="add-form__field">
 								<label class="field-label">{{
-									t('dossiq', 'Format')
+									t('dossiq', 'Type')
 								}}</label>
 								<select
-									:value="newForm.format"
+									:value="newForm.propertyType"
 									class="format-select"
-									@change="newForm.format = $event.target.value">
-									<option value="text">
+									@change="
+										newForm.propertyType = $event.target.value
+									">
+									<option value="string">
 										{{ t('dossiq', 'Text') }}
 									</option>
 									<option value="number">
 										{{ t('dossiq', 'Number') }}
 									</option>
+									<option value="boolean">
+										{{ t('dossiq', 'Yes or no') }}
+									</option>
 									<option value="date">
 										{{ t('dossiq', 'Date') }}
 									</option>
-									<option value="datetime">
-										{{ t('dossiq', 'Date & Time') }}
+									<option value="email">
+										{{ t('dossiq', 'Email address') }}
+									</option>
+									<option value="url">
+										{{ t('dossiq', 'Link') }}
+									</option>
+									<option value="enum">
+										{{ t('dossiq', 'Choice from a list') }}
+									</option>
+									<option value="json">
+										{{ t('dossiq', 'Structured data') }}
 									</option>
 								</select>
 							</div>
@@ -225,9 +265,18 @@
 								" />
 						</div>
 						<div class="add-form__row">
+							<NcCheckboxRadioSwitch
+								:modelValue="!!newForm.isRequired"
+								type="switch"
+								class="add-form__field"
+								@update:modelValue="(v) => (newForm.isRequired = v)">
+								{{ t('dossiq', 'Always required') }}
+							</NcCheckboxRadioSwitch>
+						</div>
+						<div class="add-form__row">
 							<div class="add-form__field">
 								<label class="field-label">{{
-									t('dossiq', 'Required at status')
+									t('dossiq', 'Required from status')
 								}}</label>
 								<select
 									:value="newForm.requiredAtStatus || ''"
@@ -242,7 +291,7 @@
 									<option
 										v-for="st in statusTypes"
 										:key="st.id"
-										:value="st.name">
+										:value="st.id">
 										{{ st.name }}
 									</option>
 								</select>
@@ -252,7 +301,7 @@
 							addError
 						}}</span>
 						<NcButton
-							type="primary"
+							variant="primary"
 							:disabled="addSaving"
 							@click="addProperty">
 							{{ t('dossiq', 'Add') }}
@@ -269,14 +318,27 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcLoadingIcon,
+	NcTextField,
+} from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'PropertiesTab',
-	components: { NcButton, NcLoadingIcon, NcTextField, PencilIcon, DeleteIcon },
+	components: {
+		NcButton,
+		NcCheckboxRadioSwitch,
+		NcLoadingIcon,
+		NcTextField,
+		PencilIcon,
+		DeleteIcon,
+	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
@@ -291,8 +353,9 @@ export default {
 			newForm: {
 				name: '',
 				definition: '',
-				format: 'text',
+				propertyType: 'string',
 				maxLength: null,
+				isRequired: false,
 				requiredAtStatus: null,
 			},
 
@@ -327,7 +390,7 @@ export default {
 				const result = await this.objectStore.fetchCollection(
 					'propertyDefinition',
 					{
-						'_filters[caseType]': this.caseTypeId,
+						caseType: this.caseTypeId,
 						_limit: 100,
 					},
 				)
@@ -342,7 +405,7 @@ export default {
 		async fetchStatusTypes() {
 			try {
 				const result = await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})
 				this.statusTypes = result || []
@@ -369,8 +432,9 @@ export default {
 				this.newForm = {
 					name: '',
 					definition: '',
-					format: 'text',
+					propertyType: 'string',
 					maxLength: null,
+					isRequired: false,
 					requiredAtStatus: null,
 				}
 			} else {
@@ -381,7 +445,29 @@ export default {
 		},
 
 		/**
-		 * @param pd
+		 * How a property definition's obligation reads in the list.
+		 *
+		 * `requiredAtStatus` holds a status REFERENCE, so rendering it raw
+		 * puts a UUID in the column. It is also distinct from `isRequired`:
+		 * one demands an answer at intake, the other from a later status on.
+		 *
+		 * @param {object} pd The property definition.
+		 * @return {string} The label for the obligation column.
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
+		requiredLabel(pd) {
+			if (pd.isRequired) return t('dossiq', 'Always required')
+			if (!pd.requiredAtStatus) return t('dossiq', 'Optional')
+			const status = this.statusTypes.find(
+				(st) => st.id === pd.requiredAtStatus,
+			)
+			return status
+				? t('dossiq', 'Required from {status}', { status: status.name })
+				: t('dossiq', 'Required from a later status')
+		},
+
+		/**
+		 * @param {object} pd The property definition to open for editing.
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		startEdit(pd) {
@@ -425,7 +511,7 @@ export default {
 		},
 
 		/**
-		 * @param pd
+		 * @param {object} pd The property definition to delete.
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async deleteProperty(pd) {

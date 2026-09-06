@@ -35,15 +35,19 @@ use RuntimeException;
 
 /**
  * AWB 4:5 / 4:15 pause + resume on a TermijnInstance.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlinePauseService {
 	/**
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService.
+	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -89,16 +93,30 @@ class DeadlinePauseService {
 		$newEnd = $current->modify('+' . $durationDays . ' days')->format('Y-m-d');
 		$pauseEnd = $now->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
-		$updated = $this->termService->updateTermijnInstance(
-			$termInstanceId,
-			[
-				'endDateCurrent' => $newEnd,
-				'status' => 'paused',
-				'pauseDeadline' => $pauseEnd,
-				'pauzeStartDatum' => $now->format('Y-m-d'),
-				'pauzeDuurDagen' => $durationDays,
-			]
-		);
+		// Opschorting maps onto the engine: suspend the beslistermijn timer
+		// (it banks the consumed budget, AWB 4:5) and arm the advisory
+		// hersteltermijn helper that replaces the scan's pause-expiry watch.
+		$patch = [
+			'endDateCurrent' => $newEnd,
+			'status' => 'paused',
+			'pauseDeadline' => $pauseEnd,
+			'pauzeStartDatum' => $now->format('Y-m-d'),
+			'pauzeDuurDagen' => $durationDays,
+		];
+
+		if ($this->timerService !== null) {
+			$this->timerService->suspendBeslistermijn(
+				instance: $instance,
+				reason: $rationale,
+				until: new DateTimeImmutable($pauseEnd)
+			);
+			$pauseTimerId = $this->timerService->armHersteltermijn(instance: $instance, durationDays: $durationDays);
+			if ($pauseTimerId !== null) {
+				$patch['pauseTimerId'] = $pauseTimerId;
+			}
+		}
+
+		$updated = $this->termService->updateTermijnInstance($termInstanceId, $patch);
 
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
@@ -153,12 +171,23 @@ class DeadlinePauseService {
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $aanvullingDatum->format('Y-m-d')));
 		$newEnd = $current->modify('-' . $unused . ' days')->format('Y-m-d');
 
+		// Resume the engine timer: it re-projects the fire moment from the
+		// unconsumed remainder (AWB 4:15), landing on the same date the
+		// case-data arithmetic below computes. The hersteltermijn helper
+		// cannot be cancelled individually (engine gap, see design D-2);
+		// the fired-listener's still-paused guard drops its late fire.
+		$this->timerService?->resumeBeslistermijn(
+			instance: $instance,
+			reason: 'Aanvulling ontvangen; termijn hervat'
+		);
+
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
 			[
 				'endDateCurrent' => $newEnd,
 				'status' => 'lopend',
 				'pauseDeadline' => null,
+				'pauseTimerId' => null,
 			]
 		);
 

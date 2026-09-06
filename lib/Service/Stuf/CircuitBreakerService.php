@@ -38,6 +38,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Per-endpoint circuit breaker.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
  */
 class CircuitBreakerService {
 	public const THRESHOLD = 4;

@@ -116,7 +116,7 @@ class LocationBagValidationListenerTest extends TestCase {
 	private function entity(array $payload, string $schemaId = 'location-schema-id'): ObjectEntity {
 		$entity = new ObjectEntity();
 		$entity->setObject($payload);
-		$entity->setSchemaId($schemaId);
+		$entity->setSchema($schemaId);
 		$entity->setUuid('11111111-1111-1111-1111-111111111111');
 
 		return $entity;

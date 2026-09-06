@@ -26,6 +26,8 @@ use Exception;
 
 /**
  * Tenant quota exceeded (429).
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 class QuotaExceededException extends Exception {
 }//end class

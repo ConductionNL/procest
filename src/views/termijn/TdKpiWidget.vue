@@ -96,6 +96,7 @@ export default {
 		t,
 		/**
 		 * Ask the store for the KPI block scoped to the header's case type.
+		 *
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		reload() {

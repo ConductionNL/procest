@@ -10,12 +10,12 @@
  * exactly assertable.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	isValidDuration,
-	parseDuration,
 	formatDuration,
 	getDurationError,
+	isValidDuration,
+	parseDuration,
 } from '../../src/utils/durationHelpers.js'
 
 describe('isValidDuration', () => {

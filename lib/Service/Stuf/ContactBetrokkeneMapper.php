@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Maps dossiq Contact entities to zaaksysteem betrokkenen.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
  */
 class ContactBetrokkeneMapper {
 	/**
@@ -55,7 +57,7 @@ class ContactBetrokkeneMapper {
 	 * Persist a mapping for a contact → betrokkene pair.
 	 *
 	 * Reuses an existing mapping when one already exists for the same
-	 * bronId+endpointId combo (idempotent on retry).
+	 * sourceId+endpointId combo (idempotent on retry).
 	 *
 	 * @param array $contact The dossiq Contact (array with id, bsn).
 	 * @param string $involvedParty The external betrokkene identificatie.
@@ -70,7 +72,7 @@ class ContactBetrokkeneMapper {
 		$existing = $this->getContactMapping(contact: $contact, endpoint: $endpoint);
 		$data = ($existing ?? [
 			'id' => $this->newId(prefix: 'map'),
-			'bronEntiteit' => 'contact',
+			'sourceEntity' => 'contact',
 			'sourceId' => (string)($contact['id'] ?? ''),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
 		]);
@@ -145,7 +147,7 @@ class ContactBetrokkeneMapper {
 		return $this->register->findOne(
 			schema: StufRegisterAccess::SCHEMA_MAPPING,
 			filters: [
-				'bronEntiteit' => 'contact',
+				'sourceEntity' => 'contact',
 				'sourceId' => $contactId,
 				'endpointId' => $endpointId,
 			]

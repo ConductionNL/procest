@@ -36,6 +36,8 @@ use OCP\Util;
 
 /**
  * Dashboard widget showing tasks assigned to the current user.
+ *
+ * @spec openspec/specs/dashboard/spec.md
  */
 class MyTasksWidget implements IWidget {
 	/**
@@ -55,6 +57,8 @@ class MyTasksWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget identifier
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getId(): string {
 		// FROZEN at the old app-id prefix — see CasesOverviewWidget::getId()
@@ -70,6 +74,8 @@ class MyTasksWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget title
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getTitle(): string {
 		return $this->l10n->t('My Tasks');
@@ -80,6 +86,8 @@ class MyTasksWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return int The widget order
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getOrder(): int {
 		return 12;
@@ -90,6 +98,8 @@ class MyTasksWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The icon CSS class
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getIconClass(): string {
 		return 'icon-dossiq-widget';
@@ -100,6 +110,8 @@ class MyTasksWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string|null The widget URL or null
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getUrl(): ?string {
 		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
@@ -112,6 +124,8 @@ class MyTasksWidget implements IWidget {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function load(): void {
 		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).

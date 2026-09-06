@@ -14,8 +14,8 @@
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
 	lookupAddress,
 	lookupPand,
@@ -26,6 +26,7 @@ const BASE = '/index.php/apps/dossiq/api/external/bag'
 
 /**
  * Build an axios-style success response.
+ *
  * @param {*} data The response payload.
  * @return {{data: *}} An axios-shaped response.
  */

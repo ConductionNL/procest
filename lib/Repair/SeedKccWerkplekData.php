@@ -95,7 +95,18 @@ class SeedKccWerkplekData implements IRepairStep {
 				return;
 			}
 
-			$output->warning('KCC-werkplek seed issue: ' . ((string)($result['message'] ?? 'unknown error')));
+			// REFUSED ROWS ARE NAMED IN THE COUNT. A seed that seeded nothing
+			// must not produce success-shaped output, so the failure line
+			// carries the same counters the success line does — an operator
+			// reading "0 quick-actions, 0 belplannen" then knows whether the
+			// rows were already present or refused.
+			$output->warning(
+				'KCC-werkplek seed issue: ' . ((string)($result['message'] ?? 'unknown error'))
+				. ' (' . ((int)($result['quickActions'] ?? 0)) . ' quick-actions, '
+				. ((int)($result['belplannen'] ?? 0)) . ' belplannen, '
+				. ((int)($result['skipped'] ?? 0)) . ' overgeslagen, '
+				. ((int)($result['failed'] ?? 0)) . ' geweigerd)'
+			);
 		} catch (Throwable $e) {
 			$output->warning('Could not seed KCC-werkplek data: ' . $e->getMessage());
 			$this->logger->error('Dossiq KCC-werkplek seed failed', ['exception' => $e->getMessage()]);

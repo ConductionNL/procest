@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Seed standard templates (zaaktypen, mandaat-matrix, roles) into a tenant.
+ *
+ * @spec openspec/specs/tenant-schemas/spec.md#requirement-seed-tier-templates-and-default-tenant-onboarding-template-req-001-b-seed
  */
 class TenantSeedService {
 	/**

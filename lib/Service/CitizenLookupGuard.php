@@ -26,7 +26,7 @@
  * Nextcloud admin, passes.
  *
  * The group list mirrors the idiom already used for the other broad-scope reads
- * in this app (`ParaferingAuditExportController::ALLOWED_GROUPS`,
+ * in this app (`AiAuditExportController::ALLOWED_GROUPS`,
  * `AiAuditExportController`, `ProcessMiningController`): a fixed set of
  * deployment group names plus an admin fallback.
  *
@@ -79,7 +79,7 @@ class CitizenLookupGuard {
 	 *
 	 *   - `beheerders` and `admin` are ATTESTED — both are already used as
 	 *     Nextcloud group names by `ProcessMiningController::ALLOWED_GROUPS`
-	 *     and `ParaferingAuditExportController::ALLOWED_GROUPS`.
+	 *     and `AiAuditExportController::ALLOWED_GROUPS`.
 	 *   - `kcc` and `klantcontact` are ASSUMED. Neither appears anywhere in
 	 *     this codebase as a group name: `kcc` occurs only as a feature name,
 	 *     spec slug and CSS class, and `klantcontact` only as a ZGW domain

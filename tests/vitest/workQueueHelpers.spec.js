@@ -9,12 +9,12 @@
  * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	resolveSortConfig,
-	urgencyChipClass,
 	buildUrgencyMap,
+	resolveSortConfig,
 	SORT_MODES,
+	urgencyChipClass,
 } from '../../src/utils/workQueueHelpers.js'
 
 describe('SORT_MODES', () => {

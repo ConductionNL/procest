@@ -36,6 +36,8 @@ use Throwable;
 
 /**
  * Resets monthly + hourly quotas after their window elapses.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 class ResetMonthlyQuotasJob extends TimedJob {
 	/**

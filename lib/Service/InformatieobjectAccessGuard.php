@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Enforces vertrouwelijkheidaanduiding-based access control on informatieobjecten.
+ *
+ * @spec openspec/changes/document-zaakdossier/tasks.md#T03
  */
 class InformatieobjectAccessGuard {
 	/**

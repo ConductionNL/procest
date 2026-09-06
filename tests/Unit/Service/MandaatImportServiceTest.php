@@ -64,8 +64,8 @@ class MandaatImportServiceTest extends TestCase {
 		);
 
 		// Seed roles.
-		$this->objects->saveObject('dossiq', 'organisatieRol', ['id' => 'rol-consulent', 'roleName' => 'Consulent']);
-		$this->objects->saveObject('dossiq', 'organisatieRol', ['id' => 'rol-manager', 'roleName' => 'Afdelingsmanager']);
+		$this->objects->seed('organisatieRol', ['id' => 'rol-consulent', 'roleName' => 'Consulent']);
+		$this->objects->seed('organisatieRol', ['id' => 'rol-manager', 'roleName' => 'Afdelingsmanager']);
 	}
 
 	/**

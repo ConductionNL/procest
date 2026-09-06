@@ -11,8 +11,7 @@
  * geoLocation, mfaVerified, sessionDuration).
  *
  * Persistence is OpenRegister's hash-chained, natively-immutable audit trail
- * (ADR-022 / consume-or-audit-trail-fleet-wide) — the same sink the parafering
- * trail uses via ParaferingAuditListener. Before 2026-07-16 `emit()` only wrote
+ * (ADR-022 / consume-or-audit-trail-fleet-wide). Before 2026-07-16 `emit()` only wrote
  * an INFO log line, while `hardeningChecklist()` attested that every mandate,
  * status and provisioning mutation "emits an audit entry" (procest#223 finding
  * 1). A log line is not a durable, queryable, tamper-evident audit record, so
@@ -48,6 +47,8 @@ use Throwable;
 
 /**
  * Tenant-stamped audit-trail emitter.
+ *
+ * @spec openspec/specs/tenant-compliance/spec.md
  */
 class TenantAuditTrailService {
 	/**
@@ -226,6 +227,8 @@ class TenantAuditTrailService {
 	 * @param array<string, mixed> $bio Raw BIO context.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
 	 */
 	public function sanitiseBio(array $bio): array {
 		$out = [];

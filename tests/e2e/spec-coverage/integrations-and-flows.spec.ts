@@ -25,7 +25,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { dismissSupportDialog, navToRoute, sidebarNav } from '../helpers/nav'
+import { dismissSupportDialog, navToRoute, sidebarNav } from '../helpers/nav.ts'
 
 // The nav helper expands the settings foldout and waits for the app shell, so
 // these run longer than the 30s default before their own assertion even starts.

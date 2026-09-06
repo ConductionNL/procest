@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;
 use OCA\Dossiq\Flow\DossiqCallWebhookNode;
 use OCA\Dossiq\Flow\DossiqCreateDocumentNode;
@@ -35,10 +36,10 @@ use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
 use OCA\Dossiq\Flow\DossiqTxSetFieldNode;
 use OCA\Dossiq\Flow\DossiqTxSetStatusNode;
 use OCA\Dossiq\Flow\DossiqTxNotifyNode;
-use OCA\Dossiq\Flow\DossiqTxBesluitvormingActivateNode;
 use OCA\Dossiq\Flow\DossiqTxBesluitvormingPublishNode;
 use OCA\Dossiq\Flow\DossiqTxEvaluateDecisionNode;
 use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -71,7 +72,6 @@ class DossiqFlowNodeListenerTest extends TestCase {
         DossiqRequestDecisionNode::class => 'dossiq.requestDecision',
         DossiqEnsureCommitteeNode::class => 'dossiq.ensureCommittee',
         DossiqTxNotifyNode::class => 'dossiq.notify',
-        DossiqTxBesluitvormingActivateNode::class => 'dossiq.besluitvormingActivate',
         DossiqTxBesluitvormingPublishNode::class => 'dossiq.besluitvormingPublish',
         DossiqTxEvaluateDecisionNode::class => 'dossiq.evaluateDecision',
         DossiqSendEmailNode::class => 'dossiq.action.sendEmail',
@@ -117,6 +117,25 @@ class DossiqFlowNodeListenerTest extends TestCase {
 
 
     /**
+     * An empty node catalogue for the listener to contribute to.
+     *
+     * The registry, not the event, is where a contributed node lands — the
+     * event only carries it. Both take constructor arguments the stubs used
+     * to omit, which is how six sibling call sites came to build them in a
+     * way that fatals against the real OpenRegister while green here.
+     *
+     * @return FlowNodeRegistry The catalogue.
+     */
+    private function registry(): FlowNodeRegistry {
+        return new FlowNodeRegistry(
+            $this->createMock(IEventDispatcher::class),
+            $this->createMock(LoggerInterface::class)
+        );
+
+    }//end registry()
+
+
+    /**
      * Every action lands on the catalogue — both vocabularies.
      *
      * Asserted against the fixture rather than a literal count, so adding a node
@@ -128,13 +147,10 @@ class DossiqFlowNodeListenerTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testEveryActionIsRegistered(): void {
-        $event = new RegisterFlowNodesEvent();
-        $this->listener()->handle($event);
+        $registry = $this->registry();
+        $this->listener()->handle(new RegisterFlowNodesEvent($registry));
 
-        $ids = array_map(
-            static fn ($node): string => $node->getId(),
-            $event->getRegisteredNodes()
-        );
+        $ids = array_keys($registry->all());
 
         $this->assertSame(
             array_values(self::EXPECTED_IDS),
@@ -174,18 +190,15 @@ class DossiqFlowNodeListenerTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testOneUnbuildableNodeDoesNotCostTheRest(): void {
-        $event = new RegisterFlowNodesEvent();
-        $this->listener(failing: [DossiqTxSetFieldNode::class])->handle($event);
+        $registry = $this->registry();
+        $this->listener(failing: [DossiqTxSetFieldNode::class])->handle(new RegisterFlowNodesEvent($registry));
 
-        $ids = array_map(
-            static fn ($node): string => $node->getId(),
-            $event->getRegisteredNodes()
-        );
+        $ids = array_keys($registry->all());
 
         // Derived from the fixture, not written as a literal. The sibling test
         // above already says why: a count in a test goes stale the first time
-        // somebody adds a node, and this one did — it was 17 against a
-        // catalogue that had grown to 18.
+        // somebody adds or retires a node, and this one did — it was 17
+        // against a catalogue that had grown to 18.
         $this->assertCount((count(self::EXPECTED_IDS) - 1), $ids);
         $this->assertNotContains('dossiq.setField', $ids);
         $this->assertContains('dossiq.sendEmail', $ids);

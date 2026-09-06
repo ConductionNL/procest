@@ -108,6 +108,61 @@ class StatusTypeLookup {
 	}//end idForName()
 
 	/**
+	 * A case type's statusType id, by the ROLE the status plays.
+	 *
+	 * WHY A ROLE AND NOT A NAME. A shipped flow cannot carry a statusType uuid,
+	 * so it named the status instead — and a name is not an identifier either:
+	 *
+	 * - `statusType.name` is declared `x-translatable`, so the same status is
+	 *   "In behandeling" on one instance and "In progress" on another. A flow
+	 *   matching a literal is broken by translation alone.
+	 * - Every case type spells its working phase differently and all of them are
+	 *   right: a subsidy is under `Beoordeling`, a complaint under `Onderzoek`,
+	 *   a permit `In behandeling`. Measured on the shipped seeds, the literal
+	 *   "In behandeling" exists on 2 of 4 demo case types, which is why 8 of 18
+	 *   demo runs died at `status_not_found_on_case_type`.
+	 *
+	 * A role is a machine key, untranslated and authored per case type, so it
+	 * survives both. Names remain the fallback, so a case type nobody has
+	 * annotated behaves exactly as it did before.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 * @param string $role       The role: intake, pending-info, in-progress, review, closed, stranded.
+	 *
+	 * @return string The statusType UUID, or '' when this case type models no such role.
+	 *
+	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 */
+	public function idForRole(string $caseTypeId, string $role): string {
+		$wanted = strtolower(trim($role));
+		if ($caseTypeId === '' || $wanted === '') {
+			return '';
+		}
+
+		// Lowest `order` wins when a case type gives two statuses the same role
+		// — a three-phase inspection whose every phase is `in-progress`, say.
+		// Deterministic rather than "whichever the store returned first",
+		// because a flow that lands on a different phase between two runs of
+		// the same case type is the kind of thing nobody reproduces.
+		$best = '';
+		$bestOrder = null;
+		foreach ($this->statusRowsFor(caseTypeId: $caseTypeId) as $row) {
+			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+			if ($id === '' || strtolower(trim((string)($row['role'] ?? ''))) !== $wanted) {
+				continue;
+			}
+
+			$order = (int)($row['order'] ?? 0);
+			if ($bestOrder === null || $order < $bestOrder) {
+				$best = $id;
+				$bestOrder = $order;
+			}
+		}
+
+		return $best;
+	}//end idForRole()
+
+	/**
 	 * A case type's statuses as `id => name`.
 	 *
 	 * 🔴 THE LINK LIVES ON THE CHILD, NOT THE PARENT. `caseType` has no

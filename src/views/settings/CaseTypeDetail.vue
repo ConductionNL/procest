@@ -220,6 +220,8 @@ export default {
 		},
 	},
 
+	emits: ['back', 'duplicated', 'saved'],
+
 	data() {
 		return {
 			form: { ...EMPTY_FORM },
@@ -286,7 +288,7 @@ export default {
 			// Count active cases of this type
 			try {
 				const cases = await this.objectStore.fetchCollection('case', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 1,
 				})
 				this.activeCaseCount = cases?.length || 0
@@ -297,8 +299,8 @@ export default {
 		},
 
 		/**
-		 * @param field
-		 * @param value
+		 * @param {object} field The field.
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		onFieldUpdate(field, value) {
@@ -356,7 +358,7 @@ export default {
 			const statusTypes = await this.objectStore.fetchCollection(
 				'statusType',
 				{
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				},
 			)

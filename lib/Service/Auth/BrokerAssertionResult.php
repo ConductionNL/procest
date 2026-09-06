@@ -37,6 +37,8 @@ use InvalidArgumentException;
 
 /**
  * Decoded SAML-broker assertion result for dossiq auth flows.
+ *
+ * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
  */
 final class BrokerAssertionResult {
 	/**
@@ -81,6 +83,8 @@ final class BrokerAssertionResult {
 	 * @param array<string,mixed> $attributes Raw attributes.
 	 *
 	 * @return self
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
 	 */
 	public static function forEHerkenning(
 		string $kvkNumber,
@@ -114,6 +118,8 @@ final class BrokerAssertionResult {
 	 * @param array<string,mixed> $attributes Raw attributes.
 	 *
 	 * @return self
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
 	 */
 	public static function forDigid(
 		string $bsn,
@@ -141,6 +147,8 @@ final class BrokerAssertionResult {
 	 * Serialise to a JSON-safe array (audit logs, session bootstrap).
 	 *
 	 * @return array<string,mixed>
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
 	 */
 	public function toArray(): array {
 		return [

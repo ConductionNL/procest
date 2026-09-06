@@ -140,6 +140,8 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 	 * @inheritDoc
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-drc-documenten-api-resources-must-be-mappable
 	 */
 	public function isDormant(): bool {
 		return true;

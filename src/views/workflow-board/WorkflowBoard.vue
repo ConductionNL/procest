@@ -326,6 +326,7 @@ export default {
 		 * @param {boolean} [options.background] When true (live-update refresh),
 		 *   don't toggle `loading` — the template blanks the whole board for a
 		 *   spinner on it, which would flash on every push event.
+		 *
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1

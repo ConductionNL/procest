@@ -10,10 +10,10 @@
     "schemas": {
       "substitution": {
         "slug": "substitution",
-        "icon": "AccountSwitch",
+        "icon": "AccountSwitchOutline",
         "version": "1.0.0",
         "title": "Substitution",
-        "description": "Vervanging/waarneming registration — who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
+        "description": "Vervanging/waarneming registration: who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
         "type": "object",
         "required": ["absentee", "substitute", "startDate", "endDate", "scope", "reason", "status"],
         "properties": {

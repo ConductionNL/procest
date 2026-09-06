@@ -28,6 +28,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Qmatic Orchestra REST API backend for appointment scheduling.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class QmaticBackend implements AppointmentBackendInterface {
 	/**

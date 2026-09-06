@@ -148,6 +148,8 @@ class KvkApiAdapter implements KvkHandelsregisterAdapterInterface {
 	 * A configured live adapter is not dormant.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/external-integration-test-wiring/spec.md
 	 */
 	public function isDormant(): bool {
 		return false;

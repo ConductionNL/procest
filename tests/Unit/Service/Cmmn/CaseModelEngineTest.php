@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Cmmn\PlanItemTransitions;
 use OCA\Dossiq\Service\Cmmn\PlanItemTree;
 use OCA\Dossiq\Service\Cmmn\SentryEvaluator;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -58,9 +59,29 @@ class CountingFakeStore extends FakeTermijnStore {
 	/**
 	 * {@inheritDoc}
 	 */
-	public function saveObject(string $register, string $schema, array $object): array {
+	public function saveObject(
+		array $object,
+		?array $extend = [],
+		string|int|null $register = null,
+		string|int|null $schema = null,
+		?string $uuid = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+		bool $silent = false,
+		bool $_validation = true,
+	): FakeStoredObject {
 		$this->saveCount++;
-		return parent::saveObject(register: $register, schema: $schema, object: $object);
+		return parent::saveObject(
+			object: $object,
+			extend: $extend,
+			register: $register,
+			schema: $schema,
+			uuid: $uuid,
+			_rbac: $_rbac,
+			_multitenancy: $_multitenancy,
+			silent: $silent,
+			_validation: $_validation,
+		);
 	}//end saveObject()
 }//end class
 

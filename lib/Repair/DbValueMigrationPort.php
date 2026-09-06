@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * The real storage implementation behind ValueMigrationPort.
+ *
+ * @spec exclude Database adapter for the Dutch-to-English vocabulary migration.
  */
 class DbValueMigrationPort implements ValueMigrationPort {
 	/**

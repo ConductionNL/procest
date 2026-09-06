@@ -16,17 +16,17 @@
  * deterministic stub (see vitest.config.js).
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	parseDurationToDays,
+	buildCaseTypeMap,
+	computeMonthlyTrend,
+	computePerformanceTable,
+	computeProcessingTimeDistribution,
+	computeSlaCompliance,
+	getAtRiskCases,
 	getProcessingDays,
 	getSlaTargetDays,
-	buildCaseTypeMap,
-	computeSlaCompliance,
-	computeProcessingTimeDistribution,
-	computeMonthlyTrend,
-	getAtRiskCases,
-	computePerformanceTable,
+	parseDurationToDays,
 } from '../../src/utils/doorlooptijdHelpers.js'
 
 describe('parseDurationToDays', () => {

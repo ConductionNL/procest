@@ -70,7 +70,18 @@ The system SHALL provide a pre-built workflow template for Toezichtzaak Bouw tha
 
 ### Requirement: Handhavingszaak workflow template
 
-The system SHALL provide a pre-built workflow template for Handhavingszaak that models the enforcement lifecycle from constatering through hercontrole, following the Landelijke Handhavingsstrategie (LHS).
+The system SHALL provide pre-built workflow templates for Handhavingszaak covering the enforcement lifecycle from constatering through hercontrole, following the Landelijke Handhavingsstrategie (LHS).
+
+`handhavingszaak` SHALL carry **two routes**, both published and active:
+
+| Route | Template | Statutory basis | What it is |
+|---|---|---|---|
+| `regulier` | Handhavingstraject | Awb 5:24 and the LHS | Announce, hear the offender, decide, run the recovery period, re-inspect. The default route. |
+| `spoedeisend` | Spoedig herstel (Awb 5:31) | Awb 5:31 | Act on the spot, write the decision afterwards. |
+
+Neither route SHALL deprecate the other. `regulier` SHALL be the case type's default route, because Awb 5:31 is the exception in law: acting first is what you do when the ordinary route is too slow. A route is defined by `workflow-variants`; it is not a case type, and it is not workflow inheritance.
+
+A catalogue entry sharing a case type with another SHALL declare a `variant`, and the variants on one case type SHALL be distinct. An entry SHALL still name every entry it shares a case type with in `_sharesItsCaseTypeWith`. A third enforcement template can therefore land, and it has to say which route it is.
 
 **Feature tier**: V1
 **ZGW mapping**: Zaaktype "Handhavingszaak", StatusType per enforcement phase
@@ -96,6 +107,47 @@ The system SHALL provide a pre-built workflow template for Handhavingszaak that 
 - **THEN** the workflow SHALL support escalation transitions: last onder dwangsom -> verbeuring -> bestuursdwang
 - **THEN** each escalation step SHALL require a new handhavingsactie record with updated ernst/gedrag classification
 
+#### Scenario: Both enforcement routes land active on a fresh install
+
+- **WHEN** the VTH workflow template seed runs on an instance carrying the `handhavingszaak` case type
+- **THEN** both `handhavingstraject` and `spoedig-herstel` SHALL be published and active
+- **AND** neither SHALL be deprecated
+- **AND** the case type's default route SHALL be `handhavingstraject`
+
+#### Scenario: Re-running the seed changes nothing
+
+- **GIVEN** both enforcement routes are published and active
+- **WHEN** the seed runs again
+- **THEN** both SHALL be reported as already present
+- **AND** neither SHALL be deprecated, republished or duplicated
+
+#### Scenario: A catalogue entry landing on an occupied case type declares its route
+
+- **GIVEN** two catalogue entries naming the same case type
+- **WHEN** the shipped catalogue is read
+- **THEN** each entry SHALL declare a `variant`
+- **AND** the two variants SHALL differ
+- **AND** each entry SHALL name the other in `_sharesItsCaseTypeWith`
+
+#### Notes: how the two enforcement routes stopped deprecating each other
+
+The catalogue has always shipped two templates against `handhavingszaak`:
+`handhavingstraject`, the ordinary enforcement route, and `spoedig-herstel`, the
+Awb 5:31 route where the authority acts first and issues the decision
+afterwards. Both are real, a municipality runs both, and which one a case
+follows is decided at constatering rather than at configuration time.
+
+Until 2026-09-05 the model could not say that. One published definition per case
+type meant whichever the seeder reached last deprecated the other, silently.
+Two ways out were rejected: minting a sixth VTH case type changes what a
+municipality registers as a zaaktype, and leaving the deprecation ships an
+enforcement route that is dark on every install.
+
+The rule is now one published definition per `(case type, route)`, and these two
+entries declare different routes. `workflowTemplate.parentWorkflow` is still not
+that mechanism: it is Enterprise tier, unimplemented, and describes a hierarchy
+BETWEEN case types. See `openspec/specs/workflow-variants/spec.md`.
+
 ### Requirement: VTH workflow template library
 
 The system SHALL provide a browsable library of VTH workflow templates that administrators can preview and import into their case types.
@@ -106,7 +158,8 @@ The system SHALL provide a browsable library of VTH workflow templates that admi
 
 - **WHEN** the beheerder navigates to the workflow tab on a case type admin page
 - **THEN** the system SHALL display an "Importeer VTH sjabloon" button
-- **THEN** clicking it SHALL show a list of available VTH templates: Omgevingsvergunning (regulier), Omgevingsvergunning (uitgebreid), Toezichtzaak Bouw, Toezichtzaak Milieu, Handhavingszaak, Sloopmelding
+- **THEN** clicking it SHALL show a list of available VTH templates: Omgevingsvergunning (regulier), Omgevingsvergunning (uitgebreid), Toezichtzaak Bouw, Toezichtzaak Milieu, Handhavingstraject, Spoedig herstel (Awb 5:31), Sloopmelding
+- **THEN** the two enforcement templates SHALL be listed as two routes through Handhavingszaak, not as one entry
 - **THEN** each template SHALL show: name, description, number of steps, estimated processing time
 
 #### Scenario: Preview template before import
@@ -136,6 +189,13 @@ The system SHALL provide a browsable library of VTH workflow templates that admi
 
 The step SHALL be IDEMPOTENT: `isAlreadySeeded(string $caseTypeId, string $title)` SHALL check for an existing workflow row by (caseType + title) before inserting, and SHALL increment the `skipped` counter rather than re-create. Deterministic IDs SHALL be generated via `deterministicId(string $template, string $child)` so re-runs produce identical UUIDs and downstream references stay stable.
 
+The step SHALL additionally:
+- pass each catalogue entry's `variant` to the definition it creates;
+- set the case type's default route from the entry declaring `isDefaultVariant`, rather than letting file order decide it;
+- report the route each entry landed on;
+- report a publish as having displaced something only when it displaced a previous version OF THE SAME ROUTE;
+- name a catalogue entry it finds `deprecated`, say how to bring it back, and NOT republish it. A row reads `deprecated` whether the old one-per-case-type rule retired it or an administrator did, and the stored data cannot tell those apart.
+
 #### Scenario: OpenRegister missing -> graceful no-op
 - **GIVEN** the `openregister` app is not installed
 - **WHEN** `SeedVthWorkflowTemplates::run()` executes during `occ app:enable dossiq`
@@ -153,6 +213,21 @@ The step SHALL be IDEMPOTENT: `isAlreadySeeded(string $caseTypeId, string $title
 - **WHEN** the seeder runs again on app upgrade
 - **THEN** the summary line SHALL report `4 skipped` and `0 seeded`
 - **AND** no duplicate rows SHALL be inserted
+
+#### Scenario: The summary names the route
+- **WHEN** the seed publishes a catalogue entry that declares a variant
+- **THEN** the summary line for that entry SHALL name the route it landed on
+
+#### Scenario: A publish that displaces nothing says nothing about deprecation
+- **GIVEN** a case type whose only active definition is on another route
+- **WHEN** a new route is seeded and published for it
+- **THEN** the summary line SHALL NOT report a deprecation
+
+#### Scenario: A deprecated entry is reported, not resurrected
+- **GIVEN** an instance where a catalogue entry sits at `deprecated` from an earlier install
+- **WHEN** the seed runs
+- **THEN** the entry SHALL still be deprecated afterwards
+- **AND** the summary SHALL name it, its route, and how an administrator brings it back
 
 #### Scenario: One bad catalog file does not block the rest
 - **GIVEN** 4 catalog files exist, one of which contains invalid JSON

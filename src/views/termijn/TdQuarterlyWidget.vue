@@ -111,6 +111,7 @@ export default {
 		t,
 		/**
 		 * Load the report for the entered quarter.
+		 *
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		load() {
@@ -119,6 +120,7 @@ export default {
 
 		/**
 		 * Build and download the per-case-type CSV for the loaded quarter.
+		 *
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		downloadCsv() {

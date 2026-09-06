@@ -128,6 +128,36 @@ class DossiqActionNodeTest extends TestCase {
 
 
     /**
+     * A handler's case writes travel with the outgoing item.
+     *
+     * The handler stores its field through the partial-write seam; the NEXT
+     * step's snapshot must already carry it, or that step reasons from a case
+     * that predates its own flow. This is how `besluitDocument` went missing
+     * live: stored by the document step, absent from the item, erased by the
+     * next step's save.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     */
+    public function testCaseChangesAreStampedOntoTheOutgoingItem(): void {
+        $this->handler->method('handle')->willReturn(
+            new ActionResult(true, null, ['rendered' => 'Besluit'], ['besluitDocument' => 'Besluit'])
+        );
+
+        $out = $this->node->execute(
+            [['json' => ['id' => 'case-1', 'title' => 'Bezwaar']]],
+            $this->config(),
+            []
+        );
+
+        $this->assertSame('Besluit', $out[0]['json']['besluitDocument']);
+        $this->assertSame('case-1', $out[0]['json']['id']);
+
+    }//end testCaseChangesAreStampedOntoTheOutgoingItem()
+
+
+    /**
      * The output key is configurable.
      *
      * @return void

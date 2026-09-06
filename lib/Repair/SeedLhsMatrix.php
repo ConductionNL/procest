@@ -62,6 +62,8 @@ class SeedLhsMatrix implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T02
 	 */
 	public function getName(): string {
 		return 'Seed default LHS matrix (Landelijke Handhavingsstrategie 2024) for Dossiq';

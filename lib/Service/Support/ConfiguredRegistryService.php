@@ -139,6 +139,27 @@ class ConfiguredRegistryService {
 			);
 		}
 
+		// 🔴 IDENTITY COMES FROM THE PARAMETER, NEVER FROM THE PAYLOAD.
+		//
+		// `saveObject()` does not take its target as an argument you control:
+		// `extractUuidAndNormalizeObject()` reads
+		// `$object['@self']['id'] ?? $object['id']` and treats a match as the
+		// uuid to UPDATE. The write is PUT-semantic, so keys the payload omits
+		// are NULLED rather than left alone.
+		//
+		// Every caller here builds `$data` from `$this->request->getParams()`.
+		// Several stripped `id` for exactly this reason and did not know about
+		// `@self`, which is the key saveObject reads FIRST — so a POST that
+		// CREATES could carry `@self: {id: <someone else's object>}` and
+		// silently replace it. Measured on a running instance: the create
+		// returned 201 carrying the victim's own uuid, and the victim's row
+		// came back with the attacker's values.
+		//
+		// This method already takes `$id` for the update case. Stripping the
+		// payload's identity makes that parameter the ONLY way to address an
+		// existing object, which is what it was always for.
+		unset($data['id'], $data['uuid'], $data['@self']);
+
 		if ($id !== null && $id !== '') {
 			$data['id'] = $id;
 		}

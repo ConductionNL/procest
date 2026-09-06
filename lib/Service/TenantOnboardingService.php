@@ -34,6 +34,8 @@ use Throwable;
 
 /**
  * Onboarding workflow service.
+ *
+ * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
 class TenantOnboardingService {
 	/**
@@ -244,6 +246,8 @@ class TenantOnboardingService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array{ready: bool, missing: array<int, string>}
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function validateGoLive(string $tenantId): array {
 		$objectService = $this->getObjectService();

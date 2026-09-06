@@ -30,6 +30,7 @@ import pinia from './pinia.js'
 import registry from './registry.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { routerBase } from './utils/routerBase.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
@@ -179,8 +180,19 @@ function routesFromManifest(manifest) {
 // Routes are built from the built manifest only. The backend delta merely adds
 // menu CHILDREN that point at the existing `Cases` route (via `query.caseType`);
 // it introduces no new pages, so the route table needs no reactive rebuild.
+//
+// The base comes from the DOCUMENT'S OWN PATH, not from generateUrl().
+// Nextcloud serves this app under both `/index.php/apps/dossiq/...` and
+// `/apps/dossiq/...`, while generateUrl() returns only the form the
+// instance's front-controller config prefers. A hard load of the other form
+// then fell outside the router base, matched only the catch-all below, and
+// was redirected to the dashboard — a deep link to a case answered 200 from
+// the server and landed on `/apps/dossiq/` client-side, with only sidebar
+// navigation ever reaching the detail page. See routerBase() for the rule.
 const router = createRouter({
-	history: createWebHistory(generateUrl('/apps/dossiq')),
+	history: createWebHistory(
+		routerBase(window.location.pathname, generateUrl('/apps/dossiq')),
+	),
 	routes: routesFromManifest(builtManifest),
 })
 

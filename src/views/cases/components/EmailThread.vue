@@ -88,6 +88,8 @@ export default {
 		},
 	},
 
+	emits: ['compose'],
+
 	data() {
 		return {
 			expandedMessages: {},
@@ -107,7 +109,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param dateStr
+		 * @param {string} dateStr The date str, as a string.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		formatDateTime(dateStr) {
@@ -124,7 +126,7 @@ export default {
 		},
 
 		/**
-		 * @param body
+		 * @param {object} body The body.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		truncateBody(body) {
@@ -141,7 +143,7 @@ export default {
 		},
 
 		/**
-		 * @param id
+		 * @param {string} id Identifier of the id.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		toggleExpand(id) {

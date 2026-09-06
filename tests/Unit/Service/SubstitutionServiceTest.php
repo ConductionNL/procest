@@ -107,7 +107,7 @@ class SubstitutionServiceTest extends TestCase {
 					'register' => 'dossiq',
 					'substitution_schema' => 'substitution',
 					'case_schema' => 'case',
-					'task_schema' => 'task',
+					'task_schema' => 'caseTask',
 					'status_type_schema' => 'statusType',
 				];
 				return ($map[$key] ?? $default);
@@ -302,7 +302,7 @@ class SubstitutionServiceTest extends TestCase {
 						['id' => 'case-c', 'caseType' => 'objectionProceeding', 'assignee' => 'jan', 'status' => 'st-final'],
 					];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [];
 				}
 				return [];

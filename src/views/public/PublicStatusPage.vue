@@ -142,7 +142,7 @@ export default {
 		},
 
 		/**
-		 * @param dateString
+		 * @param {string} dateString The date, as an ISO 8601 string.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		formatDate(dateString) {

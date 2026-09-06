@@ -26,6 +26,8 @@ use Exception;
 
 /**
  * Mandate matrix denied this request.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 class MandateDeniedException extends Exception {
 }//end class

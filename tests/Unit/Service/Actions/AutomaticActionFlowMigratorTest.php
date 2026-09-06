@@ -20,6 +20,7 @@ use OCA\Dossiq\Service\Actions\AutomaticActionFlowMigrator;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
@@ -181,6 +182,24 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 	}
 
 	/**
+	 * An empty node catalogue, built the way the real one must be.
+	 *
+	 * The registry takes a dispatcher and a logger — it collects contributed
+	 * nodes through the first — and these tests register into it directly, so
+	 * neither dependency does anything here. They are passed because leaving
+	 * them out is a fatal against the real class, which is what a no-argument
+	 * stub hid for six call sites.
+	 *
+	 * @return FlowNodeRegistry The catalogue.
+	 */
+	private function registry(): FlowNodeRegistry {
+		return new FlowNodeRegistry(
+			$this->createMock(IEventDispatcher::class),
+			$this->createMock(LoggerInterface::class)
+		);
+	}//end registry()
+
+	/**
 	 * Build the migrator with the given fakes.
 	 *
 	 * @param array<int, array<string, mixed>> $actions Stored actions.
@@ -190,7 +209,7 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 	 * @return AutomaticActionFlowMigrator The migrator.
 	 */
 	private function migrator(array $actions, object $flowService, array $nodeIds): AutomaticActionFlowMigrator {
-		$registry = new FlowNodeRegistry();
+		$registry = $this->registry();
 		foreach ($nodeIds as $id) {
 			$node = $this->createMock(IFlowNode::class);
 			$node->method('getId')->willReturn($id);

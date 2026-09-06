@@ -13,22 +13,23 @@
  * @spec openspec/changes/migrate-pdok-to-openconnector/specs/pdok-consumer/spec.md
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-	suggest,
-	lookup,
-	free,
-	reverse,
 	extractCoordinates,
 	formatAddress,
+	free,
 	lastWarning,
+	lookup,
+	reverse,
+	suggest,
 } from '../../src/services/pdokService.js'
 
 const BASE = '/index.php/apps/openconnector/api/pdok'
 
 /**
  * Build an axios-style success response.
+ *
  * @param {*} data The response payload.
  * @return {{data: *}} An axios-shaped response.
  */
@@ -38,6 +39,7 @@ function ok(data) {
 
 /**
  * Build an axios-style HTTP error with a response status + body.
+ *
  * @param {number} status HTTP status to attach to error.response.
  * @param {object} [data] Response body (e.g. { message_key }).
  * @return {Error} An axios-shaped rejection error.

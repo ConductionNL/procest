@@ -22,7 +22,9 @@
  *     nothing in the app reports it.
  */
 
-import { test, expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 
 /**
  * Resolve the scope of dossiq's active service worker.
@@ -31,10 +33,7 @@ import { test, expect } from '@playwright/test'
  * @param timeout How long to wait for the worker to reach `activated`.
  * @return the worker's scope URL.
  */
-async function activeWorkerScope(
-	page: import('@playwright/test').Page,
-	timeout = 20_000,
-): Promise<string> {
+async function activeWorkerScope(page: Page, timeout = 20_000): Promise<string> {
 	const deadline = Date.now() + timeout
 	while (Date.now() < deadline) {
 		const scope = await page.evaluate(async () => {
@@ -56,7 +55,7 @@ async function activeWorkerScope(
  *
  * @param page The page under test.
  */
-async function openControlled(page: import('@playwright/test').Page): Promise<void> {
+async function openControlled(page: Page): Promise<void> {
 	await page.goto('/index.php/apps/dossiq/dashboard')
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 	const scope = await activeWorkerScope(page)

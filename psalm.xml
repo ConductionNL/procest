@@ -16,6 +16,14 @@
     </projectFiles>
     <stubs>
         <file name="vendor/nextcloud/ocp/OCP/Capabilities/ICapability.php" preloadClasses="true" />
+        <!-- Integriq's ADR-041 delivery-seam contract (optional app, resolved
+             by FQN string at runtime). Declaration-only stubs mirroring the
+             real constructors verbatim, same discipline as the Decidiq event
+             stubs on the phpstan side: without them the analyzer proves the
+             class_exists() guard always false and reports the resilient
+             lookup as dead code. -->
+        <file name="tests/Stubs/Integriq/Event/DeliveryRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/DeliveryConcludedEvent.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>
@@ -77,6 +85,9 @@
                 <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletingEvent"/>
+                <!-- flow-business-timers (termijnbewaking-op-engine-timers) -->
+                <referencedClass name="OCA\OpenRegister\Event\FlowTimerFiredEvent"/>
+                <referencedClass name="OCA\OpenRegister\Db\FlowTimer"/>
                 <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>

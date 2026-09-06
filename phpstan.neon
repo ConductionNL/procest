@@ -48,6 +48,21 @@ parameters:
         # dead code — turning a fix for a real outage into a CI failure.
         - tests/Stubs/Decidiq
         - tests/Stubs/Decidesk
+        # Integriq's ADR-041 delivery-seam contract (DeliveryRequestedEvent /
+        # DeliveryConcludedEvent), same declaration-only-stub discipline as
+        # the decision-app namespaces above.
+        - tests/Stubs/Integriq
+        # OpenRegister's AppHost store plane (ADR-080). StoreController takes
+        # GenericStoreService as an INJECTED type-hint rather than extending a
+        # cross-app base, precisely so one scanned stub resolves it; an
+        # `extends` would be resolved by the autoloader instead and phpstan
+        # refuses to ignore "extends unknown class" at all.
+        #
+        # Scoped to Service/, not the whole tests/Stubs/AppHost tree: the
+        # sibling Bootstrap.php and GenericDashboardController.php are runtime
+        # includes with their own class_exists guards, and widening the scope
+        # is how the HttpClientStubs shadowing incident happened.
+        - tests/Stubs/AppHost/Service
 
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse

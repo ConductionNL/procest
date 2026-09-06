@@ -66,7 +66,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		$this->service = new NoticeOfDefaultService($settings, $this->termService, $logger);
 
 		// Seed an AWB-default definition.
-		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
+		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
@@ -76,7 +76,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		]);
 
 		// Seed an overdue TermijnInstance.
-		$this->objects->saveObject('dossiq', 'deadlineInstance', [
+		$this->objects->seed('deadlineInstance', [
 			'id' => 'ti-1',
 			'case' => 'Z/2026/300',
 			'deadlineDefinition' => 'td-ov',
@@ -119,7 +119,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 */
 	public function testPrematureNoticeIsRejected(): void {
 		// Use a different instance still in lopend (not overschreden).
-		$this->objects->saveObject('dossiq', 'deadlineInstance', [
+		$this->objects->seed('deadlineInstance', [
 			'id' => 'ti-lopend',
 			'case' => 'Z/2026/301',
 			'deadlineDefinition' => 'td-ov',
@@ -168,7 +168,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCustomRegimeIsResolvedFromDefinition(): void {
-		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
+		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-woo',
 			'caseType' => 'woo-verzoek',
 			'wettelijkeGrondslag' => 'Woo art 4.4',
@@ -177,7 +177,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'deviatingPenaltyPaymentRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('dossiq', 'deadlineInstance', [
+		$this->objects->seed('deadlineInstance', [
 			'id' => 'ti-woo',
 			'case' => 'Z/2026/302',
 			'deadlineDefinition' => 'td-woo',

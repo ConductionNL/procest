@@ -126,7 +126,7 @@ class MandaatRepository {
 				$m['validFrom'] = $now;
 			}
 
-			$objectService->saveObject($register, $mSchema, $m);
+			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $mSchema, object: $m);
 		}
 	}//end activateMandatenForBesluit()
 
@@ -258,12 +258,13 @@ class MandaatRepository {
 		}
 
 		try {
-			$saved = $objectService->saveObject($register, $schema, $object);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return $object;
+			$saved = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $object
+			);
+			return ($saved ?? $object);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Mandaat import persist failed',

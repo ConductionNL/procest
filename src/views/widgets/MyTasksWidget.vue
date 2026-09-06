@@ -33,6 +33,12 @@ export default {
 	},
 
 	props: {
+		// Declared on purpose. The mount script passes `title: widget.title`, and
+		// the Nextcloud dashboard host renders the heading; rendering it here too
+		// is the dashboard-in-dashboard antipattern (hydra#316). Dropping the
+		// declaration would not remove the prop, it would make it a fallthrough
+		// attribute and put a title="" tooltip on the root element.
+		// eslint-disable-next-line vue/no-unused-properties
 		title: {
 			type: String,
 			default: '',
@@ -120,8 +126,15 @@ export default {
 			this.loading = true
 			try {
 				const currentUser = getCurrentUser()?.uid || ''
-				const results = await this.objectStore.fetchCollection('task', {
-					'_filters[assignee]': currentUser,
+				// 🔴 `_filters[x]` IS INERT. The store passes params straight to the
+				// query string, and OpenRegister reads a BARE field name; measured
+				// against the live API, `_filters[assignee]=rbac-editor` returned all
+				// 32 tasks while `assignee=rbac-editor` returned the 2 that match. So
+				// this widget was fetching EVERY user's tasks and filtering only by
+				// status, which is not what a widget called "My Tasks" may show.
+				const results = await this.objectStore.fetchCollection('caseTask', {
+					assignee: currentUser,
+					isTerminalStatus: false,
 					_limit: 7,
 				})
 				// Filter to active/available tasks only.

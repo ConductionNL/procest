@@ -3,15 +3,32 @@
   "title": "VTH Handhavingszaak",
   "version": "1.0.0",
   "description": "Template voor handhavingszaken (VTH module)",
-  "statusTypes": ["Constatering", "Vooraankondiging", "Zienswijze", "Handhavingsbesluit", "Begunstigingstermijn", "Hercontrole", "Afgehandeld"],
-  "documentTypes": ["Constateringsrapport", "Vooraankondigingsbrief", "Handhavingsbesluit", "Dwangsombeschikking"],
-  "propertyDefinitions": [
-    {"name": "overtredingstype", "type": "string"},
-    {"name": "ernst", "type": "string", "enum": ["gering", "aanzienlijk", "ernstig"]},
-    {"name": "gedrag", "type": "string", "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
-    {"name": "intervention", "type": "string"},
-    {"name": "dwangsombedrag", "type": "number"},
-    {"name": "compliancePeriod", "type": "integer"}
+  "statusTypes": [
+    {"name": "Constatering", "order": 1, "isFinal": false},
+    {"name": "Vooraankondiging", "order": 2, "isFinal": false},
+    {"name": "Zienswijze", "order": 3, "isFinal": false},
+    {"name": "Handhavingsbesluit", "order": 4, "isFinal": false},
+    {"name": "Begunstigingstermijn", "order": 5, "isFinal": false},
+    {"name": "Hercontrole", "order": 6, "isFinal": false},
+    {"name": "Afgehandeld", "order": 7, "isFinal": true}
   ],
-  "roleTypes": ["handler", "overtreder", "toezichthouder"]
+  "documentTypes": [
+    {"name": "Constateringsrapport"},
+    {"name": "Vooraankondigingsbrief"},
+    {"name": "Handhavingsbesluit"},
+    {"name": "Dwangsombeschikking"}
+  ],
+  "propertyDefinitions": [
+    {"name": "overtredingstype", "propertyType": "string"},
+    {"name": "ernst", "propertyType": "enum", "enumValues": ["gering", "aanzienlijk", "ernstig"]},
+    {"name": "gedrag", "propertyType": "enum", "enumValues": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
+    {"name": "intervention", "propertyType": "string"},
+    {"name": "dwangsombedrag", "propertyType": "number"},
+    {"name": "compliancePeriod", "propertyType": "number"}
+  ],
+  "roleTypes": [
+    {"name": "handler"},
+    {"name": "overtreder"},
+    {"name": "toezichthouder"}
+  ]
 }

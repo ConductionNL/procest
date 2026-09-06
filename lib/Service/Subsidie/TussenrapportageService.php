@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -46,6 +47,9 @@ use Throwable;
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class TussenrapportageService {
+
+	use SearchesObjects;
+
 	/**
 	 * Valid report status values.
 	 *
@@ -87,6 +91,8 @@ class TussenrapportageService {
 	 * @param int $termWeken The regeling assessment term.
 	 *
 	 * @return DateTimeImmutable The assessment deadline.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBeoordelingstermijn(DateTimeImmutable $periodEnd, int $termWeken): DateTimeImmutable {
 		$termWeken = max(1, $termWeken);
@@ -102,6 +108,8 @@ class TussenrapportageService {
 	 * @param int $year The calendar year.
 	 *
 	 * @return array<int, array{start: string, eind: string}> The reporting periods.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function periodsForFrequentie(string $frequency, int $year): array {
 		if ($frequency === 'annually') {
@@ -143,7 +151,7 @@ class TussenrapportageService {
 		);
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: createExpected tussenrapportage failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet aanmaken');
@@ -188,7 +196,13 @@ class TussenrapportageService {
 		}
 
 		try {
-			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$reportId);
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $patch,
+				uuid: (string)$reportId
+			) ?? $patch);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: approveReport failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet goedkeuren');
@@ -231,7 +245,13 @@ class TussenrapportageService {
 		];
 
 		try {
-			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$reportId);
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $patch,
+				uuid: (string)$reportId
+			) ?? $patch);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: partialApprove failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet gedeeltelijk goedkeuren');

@@ -133,7 +133,7 @@ const COLLECTION_URL = '/apps/dossiq/api/vth/checklists'
  * 45,031 rows, 90,122 buttons and a 50 MB DOM on which Playwright's
  * accessible-name computation never terminated (procest#784).
  *
- * @param {*} body Parsed response body, of any shape.
+ * @param {unknown} body Parsed response body, of any shape.
  * @return {Array} The checklist rows, or an empty array when the body is not
  *                 a recognised collection shape.
  */

@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Daily timed job that sends appointment reminders for next-day appointments.
+ *
+ * @spec openspec/specs/appointment-booking/spec.md
  */
 class AppointmentReminderJob extends TimedJob {
 	/**

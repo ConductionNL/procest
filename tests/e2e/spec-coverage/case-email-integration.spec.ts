@@ -10,6 +10,7 @@
  * any per-user SMTP-send credential fields on it. Leaf display/linking,
  * IMAP ingest, Docudesk PDF archival and NC Mail draft-open are backend /
  * cross-app concerns covered by PHPUnit + Newman + the email leaf, and are
+ *
  * @e2e-excluded at the spec level.
  *
  * Tests are defensive: the admin settings SPA is data-independent chrome, so
@@ -17,8 +18,8 @@
  * present, guarding against a 5xx render.
  */
 
-import { test, expect } from '@playwright/test'
-import { loadAllAdminSections } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { loadAllAdminSections } from '../helpers/nav.ts'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 

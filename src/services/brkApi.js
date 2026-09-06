@@ -34,6 +34,7 @@ const BASE_URL = generateUrl('/apps/dossiq/api/external/brk')
  * @param {string} [options.appartementsrechtVolgnummer] Appartementsrecht volgnummer.
  * @return {Promise<{lookupStatus: string, parcel: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 export async function lookupParcel(
@@ -56,6 +57,7 @@ export async function lookupParcel(
  * @param {string} id BRK kadastraalOnroerendeZaak identificatie.
  * @return {Promise<{lookupStatus: string, parcel: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 export async function lookupParcelById(id) {

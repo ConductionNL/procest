@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Vth\LhsDecisionTableLookup;
 use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCA\Dossiq\Service\Vth\LhsRecommendationStore;
 use OCP\IUser;
@@ -117,7 +118,15 @@ class LhsOverrideAuthorizationTest extends TestCase {
 		// tests exist to pin.
 		$store = new LhsRecommendationStore($settings, $logger);
 
-		return new LhsRecommendationService($session, $store);
+		// The decision-table lookup answers null here, which is the state of an
+		// instance that has not run the projection. These tests are about the
+		// override guard, so they must exercise the matrix path deliberately
+		// rather than by accident: a lookup that silently answered would move
+		// the assertions onto a code path they were never written for.
+		$tableLookup = $this->createMock(LhsDecisionTableLookup::class);
+		$tableLookup->method('intervention')->willReturn(null);
+
+		return new LhsRecommendationService($session, $store, $tableLookup);
 
 	}//end service()
 

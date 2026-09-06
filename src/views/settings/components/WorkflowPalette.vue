@@ -76,8 +76,8 @@ export default {
 	emits: ['drag-start', 'add-status'],
 	methods: {
 		/**
-		 * @param type
-		 * @param event
+		 * @param {string} type The type.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onDragStart(type, event) {

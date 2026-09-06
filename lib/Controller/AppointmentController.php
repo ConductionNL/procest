@@ -36,6 +36,8 @@ use OCP\IUserSession;
 
 /**
  * Controller exposing citizen appointment endpoints.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class AppointmentController extends Controller {
 	/**

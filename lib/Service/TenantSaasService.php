@@ -48,6 +48,8 @@ use Throwable;
  * All persistence goes through OpenRegister's ObjectService — no bespoke
  * Doctrine entity. The state machine validates that only the documented
  * transitions are written.
+ *
+ * @spec openspec/specs/tenant-crud-lifecycle/spec.md
  */
 class TenantSaasService {
 	use SearchesObjects;
@@ -323,6 +325,8 @@ class TenantSaasService {
 	 * @param string $name Display name.
 	 *
 	 * @return string Slug.
+	 *
+	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-lifecycle-state-machine-req-001-a-lifecycle
 	 */
 	public function slugify(string $name): string {
 		$lower = mb_strtolower(trim($name), 'UTF-8');
@@ -348,6 +352,8 @@ class TenantSaasService {
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When the transition is illegal.
+	 *
+	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-lifecycle-state-machine-req-001-a-lifecycle
 	 */
 	public function assertLegalTransition(string $current, string $target): void {
 		if (array_key_exists($current, self::LIFECYCLE_TRANSITIONS) === false) {
@@ -369,6 +375,8 @@ class TenantSaasService {
 	 * Return the full lifecycle transition graph (for tests / introspection).
 	 *
 	 * @return array<string, array<int, string>>
+	 *
+	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-lifecycle-state-machine-req-001-a-lifecycle
 	 */
 	public function getLifecycleGraph(): array {
 		return self::LIFECYCLE_TRANSITIONS;

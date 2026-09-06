@@ -83,6 +83,7 @@
 </template>
 
 <script>
+import { getCurrentUser } from '@nextcloud/auth'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
@@ -112,7 +113,7 @@ export default {
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		currentUser() {
-			return (typeof OC !== 'undefined' && OC?.currentUser) || ''
+			return (getCurrentUser() && getCurrentUser().uid) || ''
 		},
 
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
@@ -146,7 +147,7 @@ export default {
 		},
 
 		/**
-		 * @param id
+		 * @param {string} id Identifier of the id.
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 		 */
 		async revoke(id) {

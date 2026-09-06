@@ -431,7 +431,7 @@ export default {
 		},
 
 		/**
-		 * @param deletedId
+		 * @param {string} deletedId Identifier of the deleted id.
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
 		 */
 		onParentDeleted(deletedId) {

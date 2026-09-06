@@ -31,6 +31,8 @@ use Psr\Log\LoggerInterface;
  * Mock Berichtenbox adapter for development and testing.
  *
  * Simulates message sending and read status without external API calls.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class MockAdapter implements BerichtenboxAdapterInterface {
 	/**

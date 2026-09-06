@@ -17,7 +17,7 @@
  * where it belongs.
  */
 import { expect, test } from '@playwright/test'
-import { BASE_URL } from '../base-url'
+import { BASE_URL } from '../base-url.ts'
 
 const BASE = BASE_URL
 

@@ -38,6 +38,8 @@ use RuntimeException;
  * Handles the full consultation lifecycle: creation with auto-generated numbers,
  * status transitions, advice responses, deadline extensions, and dependency
  * cycle detection per Awb 3:5-3:9.
+ *
+ * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationService {
 	/**

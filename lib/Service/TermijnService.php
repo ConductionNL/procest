@@ -35,12 +35,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * Server-authoritative TermijnInstance lifecycle.
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
@@ -59,10 +62,12 @@ class TermijnService {
 	 *
 	 * @param SettingsService $settingsService Settings + ObjectService access.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -75,12 +80,16 @@ class TermijnService {
 	 * matching definition exists (REQ-TERM-001-A).
 	 *
 	 * @param string $caseId The case id.
-	 * @param string $caseType The zaaktype slug.
+	 * @param string $caseType The zaaktype SLUG. A `case` object carries its
+	 *        case type as a uuid, so a caller holding one must convert it
+	 *        through {@see CaseTypeSlugResolver} first — a uuid matches no
+	 *        definition and the term silently never starts.
 	 * @param DateTimeImmutable|null $startDate Optional start (defaults to now).
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @throws RuntimeException When no TermijnDefinitie matches the zaaktype.
+	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
+	 * @throws RuntimeException When the instance cannot be persisted.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
@@ -88,8 +97,11 @@ class TermijnService {
 		$startDate = ($startDate ?? new DateTimeImmutable());
 		$definitie = $this->getTermijnDefinitie(caseType: $caseType);
 		if ($definitie === null) {
-			throw new RuntimeException(
-				'No active TermijnDefinitie configured for zaaktype "' . $caseType . '" (REQ-TERM-001-A)'
+			// A DISTINCT type, because this is the one refusal a caller can
+			// act on and the one that must not be swallowed at debug level:
+			// it means no statutory clock started for this case at all.
+			throw new NoTermijnDefinitieException(
+				message: 'No active TermijnDefinitie configured for zaaktype "' . $caseType . '" (REQ-TERM-001-A)'
 			);
 		}
 
@@ -123,8 +135,37 @@ class TermijnService {
 			moment: $startDate,
 		);
 
-		return $saved;
+		return ($this->armEngineTimer(instance: $saved, definitie: $definitie) ?? $saved);
 	}//end createTermijnInstance()
+
+	/**
+	 * Arm the engine timer for a freshly created instance and store its
+	 * uuid as `engineTimerId` (REQ-TOT-001). A missing engine degrades to
+	 * a logged no-op inside {@see TermijnTimerService}; the instance then
+	 * simply carries no timer until the repair step re-arms it.
+	 *
+	 * @param array<string, mixed> $instance The saved TermijnInstance.
+	 * @param array<string, mixed> $definitie The resolved TermijnDefinitie.
+	 *
+	 * @return array<string, mixed>|null The instance carrying `engineTimerId`, or null.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function armEngineTimer(array $instance, array $definitie): ?array {
+		if ($this->timerService === null) {
+			return null;
+		}
+
+		$timerId = $this->timerService->armBeslistermijn(instance: $instance, definitie: $definitie);
+		if ($timerId === null) {
+			return null;
+		}
+
+		return $this->updateTermijnInstance(
+			termInstanceId: (string)($instance['id'] ?? ''),
+			patch: ['engineTimerId' => $timerId]
+		);
+	}//end armEngineTimer()
 
 	/**
 	 * Get TermijnInstance by id.
@@ -148,12 +189,12 @@ class TermijnService {
 		}
 
 		try {
-			$row = $objectService->find($termInstanceId, register: $register, schema: $schema);
-			if (is_array($row) === true) {
-				return $row;
-			}
-
-			return null;
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $termInstanceId
+			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'TermijnService.getTermijnInstance failed',
@@ -338,6 +379,13 @@ class TermijnService {
 				moment: $voltooiDatum,
 				documentLink: $documentLink,
 			);
+
+			// Completion cancels every open timer of the instance, in the
+			// same operation that made the term terminal (REQ-TOT-001).
+			$this->timerService?->cancelForInstance(
+				instanceId: $termInstanceId,
+				reason: 'Termijn voltooid door beschikking'
+			);
 		}
 
 		return $updated;
@@ -407,12 +455,12 @@ class TermijnService {
 		}
 
 		try {
-			$saved = $objectService->saveObject($register, $schema, $object);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return null;
+			return $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $object
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'TermijnService persist failed',

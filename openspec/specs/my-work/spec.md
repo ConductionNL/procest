@@ -9,7 +9,13 @@ status: done
 My Work is the personal starting point for a case handler: the list of cases
 assigned to the signed-in user. It answers the daily question "what is on my
 plate?" by scoping the standard case index to `assignee == currentUser` and
-rendering it as a card list (with a table toggle). It deliberately reuses the
+rendering it as a card list (with a table toggle).
+
+It is one of three surfaces in the My work group, and each answers a different
+question. **Queue** (`/queue`) holds what nobody has picked up: no `assignee` and
+`isFinalStatus` false. **Assigned to me** (this page) holds what is the signed-in
+user's. **All cases** holds everything. Assigning a case moves it from the Queue to
+this page; All cases shows it either way. See `openspec/changes/add-work-queue`. It deliberately reuses the
 same index engine as the "All cases" view rather than a bespoke board, so
 filtering, sorting, the sidebar and navigation behave identically.
 

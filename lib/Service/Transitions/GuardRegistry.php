@@ -103,6 +103,8 @@ class GuardRegistry {
 				continue;
 			}
 
+			$this->warnOnNestedConfig(type: $type, guard: $guard);
+
 			if (isset($this->evaluators[$type]) === false) {
 				$this->logger->warning('Unknown guard type', ['type' => $type]);
 				$results[] = [
@@ -125,6 +127,39 @@ class GuardRegistry {
 
 		return $results;
 	}//end evaluateAll()
+
+	/**
+	 * Report a guard that declares its parameters at a position nothing reads.
+	 *
+	 * Every evaluator reads its parameters from the top level of the guard
+	 * entry. A guard written as `{"type": "requiredField", "config": {"field":
+	 * "x"}}` therefore resolves no field at all, and the evaluator answers
+	 * with its empty-configuration failure — which reads as "the case is not
+	 * ready" rather than "this guard was never wired up". Three shipped
+	 * besluitvorming bundles carried exactly that, and a case could not leave
+	 * Parafering on any fresh install. Saying so out loud is what makes the
+	 * next one findable.
+	 *
+	 * @param string $type The guard type.
+	 * @param array<string, mixed> $guard The guard entry.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function warnOnNestedConfig(string $type, array $guard): void {
+		$config = ($guard['config'] ?? null);
+		if (is_array($config) === false || $config === []) {
+			return;
+		}
+
+		$this->logger->warning(
+			'Dossiq: a guard declares its parameters under `config`, a position the transition engine '
+			. 'never reads; the guard will evaluate as unconfigured. Declare them at the top level of '
+			. 'the guard entry.',
+			['type' => $type, 'keys' => array_keys($config)],
+		);
+	}//end warnOnNestedConfig()
 
 	/**
 	 * Check if all guards in the result set passed.

@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Pre-send domain error: zaaktype not mapped.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 class ZaaktypeNotMappedException extends StufException {
 }//end class

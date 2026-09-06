@@ -46,6 +46,8 @@ use OCP\IUserSession;
 
 /**
  * REST controller for email-template templating + IMAP settings.
+ *
+ * @spec openspec/changes/case-email-integration/tasks.md#T06
  */
 class EmailTemplateController extends Controller {
 

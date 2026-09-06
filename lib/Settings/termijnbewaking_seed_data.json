@@ -1,5 +1,39 @@
 {
+  "$comment": "A TermijnDefinitie binds to a case type by SLUG (deadlineDefinition.caseType), never by uuid. A definition whose caseType names a slug no seed creates arms nothing at all, and says nothing while it does so: the first three rows below did exactly that on every fresh install until ShippedDeadlineDefinitionCoverageTest started sweeping them. That test asserts the other direction too — every shipped case type that declares a processingDeadline must have a definition here, with matching durations — so a new zaaktype with a statutory term cannot ship without its clock.",
   "termijnDefinities": [
+    {
+      "id": "td-omgevingsvergunning-kleinbouw",
+      "caseType": "omgevingsvergunning-kleinbouw",
+      "legalBasis": "Ow 16.64 lid 1",
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "extensionCapacity": 42,
+      "countExtensions": 1,
+      "pauseExtensionDuration": [14, 28],
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-omgevingsvergunning-bouwactiviteit",
+      "caseType": "omgevingsvergunning-bouwactiviteit",
+      "legalBasis": "Ow 16.64 lid 1",
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "extensionCapacity": 42,
+      "countExtensions": 1,
+      "pauseExtensionDuration": [14, 28],
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-sloopmelding",
+      "caseType": "sloopmelding",
+      "legalBasis": "Bbl 7.10",
+      "standardDurationDays": 28,
+      "standardDurationWeeks": 4,
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "pauseExtensionDuration": [14],
+      "validFrom": "2026-01-01"
+    },
     {
       "id": "td-omgevingsvergunning-regulier",
       "caseType": "omgevingsvergunning-regulier",

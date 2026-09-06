@@ -65,6 +65,8 @@ use Psr\Log\LoggerInterface;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class StufController extends Controller {
 	/**
@@ -202,9 +204,9 @@ class StufController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$endpoint = $this->stuf->register->findOne(
+		$endpoint = $this->stuf->register->findById(
 			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-			filters: ['id' => $endpointId]
+			id: $endpointId
 		);
 		if ($endpoint === null) {
 			return new JSONResponse(['error' => $this->l10n->t('Endpoint not found')], Http::STATUS_NOT_FOUND);
@@ -381,7 +383,7 @@ class StufController extends Controller {
 	 */
 	private function messageFilters(): array {
 		$filters = [];
-		foreach (['endpointId', 'berichtSoort', 'status'] as $key) {
+		foreach (['endpointId', 'messageKind', 'status'] as $key) {
 			$value = (string)$this->request->getParam(key: $key, default: '');
 			if ($value !== '') {
 				$filters[$key] = $value;
@@ -418,7 +420,7 @@ class StufController extends Controller {
 			newStatus: 'bevestigd',
 			extras: [
 				'responseEnvelopeXml' => $rawXml,
-				'caseIdentification' => ($caseId ?? ($outbound['zaakIdentificatie'] ?? '')),
+				'caseIdentification' => ($caseId ?? ($outbound['caseIdentification'] ?? '')),
 			]
 		);
 	}//end confirmOutbound()

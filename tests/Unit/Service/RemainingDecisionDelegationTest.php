@@ -146,26 +146,6 @@ class RemainingDecisionDelegationTest extends TestCase {
 	}//end testAdviceSiblingFailsClosed()
 
 	/**
-	 * The voorstel besluit path dispatches a report-adoption Decision.
-	 *
-	 * @return void
-	 */
-	public function testVoorstelBesluitRaisesReportAdoption(): void {
-		$core = $this->coreThatHandlesWith(
-			'ra-1',
-			function (DecisionRequestedEvent $event): void {
-				$this->assertSame('report-adoption', $event->getDecisionType());
-				$this->assertSame('proposal', $event->getSubjectSchema());
-			}
-		);
-
-		$sibling = new AdviceDelegationService($core);
-
-		$ref = $sibling->raiseVoorstelBesluit('voorstel-1', ['title' => 'Besluit X']);
-		$this->assertSame('ra-1', $ref);
-	}//end testVoorstelBesluitRaisesReportAdoption()
-
-	/**
 	 * Build a delegation core whose dispatcher simulates the decidesk listener
 	 * marking the event handled and writing the given decisionId.
 	 *

@@ -36,6 +36,8 @@ use Throwable;
 
 /**
  * Quota service.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 class TenantQuotaService {
 	/**
@@ -143,6 +145,8 @@ class TenantQuotaService {
 	 * @param string $quotaType Type.
 	 *
 	 * @return array<string,mixed>|null
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function getQuota(string $tenantId, string $quotaType): ?array {
 		$objectService = $this->getObjectService();
@@ -185,6 +189,8 @@ class TenantQuotaService {
 	 * @param int $increment Requested increment.
 	 *
 	 * @return array{decision:string, soft:bool, reason:string}
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function decide(array $quota, int $increment = 1): array {
 		$limit = $quota['limit'] ?? null;
@@ -231,6 +237,8 @@ class TenantQuotaService {
 	 * @param int $amount Amount to consume.
 	 *
 	 * @return array{decision:string, soft:bool, reason:string, currentUsage?:int}
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function consume(string $tenantId, string $quotaType, int $amount = 1): array {
 		$quota = $this->getQuota(tenantId: $tenantId, quotaType: $quotaType);
@@ -257,6 +265,8 @@ class TenantQuotaService {
 	 * @param int|null $limit New limit (null = unlimited).
 	 *
 	 * @return array<string,mixed>|null Persisted row.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function setLimit(string $tenantId, string $quotaType, ?int $limit): ?array {
 		$quota = $this->getQuota(tenantId: $tenantId, quotaType: $quotaType);
@@ -275,6 +285,8 @@ class TenantQuotaService {
 	 * @param array<string,mixed> $quota Quota row.
 	 *
 	 * @return array<string,mixed> Updated row.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function resetIfDue(array $quota): array {
 		$resetAt = strtotime((string)($quota['resetAt'] ?? ''));
@@ -295,6 +307,8 @@ class TenantQuotaService {
 	 * @param string $quotaType Type.
 	 *
 	 * @return string ISO-8601 timestamp.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function nextResetAt(string $quotaType): string {
 		if ($quotaType === 'api_calls_per_hour') {

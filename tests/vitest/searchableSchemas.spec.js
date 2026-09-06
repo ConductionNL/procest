@@ -11,9 +11,9 @@
  * @spec openspec/changes/case-search-via-or-unified-search/specs/case-search-via-or-unified-search/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import path from 'path'
+import { describe, expect, it } from 'vitest'
 
 const REGISTER_PATH = path.resolve(
 	__dirname,
@@ -23,16 +23,15 @@ const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
 const EXPECTED_SEARCHABLE_SLUGS = [
 	'case',
-	'task',
+	'caseTask',
 	'objectionProceeding',
-	'proposal',
 	'beroep',
 ]
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
 describe('searchable schema opt-in (register JSON)', () => {
-	it('flags exactly case, task, bezwaar, voorstel, beroep as searchable', () => {
+	it('flags exactly case, task, bezwaar, beroep as searchable', () => {
 		const register = loadJson(REGISTER_PATH)
 		const schemas = register.components.schemas
 
@@ -65,20 +64,21 @@ describe('deep links cover all searchable schemas', () => {
 
 		const expectedTemplates = {
 			case: '/apps/dossiq/cases/{uuid}',
-			task: '/apps/dossiq/tasks/{uuid}',
-			// The KEY is the schema slug and moved with it; the URL is a published
-			// ROUTE and deliberately did not — a route resolves at request time,
-			// so breaking one fails silently.
+			caseTask: '/apps/dossiq/tasks/{uuid}',
+			// The KEY is the schema slug and moves with it; the URL is a published
+			// ROUTE and deliberately does not — a route resolves at request time,
+			// so breaking one fails silently. That holds for `caseTask` above as
+			// much as for `objectionProceeding`: #1845 renamed the slug and left
+			// both of these maps, and the manifest's own `deepLinks` entry,
+			// keyed on `task`.
 			objectionProceeding: '/apps/dossiq/bezwaren/{uuid}',
-			proposal: '/apps/dossiq/voorstellen/{uuid}',
 			beroep: '/apps/dossiq/beroepen/{uuid}',
 		}
 
 		const expectedRoutes = {
 			case: '/cases/:id',
-			task: '/tasks/:id',
+			caseTask: '/tasks/:id',
 			objectionProceeding: '/bezwaren/:id',
-			proposal: '/voorstellen/:id',
 			beroep: '/beroepen/:id',
 		}
 

@@ -44,8 +44,8 @@
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 
-import { test, expect } from '@playwright/test'
-import { BASE_URL } from './base-url'
+import { expect, test } from '@playwright/test'
+import { BASE_URL } from './base-url.ts'
 
 const API_HEADERS = { 'OCS-APIRequest': 'true' }
 
@@ -115,24 +115,53 @@ test.describe('AppHost adoption (ADR-040)', () => {
 		expect(body).toContain('dossiq_info')
 	})
 
-	test('the catch-all really does answer 200 (guard against a dead discriminator)', async ({
+	test('the catch-all is alive, and no longer answers unmatched API paths', async ({
 		request,
 	}) => {
-		// The two assertions above are only meaningful while the catch-all
-		// behaves as described. If dossiq ever starts returning a real 404 for
-		// unmatched API paths, the content-type checks stop being the ONLY thing
-		// standing between a broken adoption and a green suite — and whoever
-		// changes that should see this test fail and read the note above.
-		const res = await request.get(
+		// ⚠️ THIS TEST CHANGED, ON PURPOSE. It used to assert that
+		// /api/definitely-not-a-route answered 200 text/html, and said "if this
+		// is now 404, update the reasoning in this file". It is now 404, so this
+		// is that update.
+		//
+		// `\OCA\OpenRegister\AppHost\Routes::catchAllRoute()` gained a
+		// `(?!api/)` lookahead (openregister#3270). Its `/{path}` requirement
+		// was `.+`, which matches slashes, so the catch-all swallowed every
+		// unmatched `api/...` path and answered the SPA shell with HTTP 200 —
+		// in zaakafhandelapp it ate all seventeen ZGW resource routes, and a
+		// JSON caller received HTML without anything erroring. dossiq reaches
+		// the same builder through the `class_exists()` branch at the bottom of
+		// appinfo/routes.php, so the behaviour changed here too.
+		//
+		// This is STRICTLY better for the two assertions above. Their whole
+		// point is to distinguish "the AppHost alias was installed" from
+		// "something else answered": previously only the content-type could
+		// tell those apart, because a missing alias fell through to a 200-HTML
+		// shell. Now an unadopted API path fails loudly with a 404 as well.
+		const unmatchedApi = await request.get(
 			`${BASE_URL}/index.php/apps/dossiq/api/definitely-not-a-route`,
 			{ headers: API_HEADERS, failOnStatusCode: false },
 		)
-
 		expect(
-			res.status(),
-			'if this is now 404, update the reasoning in this file',
+			unmatchedApi.status(),
+			'an unmatched API path must NOT be answered by the SPA catch-all — if this '
+				+ 'is 200 again, the (?!api/) lookahead has been lost from '
+				+ 'Routes::catchAllRoute() and JSON callers are silently receiving HTML',
+		).toBe(404)
+
+		// The other half of the original guarantee, which still holds and still
+		// matters: the catch-all itself is alive, so a non-api deep link is
+		// served the SPA shell rather than 404ing. Probing an API path can no
+		// longer establish that, which is why the probe moved off `api/`.
+		const deepLink = await request.get(
+			`${BASE_URL}/index.php/apps/dossiq/definitely-not-a-route`,
+			{ headers: API_HEADERS, failOnStatusCode: false },
+		)
+		expect(
+			deepLink.status(),
+			'the SPA catch-all is dead: a non-api deep link 404s, so every bookmarked '
+				+ 'dossiq route below / is broken',
 		).toBe(200)
-		expect(res.headers()['content-type'] ?? '').toContain('text/html')
+		expect(deepLink.headers()['content-type'] ?? '').toContain('text/html')
 	})
 
 	test('the SPA still boots with the prelude in place', async ({ page }) => {

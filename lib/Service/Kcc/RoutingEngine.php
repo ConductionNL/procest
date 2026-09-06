@@ -35,6 +35,8 @@ use DateTimeImmutable;
  * Deterministic routing-rule evaluation and agent ranking for the KCC.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 class RoutingEngine {
 	/**
@@ -44,11 +46,20 @@ class RoutingEngine {
 	 * whose conditions all match wins. Returns the matched rule plus the
 	 * resolved domain/team, or null when nothing matches.
 	 *
+	 * DEPRECATED (kcc-routing-onto-or-decision-tables): runtime routing goes
+	 * through {@see RoutingTableEvaluator}, which compiles these rules onto
+	 * OpenRegister's shared decision-table evaluator. This method stays ONLY
+	 * as the parity oracle — KccRoutingParityTest drives both paths over one
+	 * fixture matrix — until the staged retirement in that change's tasks.
+	 * Do not add new callers. Agent ranking below is NOT deprecated.
+	 *
 	 * @param array<int, array<string, mixed>> $rules Routing rules.
 	 * @param array<string, mixed> $contactMoment The contact moment.
 	 * @param \DateTimeImmutable|null $now Reference time (for time-of-day rules).
 	 *
 	 * @return array<string, mixed>|null The routing result, or null when unmatched.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function evaluate(array $rules, array $contactMoment, ?\DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -91,6 +102,8 @@ class RoutingEngine {
 	 * @param \DateTimeImmutable $now Reference time.
 	 *
 	 * @return bool True when all conditions match.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function ruleMatches(array $rule, array $contactMoment, \DateTimeImmutable $now): bool {
 		$conditions = ($rule['matchConditions'] ?? []);
@@ -212,6 +225,8 @@ class RoutingEngine {
 	 * @param int $limit Maximum results.
 	 *
 	 * @return array<int, array<string, mixed>> Ranked agents with motivation.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function rankAgents(array $agents, string $team, array $contactMoment, int $limit = 3): array {
 		$domain = strtolower((string)($contactMoment['assignedDomain'] ?? ''));

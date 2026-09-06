@@ -34,6 +34,9 @@ use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\FlowRun;
+use OCA\OpenRegister\Db\FlowRunMapper;
+use OCA\OpenRegister\Service\Flow\FlowRunService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -210,6 +213,176 @@ class DecisionConcludedListenerTest extends TestCase {
 
 		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
 	}//end testRecordsNoDeviationWhenNoCommitteeWasInvolved()
+
+	/**
+	 * A concluded decision resumes the run whose slot names its ref.
+	 *
+	 * The signal must carry decidiq's verdict as the `decision` (a payload
+	 * without one is a nudge, and the awaiting node suspends again), plus the
+	 * ref, so the requesting node can tell this answer from any other.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	public function testAConcludedDecisionResumesTheRunThatAskedForIt(): void {
+		$signals = [];
+
+		$listener = $this->listenerForRuns(
+			runs: [$this->suspendedRun(uuid: 'run-7', decisionRef: 'dec-1')],
+			signals: $signals
+		);
+
+		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$this->assertCount(1, $signals);
+		$this->assertSame('run-7', $signals[0]['run']);
+		$this->assertSame('approved', $signals[0]['payload']['decision']);
+		$this->assertSame('dec-1', $signals[0]['payload']['decisionRef']);
+	}//end testAConcludedDecisionResumesTheRunThatAskedForIt()
+
+	/**
+	 * A run waiting on a DIFFERENT decision is left suspended.
+	 *
+	 * The match is on the decisionRef, not on the case: this run belongs to the
+	 * right case, so matching on the case would wrongly advance it. Leaving it
+	 * suspended is the spec'd behaviour, not an omission.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	public function testAnUnrelatedDecisionLeavesTheRunSuspended(): void {
+		$signals = [];
+
+		$listener = $this->listenerForRuns(
+			runs: [$this->suspendedRun(uuid: 'run-7', decisionRef: 'dec-OTHER')],
+			signals: $signals
+		);
+
+		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$this->assertSame([], $signals);
+	}//end testAnUnrelatedDecisionLeavesTheRunSuspended()
+
+	/**
+	 * Of several suspended runs, only the one naming the ref is signalled.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	public function testOnlyTheRunNamingTheRefIsResumed(): void {
+		$signals = [];
+
+		$listener = $this->listenerForRuns(
+			runs: [
+				$this->suspendedRun(uuid: 'run-a', decisionRef: 'dec-OTHER'),
+				$this->suspendedRun(uuid: 'run-b', decisionRef: 'dec-1'),
+			],
+			signals: $signals
+		);
+
+		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$this->assertCount(1, $signals);
+		$this->assertSame('run-b', $signals[0]['run']);
+	}//end testOnlyTheRunNamingTheRefIsResumed()
+
+	/**
+	 * Without the flow collaborators the listener still materialises quietly.
+	 *
+	 * The nullable mapper/runner exist so older construction sites keep
+	 * working; absent, no run is resumed, and nothing raises.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	public function testWithoutFlowCollaboratorsNothingIsResumedAndNothingRaises(): void {
+		$listener = $this->listenerForDecision(
+			record: ['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2'],
+			bac: $this->createMock(AdvisoryCommitteeService::class)
+		);
+
+		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$this->addToAssertionCount(1);
+	}//end testWithoutFlowCollaboratorsNothingIsResumedAndNothingRaises()
+
+	/**
+	 * A suspended run whose resume slot records the given decisionRef.
+	 *
+	 * @param string $uuid        The run uuid.
+	 * @param string $decisionRef The ref the run's requesting node stored.
+	 *
+	 * @return FlowRun
+	 */
+	private function suspendedRun(string $uuid, string $decisionRef): FlowRun {
+		$run = new FlowRun();
+		$run->setUuid($uuid);
+		$run->setContext(
+			[
+				'resumeState' => [
+					'decide-commissie' => ['decisionRef' => $decisionRef],
+				],
+			]
+		);
+
+		return $run;
+	}//end suspendedRun()
+
+	/**
+	 * Build a listener whose case lookup resolves and whose flow collaborators
+	 * see the given suspended runs, recording every signal into $signals.
+	 *
+	 * @param FlowRun[] $runs The suspended runs the mapper reports for the case.
+	 * @param array $signals Sink for delivered signals (by reference).
+	 *
+	 * @return DecisionConcludedListener
+	 */
+	private function listenerForRuns(array $runs, array &$signals): DecisionConcludedListener {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')
+			->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+
+		$mapper = $this->createMock(FlowRunMapper::class);
+		$mapper->method('findSuspendedBySubject')->willReturn($runs);
+
+		$runner = new class($signals) extends FlowRunService {
+			/**
+			 * @param array $sink Where delivered signals land.
+			 */
+			public function __construct(private array &$sink) {
+			}
+
+			/**
+			 * Record the signal instead of delivering it.
+			 *
+			 * @param FlowRun $run The run being signalled.
+			 * @param array $payload The signal payload.
+			 *
+			 * @return FlowRun|null
+			 */
+			public function signal(FlowRun $run, array $payload = []): ?FlowRun {
+				$this->sink[] = ['run' => $run->getUuid(), 'payload' => $payload];
+
+				return $run;
+			}
+		};
+
+		return new DecisionConcludedListener(
+			$settings,
+			$this->createMock(BesluitMaterialisationService::class),
+			$this->createMock(AdvisoryCommitteeService::class),
+			$this->createMock(LoggerInterface::class),
+			$mapper,
+			$runner
+		);
+	}//end listenerForRuns()
 
 	/**
 	 * Build a listener whose decisionRef lookup resolves to $record.

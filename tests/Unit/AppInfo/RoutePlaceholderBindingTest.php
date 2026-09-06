@@ -25,7 +25,7 @@ use ReflectionNamedType;
  *
  * Nextcloud's Dispatcher resolves a controller argument BY NAME —
  * `$this->request->getParam($param, $default)` — never by position. So a route
- * declaring `{voorstelId}` against a method signing `string $proposalId` binds
+ * declaring `{zaakId}` against a method signing `string $caseId` binds
  * null, the typehint throws a TypeError, and the request is answered HTTP 400.
  * For any input. On every call.
  *
@@ -59,7 +59,7 @@ class RoutePlaceholderBindingTest extends TestCase {
 	}
 
 	/**
-	 * Turn `parafeerRoute#start` into its controller class and method.
+	 * Turn `subsidie#transition` into its controller class and method.
 	 *
 	 * Nextcloud's own convention: the part before `#` is the controller in
 	 * lowerCamelCase, optionally namespaced with `\`, and gains a `Controller`

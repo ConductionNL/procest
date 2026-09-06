@@ -39,6 +39,7 @@ const REGISTER_URL = generateUrl(
  *   These keys are FROZEN at the old `procest-` prefix across the app-id
  *   rename: OR upserts on `seriesKey`, so renaming one orphans the stored
  *   series rather than moving it.
+ *
  * @param {string[]} series.labels Category / slice labels.
  * @param {Array} series.datasets Chart datasets ([{ name, data }] or number[] for pie/donut).
  * @param {string} [series.title] Human-readable chart title.
@@ -46,6 +47,7 @@ const REGISTER_URL = generateUrl(
  * @param {string} [series.visibility] private|group|public (default private).
  * @return {Promise<object|null>} The stored render contract, or null on failure
  *   (the dashboard degrades to its empty state — never throws into the view).
+ *
  * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
  */
 export async function registerSeries({
@@ -79,6 +81,7 @@ export async function registerSeries({
  * @return {Promise<object|null>} The render contract { seriesKey, title,
  *   chartType, labels, datasets, visibility }, or null when unknown / not
  *   readable (uniform 404, fail-closed) / OR unavailable.
+ *
  * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
  */
 export async function fetchSeries(seriesKey) {

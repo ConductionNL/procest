@@ -95,3 +95,32 @@ command SHALL exit non-zero when any template failed.
 - **GIVEN** a flow write that is refused
 - **WHEN** the migration runs
 - **THEN** that template is counted as failed and the others still project
+
+### Requirement: REQ-WDF-006 Flows is the single authoring entry
+
+The settings menu SHALL offer exactly one entry for authoring how a case moves,
+and it SHALL be Flows.
+
+Two entries stood next to each other at orders 96 and 97, named Flows and
+Workflow definitions, wearing `Sitemap` and `SitemapOutline`. They read as one
+feature listed twice, and the pair was actively misleading rather than merely
+redundant: editing a definition does not reach the running flow unless somebody
+re-runs the projection, and re-running it overwrites whatever was authored on
+the canvas. A reader who picked the wrong one of two near-identical entries got
+a screen whose edits quietly did nothing.
+
+The definitions page SHALL remain routable. Losing a menu entry is not losing
+the page: a projected flow was generated FROM a definition, so a legacy link
+must still land on the definition rather than on the dashboard. This follows the
+precedent set for Approval routes, which lost its entry for the same reason when
+an approval route became a flow.
+
+#### Scenario: The menu offers Flows once
+
+- **GIVEN** the settings menu
+- **THEN** Flows is present and Workflow definitions is absent
+
+#### Scenario: The definitions page survives its menu entry
+
+- **WHEN** `/settings/workflow-definitions` is opened directly
+- **THEN** the definitions page renders rather than the dashboard

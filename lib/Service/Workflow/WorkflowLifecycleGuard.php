@@ -14,7 +14,8 @@
  *   - that only a draft may be published, and only when every status it
  *     references belongs to its own caseType (referential integrity);
  *   - that only a published row may be deprecated, and never the last
- *     published version of a caseType that still has cases pinned to it.
+ *     published version of a caseType that still has cases pinned to it;
+ *   - which ROUTE a row is on, and which route a caseType takes by default.
  *
  * Every refusal is logged with its reason; the caller only learns "no".
  *
@@ -55,6 +56,16 @@ class WorkflowLifecycleGuard {
 	public const STATUS_DRAFT = 'draft';
 	public const STATUS_PUBLISHED = 'published';
 	public const STATUS_DEPRECATED = 'deprecated';
+
+	/**
+	 * The route a definition is on when it names none.
+	 *
+	 * Every definition that predates the `variant` property carries no route,
+	 * so reading absent as this value puts the whole existing corpus on one
+	 * route per case type. The per-route uniqueness rule then reduces to the
+	 * per-case-type rule it replaces, and no backfill has to run.
+	 */
+	public const VARIANT_DEFAULT = 'standaard';
 
 	/**
 	 * Constructor.
@@ -105,6 +116,133 @@ class WorkflowLifecycleGuard {
 
 		return self::STATUS_DEPRECATED;
 	}//end statusOf()
+
+	/**
+	 * Resolve the route a definition is on.
+	 *
+	 * A route (a "variant") is one path from intake to closure through a single
+	 * case type. Two definitions on the same case type and the same route are
+	 * versions of each other; on different routes they are siblings, and both
+	 * may be published at once.
+	 *
+	 * This lives beside statusOf() on purpose: both answer "what is this row
+	 * really", and keeping one class responsible for that is what made the
+	 * legacy isDraft/isActive fallback safe to rely on.
+	 *
+	 * @param array<string, mixed> $row Definition row.
+	 *
+	 * @return string The route slug, never empty.
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
+	 */
+	public function variantOf(array $row): string {
+		$variant = trim((string)($row['variant'] ?? ''));
+		if ($variant === '') {
+			return self::VARIANT_DEFAULT;
+		}
+
+		return $variant;
+	}//end variantOf()
+
+	/**
+	 * The definition id a case type records as its default route.
+	 *
+	 * `caseType.workflowDefinition` is the ONE place a default route is
+	 * recorded. There is deliberately no second marker on the definition itself:
+	 * two markers can disagree, only one drives behaviour, and the disagreement
+	 * is unfindable.
+	 *
+	 * @param string $caseTypeId The caseType UUID.
+	 *
+	 * @return string The definition UUID, or the empty string.
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
+	 */
+	public function defaultDefinitionIdFor(string $caseTypeId): string {
+		if ($caseTypeId === '') {
+			return '';
+		}
+
+		$caseType = $this->repository->findCaseType(caseTypeId: $caseTypeId);
+		if ($caseType === null) {
+			return '';
+		}
+
+		$pinned = ($caseType['workflowDefinition'] ?? '');
+		if (is_array($pinned) === true) {
+			return $this->idOf(row: $pinned);
+		}
+
+		return (string)$pinned;
+	}//end defaultDefinitionIdFor()
+
+	/**
+	 * Pick a case type's DEFAULT route among its active definitions.
+	 *
+	 * One candidate needs no default and raises no ambiguity, which is every
+	 * case type carrying one route. Several candidates are answered by the
+	 * recorded default. Several candidates and no usable default is a
+	 * misconfiguration: the pick is deterministic, by route slug then by highest
+	 * version, and it is logged. Answering that state randomly is how a case
+	 * ends up on a route nobody chose for it.
+	 *
+	 * @param array<int, array<string, mixed>> $active The active definitions, at least one.
+	 * @param string $caseTypeId The caseType UUID.
+	 *
+	 * @return array<string, mixed> The chosen definition.
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
+	 */
+	public function defaultAmong(array $active, string $caseTypeId): array {
+		if (count($active) === 1) {
+			return $active[0];
+		}
+
+		$pinned = $this->defaultDefinitionIdFor(caseTypeId: $caseTypeId);
+		foreach ($active as $candidate) {
+			if ($pinned !== '' && $this->idOf(row: $candidate) === $pinned) {
+				return $candidate;
+			}
+		}
+
+		usort($active, fn (array $left, array $right): int => ($this->routeOrder(row: $left)
+			<=> $this->routeOrder(row: $right)));
+
+		$this->logger->warning(
+			'Dossiq: case type has several active workflow definitions and no usable default route',
+			[
+				'app' => Application::APP_ID,
+				'caseType' => $caseTypeId,
+				'routes' => array_map(fn (array $row): string => $this->variantOf(row: $row), $active),
+				'chose' => $this->idOf(row: $active[0]),
+			]
+		);
+
+		return $active[0];
+	}//end defaultAmong()
+
+	/**
+	 * The sort key that makes an ambiguous pick reproducible: route slug first,
+	 * then the highest version of that route.
+	 *
+	 * @param array<string, mixed> $row Definition row.
+	 *
+	 * @return array{0: string, 1: int} The sort key.
+	 */
+	private function routeOrder(array $row): array {
+		return [$this->variantOf(row: $row), -(int)($row['version'] ?? 0)];
+	}//end routeOrder()
+
+	/**
+	 * The uuid of a row, whichever of the two keys OpenRegister answered with.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The uuid, or the empty string.
+	 */
+	private function idOf(array $row): string {
+		return (string)($row['id'] ?? ($row['uuid'] ?? ''));
+	}//end idOf()
 
 	/**
 	 * Assert a row may be published: it MUST be a draft, carry a caseType

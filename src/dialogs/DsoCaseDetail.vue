@@ -98,17 +98,17 @@
 			<!-- Sub-dialogs -->
 			<BeschikkingDialog
 				v-if="showBeschikkingDialog"
-				:zaakId="caseId"
+				:zaakId="zaakId"
 				@close="showBeschikkingDialog = false"
 				@generated="onBeschikkingGenerated" />
 			<SamenwerkverzoekDialog
 				v-if="showSamenwerkDialog"
-				:zaakId="caseId"
+				:zaakId="zaakId"
 				@close="showSamenwerkDialog = false"
 				@initiated="onSamenwerkInitiated" />
 			<DoorstuurDialog
 				v-if="showDoorstuurDialog"
-				:zaakId="caseId"
+				:zaakId="zaakId"
 				@close="showDoorstuurDialog = false" />
 
 			<!-- Inline transition form -->
@@ -195,6 +195,27 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The case, under a name a template expression may actually use.
+		 *
+		 * 🔴 THE PROP IS CALLED `case`, AND A TEMPLATE CANNOT READ IT. Vue
+		 * parses every template expression as JavaScript, and `case` is a
+		 * reserved word: `{{ case.title }}` is a compile error, not a lookup
+		 * that returns undefined. So this alias is not a nicety, it is the
+		 * only way the template reaches the prop at all.
+		 *
+		 * The template was written against `zaak` and the prop was later
+		 * renamed to `case` without it, which is why every field in this
+		 * dialog rendered as nothing.
+		 *
+		 * @return {object} The case this dialog shows.
+		 *
+		 * @spec exclude presentational alias for a reserved-word prop name
+		 */
+		zaak() {
+			return this.case
+		},
+
 		zaakId() {
 			return this.case.uuid || this.case.id || ''
 		},
@@ -250,7 +271,7 @@ export default {
 				const { data } = await axios.post(
 					generateUrl(
 						'/apps/dossiq/api/dso/cases/'
-							+ encodeURIComponent(this.caseId)
+							+ encodeURIComponent(this.zaakId)
 							+ '/transition',
 					),
 					payload,

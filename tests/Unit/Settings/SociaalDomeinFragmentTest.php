@@ -107,8 +107,8 @@ class SociaalDomeinFragmentTest extends TestCase {
 	}//end testBaseSchemasPreserved()
 
 	/**
-	 * Every zaaktype embeds the mandatory AvgClassificatie value-type by
-	 * reference, enforcing classification-at-creation per the AVG spec.
+	 * Every zaaktype embeds the mandatory AVG classification value-type,
+	 * enforcing classification-at-creation per the AVG spec.
 	 *
 	 * @return void
 	 */
@@ -128,6 +128,70 @@ class SociaalDomeinFragmentTest extends TestCase {
 			);
 		}
 	}//end testZaaktypesRequireAvgClassificatie()
+
+	/**
+	 * The classification block is declared inline as an object, and the three
+	 * copies stay identical to the standalone `gdprClassification` schema.
+	 *
+	 * It used to be `{"$ref": "#/components/schemas/gdprClassification"}`.
+	 * OpenRegister reads a `$ref` as a bare relation slug, so a JSON Pointer
+	 * resolved to nothing: the property carried no `type`, imported as a
+	 * string column, and every one of the nine shipped zaak objects — each
+	 * writing an object there — was refused. The import still said success.
+	 *
+	 * Inlining the shape is what makes the column an object, so the three
+	 * copies are frozen against the standalone schema that documents it.
+	 *
+	 * @return void
+	 */
+	public function testClassificationBlockIsDeclaredInlineAndMatchesTheSchema(): void {
+		$schemas = $this->merged['components']['schemas'];
+
+		$canonical = $schemas['gdprClassification'];
+		unset($canonical['slug'], $canonical['icon'], $canonical['version']);
+
+		foreach (['wmoZaak', 'jeugdwetZaak', 'participatiewetZaak'] as $caseType) {
+			$property = $schemas[$caseType]['properties']['gdprClassification'];
+
+			$this->assertSame(
+				'object',
+				($property['type'] ?? null),
+				$caseType . '.gdprClassification must declare type object, or the column is a string'
+			);
+			$this->assertArrayNotHasKey(
+				'$ref',
+				$property,
+				$caseType . '.gdprClassification must declare its shape inline, not by reference'
+			);
+			// assertEquals, not assertSame: the two are the same declaration,
+			// and which of `type` and `description` a hand edit puts first is
+			// not drift.
+			$this->assertEquals(
+				$canonical,
+				$property,
+				$caseType . '.gdprClassification has drifted from the gdprClassification schema'
+			);
+		}
+	}//end testClassificationBlockIsDeclaredInlineAndMatchesTheSchema()
+
+	/**
+	 * The classification categories enum spells the financial category the way
+	 * the spec and the seed data do.
+	 *
+	 * The rest of the enum is Dutch (`medisch`, `justitieel`, `etnisch`), and
+	 * `openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md` names
+	 * `financieel`. One anglicised value left the three participatiewet seed
+	 * objects unimportable for a second reason, behind the first.
+	 *
+	 * @return void
+	 */
+	public function testFinancialCategoryKeepsItsDutchEnumValue(): void {
+		$enum = $this->merged['components']['schemas']['gdprClassification']
+			['properties']['categories']['items']['enum'];
+
+		$this->assertContains('financieel', $enum);
+		$this->assertNotContains('financial', $enum);
+	}//end testFinancialCategoryKeepsItsDutchEnumValue()
 
 	/**
 	 * The dossiq register lists every new sociaal-domein schema while keeping

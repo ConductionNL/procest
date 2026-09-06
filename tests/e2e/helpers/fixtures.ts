@@ -27,24 +27,67 @@
  * every object this run produced.
  */
 
-import { APIRequestContext, expect } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
+import { occPurge, OccUnavailableError } from './occ.ts'
 
 /** OpenRegister register slug that owns every dossiq object. */
 export const REGISTER = 'dossiq'
+
+/**
+ * The family prefix every fixture run shares. `RUN_PREFIX` extends it with a
+ * per-process suffix, so `RUN_PREFIX` finds exactly this run's objects and
+ * `FIXTURE_PREFIX` finds every run's — including the residue of a run that
+ * crashed before its teardown fired. `sweepFixtureResidue` uses the family
+ * form; per-spec teardown uses the run form.
+ */
+export const FIXTURE_PREFIX = 'E2EZAAK-'
 
 /**
  * Unique-per-process prefix. Every seeded object embeds this in a visible
  * field so list/detail assertions and afterAll cleanup can target exactly
  * the rows this run created (never another run's or real demo data).
  */
-export const RUN_PREFIX = `E2EZAAK-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
+export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
 
 const API_BASE = '/index.php/apps/openregister/api/objects'
+
+/**
+ * OpenRegister's trash endpoint. `DELETE /api/deleted/{uuid}` destroys a row
+ * that is genuinely in the trash and is NOT on an archival schema. It refuses
+ * anything else: `400` for a live object, `403 SCHEMA_ARCHIVAL_IMMUTABLE` for an
+ * archival record whether live or trashed. Archival rows go through
+ * `helpers/occ.ts#occPurge` instead — see `purgeObject`.
+ */
+const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
+
+/**
+ * Every schema the dossiq e2e fixtures create, CHILD-FIRST.
+ *
+ * Order is the cleanup order: rows that reference a case come before `case`,
+ * and `case` comes before the caseType/statusType/workflowTemplate it points
+ * at. Deleting a parent first is what left the dangling references that
+ * reddened `spec-coverage/ui-pages.spec.ts` on a second run.
+ */
+export const FIXTURE_SCHEMAS = [
+	'statusRecord',
+	'caseProperty',
+	'caseTask',
+	'consultation',
+	'objectionProceeding',
+	'case',
+	'workflowTemplate',
+	'statusType',
+	'caseType',
+	'propertyDefinition',
+] as const
 
 /**
  * Read a CSRF request-token from a freshly-loaded dossiq page. The
  * OpenRegister write endpoints (POST/PUT/DELETE) are CSRF-protected, so
  * mutating calls must carry a `requesttoken` header. GET is not protected.
+ *
  * @param api  The authenticated request context (storageState).
  */
 export async function getRequestToken(api: APIRequestContext): Promise<string> {
@@ -59,6 +102,7 @@ export async function getRequestToken(api: APIRequestContext): Promise<string> {
 
 /**
  * Standard headers for a CSRF-protected write call.
+ *
  * @param token CSRF request-token.
  */
 function writeHeaders(token: string): Record<string, string> {
@@ -71,6 +115,7 @@ function writeHeaders(token: string): Record<string, string> {
 
 /**
  * Pull the object array out of OpenRegister's list/response envelopes.
+ *
  * @param body The parsed response body.
  */
 function unwrapList(body: any): any[] {
@@ -82,6 +127,7 @@ function unwrapList(body: any): any[] {
 
 /**
  * Pull a single object out of a create/show envelope.
+ *
  * @param body The parsed response body.
  */
 function unwrapObject(body: any): any {
@@ -94,6 +140,7 @@ function unwrapObject(body: any): any {
 
 /**
  * The OpenRegister id of an object (uuid preferred, numeric id fallback).
+ *
  * @param obj The object whose id to read.
  */
 export function objectId(obj: any): string {
@@ -102,6 +149,7 @@ export function objectId(obj: any): string {
 
 /**
  * Create one object of `schema` in the dossiq register.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug (e.g. "case", "caseType", "statusType").
@@ -127,6 +175,7 @@ export async function createObject(
 /**
  * List objects of `schema`, optionally filtered. Filters are passed as
  * query params (OpenRegister treats unknown params as field filters).
+ *
  * @param api    Authenticated request context.
  * @param schema Schema slug.
  * @param params Extra query params (filters / _limit).
@@ -144,6 +193,7 @@ export async function listObjects(
 
 /**
  * Fetch a single object by id.
+ *
  * @param api    Authenticated request context.
  * @param schema Schema slug.
  * @param id     Object id/uuid.
@@ -161,6 +211,7 @@ export async function showObject(
 /**
  * Delete a single object by id (idempotent — a 404 is tolerated so cleanup
  * never fails a suite when an earlier step already removed the row).
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug.
@@ -179,10 +230,127 @@ export async function deleteObject(
 }
 
 /**
+ * List EVERY object of `schema`, following the pagination cursor.
+ *
+ * `listObjects` caps at `_limit=200`. On a demo-sized instance the case table
+ * runs past that, and a teardown that only ever saw the first page reported
+ * success while leaving the rest behind. This walks `_page` until the server
+ * stops handing back rows.
+ *
+ * @param api    Authenticated request context.
+ * @param schema Schema slug.
+ */
+export async function listAllObjects(
+	api: APIRequestContext,
+	schema: string,
+): Promise<any[]> {
+	const all: any[] = []
+	const limit = 200
+	for (let page = 1; page <= 100; page++) {
+		const qs = new URLSearchParams({
+			_limit: String(limit),
+			_page: String(page),
+		}).toString()
+		const res = await api.get(`${API_BASE}/${REGISTER}/${schema}?${qs}`)
+		if (res.ok() === false) break
+		const rows = unwrapList(await res.json())
+		all.push(...rows)
+		if (rows.length < limit) break
+	}
+	return all
+}
+
+/**
+ * Remove an object PERMANENTLY, whatever its schema declares, and report
+ * whether it actually went.
+ *
+ * Two things make a plain DELETE insufficient, and both were measured on a
+ * persistent rig rather than reasoned about:
+ *
+ *  1. `case` is an ARCHIVAL schema (`x-openregister-archival`). A user-driven
+ *     `DELETE /api/objects/dossiq/case/{id}` is refused with
+ *     `403 SCHEMA_ARCHIVAL_IMMUTABLE`, and `deleteObject` never inspected the
+ *     response — so the old teardown reported success and removed NOTHING.
+ *     After 11 runs one rig held 68 cases, 33 of them fixture leftovers.
+ *  2. For the schemas that DO accept a delete, the delete is SOFT. The row
+ *     leaves the object API but stays in the trash, and anything still holding
+ *     its uuid gets a 404 on lookup. Six soft-deleted statusTypes plus ten
+ *     leftover cases pointing at them is exactly what reddened
+ *     `spec-coverage/ui-pages.spec.ts:55` ("dashboard mounts without console
+ *     errors") on a second full run.
+ *
+ * The HTTP pair handles case 2: the object delete soft-deletes the row and the
+ * trash delete then destroys it. That reaches every NON-archival schema here.
+ *
+ * Case 1 has no HTTP answer at all, and that is the contract rather than a gap.
+ * OpenRegister refuses an archival record on every delete route it serves —
+ * `403 SCHEMA_ARCHIVAL_IMMUTABLE` from the object API, and the same from the
+ * trash endpoint whether the row is live or trashed. Destroying a legally
+ * retained record is an administrative act, so the only sanctioned way is a
+ * command that needs shell access to the server:
+ *
+ *     occ openregister:objects:purge <uuid> --force --apply
+ *
+ * `--force` is what says out loud that an archival record is being destroyed.
+ * `helpers/occ.ts` works out how to reach `occ` on this rig and fails loudly if
+ * it cannot, because a teardown that cannot remove a case does not leave one
+ * survivor — it poisons every later run on the instance.
+ *
+ * The CLI is used ONLY when the HTTP pair did not manage it, so an ordinary
+ * fixture row still costs no process spawn. NO status is trusted anywhere here,
+ * exit code included: the return value comes from re-reading the object.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ * @return `true` when the object no longer resolves.
+ * @throws OccUnavailableError When the row needs the CLI purge and occ cannot be reached.
+ */
+export async function purgeObject(
+	api: APIRequestContext,
+	token: string,
+	schema: string,
+	id: string,
+): Promise<boolean> {
+	if (!id) return true
+
+	/**
+	 * Whether the object still answers. An unreadable answer counts as "still
+	 * there": a teardown may only report a clean sweep it actually observed.
+	 */
+	const stillResolves = async (): Promise<boolean> => {
+		for (let attempt = 0; attempt < 2; attempt++) {
+			const check = await api
+				.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
+				.catch(() => null)
+			if (check !== null) return check.status() !== 404
+		}
+		return true
+	}
+
+	await api
+		.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+			headers: writeHeaders(token),
+		})
+		.catch(() => undefined)
+	await api
+		.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
+		.catch(() => undefined)
+
+	if ((await stillResolves()) === false) return true
+
+	await occPurge([id])
+
+	return (await stillResolves()) === false
+}
+
+/**
  * Attempt a delete and RETURN the outcome (status + parsed body) instead of
  * swallowing it. Used to assert a rejection — e.g. an archival schema
  * (x-openregister-archival) returns 403 ArchivalImmutableException on a
  * user-driven delete.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug.
@@ -206,6 +374,7 @@ export async function tryDeleteObject(
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with
  * RUN_PREFIX so cleanup removes it.
+ *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
@@ -234,6 +403,7 @@ export async function ensureCaseType(
 
 /**
  * Seed a case with the given title and fields. Returns the created object.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param fields Case fields (must satisfy required title + caseType).
@@ -280,6 +450,7 @@ export interface StateMachine {
  * an arbitrary value), so a transition attempt while `description` is empty is
  * blocked by the engine (409) — which is what the guard-enforcement assertion
  * checks. Setting `description` then lets the same transition pass.
+ *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
@@ -356,6 +527,7 @@ const DOSSIQ_API = '/index.php/apps/dossiq/api'
 
 /**
  * GET the engine's available transitions for a case.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param caseId The case id/uuid.
@@ -373,6 +545,7 @@ export async function getAvailableTransitions(
 
 /**
  * POST a guarded transition. Returns {status, body} — caller asserts.
+ *
  * @param api          Authenticated request context.
  * @param token        CSRF request-token.
  * @param caseId       The case id/uuid.
@@ -395,6 +568,7 @@ export async function executeTransition(
 
 /**
  * GET the replayed transition history of a case.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param caseId The case id/uuid.
@@ -412,6 +586,7 @@ export async function getTransitionHistory(
 
 /**
  * PUT a partial update onto an existing object (merges over the full body).
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug.
@@ -440,6 +615,7 @@ export async function updateObject(
 /**
  * Find every object of `schema` whose stringified body contains RUN_PREFIX
  * and delete it. Used by afterAll to guarantee no seeded data is left behind.
+ *
  * @param api     Authenticated request context.
  * @param token   CSRF request-token.
  * @param schemas Schema slugs to sweep (order matters: children before parents).
@@ -447,19 +623,172 @@ export async function updateObject(
 export async function cleanupRunObjects(
 	api: APIRequestContext,
 	token: string,
-	schemas: string[],
+	schemas: string[] = [...FIXTURE_SCHEMAS],
 ): Promise<void> {
+	// This sweep is a NETWORK walk over every fixture schema plus the trash, so
+	// its cost scales with `FIXTURE_SCHEMAS`, not with what the spec created. At
+	// ten schemas on a loaded instance it does not fit the 30s the config gives
+	// a hook, and the run then fails with `"afterAll" hook timeout` — pointing at
+	// the spec that happened to finish last rather than at the sweep.
+	//
+	// Raised here rather than in playwright.config.ts on purpose: the config
+	// timeout also governs every TEST, and loosening that would hide a genuinely
+	// slow test. This widens only the teardown that is genuinely slow.
+	try {
+		test.setTimeout(120_000)
+	} catch {
+		// Called outside a running test/hook. Nothing to extend; carry on.
+	}
+
+	const survivors = [
+		...(await sweepPrefix(api, token, RUN_PREFIX, schemas)),
+		...(await sweepTrash(api, token, RUN_PREFIX)),
+	]
+	if (survivors.length > 0) {
+		throw new Error(
+			'e2e teardown left objects behind, so the next run on this instance '
+				+ `starts dirty: ${survivors.join(', ')}`,
+		)
+	}
+}
+
+/**
+ * Remove the residue of EVERY fixture run on this instance.
+ *
+ * Called once from `global-setup.ts`, before any spec has run. Per-spec
+ * teardown can only sweep its own `RUN_PREFIX`; a run that was interrupted
+ * (Ctrl-C, a crashed worker, a `globalTimeout`) never reaches its teardown at
+ * all, and its objects then belong to no future run's prefix. Sweeping the
+ * family prefix up front is what makes a second suite run on one rig start
+ * from the same state as the first.
+ *
+ * Deliberately NOT an afterAll: the suite runs single-worker and owns its
+ * instance (see `base-url.ts`, which refuses a default target for exactly this
+ * reason), so a clean slate at the start is safe, where a family-wide sweep at
+ * the end could tear down a concurrently running sibling suite.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @return Ids that could not be removed (empty on a clean sweep).
+ */
+export async function sweepFixtureResidue(
+	api: APIRequestContext,
+	token: string,
+): Promise<string[]> {
+	return [
+		...(await sweepPrefix(api, token, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])),
+		...(await sweepTrash(api, token, FIXTURE_PREFIX)),
+	]
+}
+
+/**
+ * Purge every TRASHED row whose body carries `prefix`.
+ *
+ * The live sweep cannot reach these: a spec that deletes its own object during
+ * a test soft-deletes it, so by teardown the row is gone from the object API
+ * and `sweepPrefix` never enumerates it, while it sits in the trash for good.
+ * After two full runs on one rig that surface held 8 prefixed rows with
+ * nothing to remove them.
+ *
+ * The trash endpoint refuses an archival record even once it is trashed, so a
+ * row an older rig managed to soft-delete before openregister#3428 landed can
+ * only leave through the CLI purge. Survivors of the HTTP pass are handed to it
+ * in ONE batched invocation rather than one process per row.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param prefix Run prefix or family prefix.
+ * @return Trash ids that survived the sweep.
+ */
+async function sweepTrash(
+	api: APIRequestContext,
+	token: string,
+	prefix: string,
+): Promise<string[]> {
+	const matching = async (): Promise<string[]> => {
+		const res = await api.get(`${TRASH_BASE}?limit=500`).catch(() => null)
+		if (res === null || res.ok() === false) return []
+		const rows = unwrapList(await res.json().catch(() => ({})))
+		return rows
+			.filter((row: any) => JSON.stringify(row).includes(prefix))
+			.map((row: any) => objectId(row))
+			.filter((id: string) => id !== '')
+	}
+
+	for (const id of await matching()) {
+		await api
+			.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
+			.catch(() => undefined)
+	}
+
+	const refused = await matching()
+	if (refused.length > 0) {
+		await occPurge(refused)
+	}
+
+	return (await matching()).map((id) => `deleted/${id}`)
+}
+
+/**
+ * Purge every object whose body carries `prefix`, plus the child rows the app
+ * itself created against those objects.
+ *
+ * The child sweep is the half a prefix match cannot do on its own: a
+ * `statusRecord` written by the transition engine carries the case's UUID and
+ * none of the fixture's text, so `JSON.stringify(row).includes(prefix)` never
+ * matches it. Those rows outlived every previous teardown.
+ *
+ * @param api     Authenticated request context.
+ * @param token   CSRF request-token.
+ * @param prefix  Run prefix or family prefix.
+ * @param schemas Schema slugs to sweep, child-first.
+ * @return Ids that still resolve after the sweep.
+ */
+async function sweepPrefix(
+	api: APIRequestContext,
+	token: string,
+	prefix: string,
+	schemas: string[],
+): Promise<string[]> {
+	const survivors: string[] = []
+
+	// Case ids first, so the child sweep below knows what to orphan-hunt for.
+	const caseIds = new Set<string>()
+	if (schemas.includes('case') === true) {
+		for (const row of await listAllObjects(api, 'case').catch(() => [])) {
+			if (JSON.stringify(row).includes(prefix)) caseIds.add(objectId(row))
+		}
+	}
+
 	for (const schema of schemas) {
-		let rows: any[] = []
+		let rows: any[]
 		try {
-			rows = await listObjects(api, schema)
+			rows = await listAllObjects(api, schema)
 		} catch {
 			continue
 		}
+
 		for (const row of rows) {
-			if (JSON.stringify(row).includes(RUN_PREFIX)) {
-				await deleteObject(api, token, schema, objectId(row))
-			}
+			const id = objectId(row)
+			if (id === '') continue
+			const matchesPrefix = JSON.stringify(row).includes(prefix)
+			const matchesCase =
+				caseIds.has(String(row.case ?? '')) === true
+				|| caseIds.has(String(row.parentCase ?? '')) === true
+			if (matchesPrefix === false && matchesCase === false) continue
+
+			// An OccUnavailableError is NOT a survivor: it means no row can be
+			// removed at all, so it must abort here rather than be reported once
+			// per fixture as though each one had individually resisted.
+			const gone = await purgeObject(api, token, schema, id).catch(
+				(error: unknown) => {
+					if (error instanceof OccUnavailableError) throw error
+					return false
+				},
+			)
+			if (gone === false) survivors.push(`${schema}/${id}`)
 		}
 	}
+
+	return survivors
 }

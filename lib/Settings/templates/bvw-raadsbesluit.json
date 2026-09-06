@@ -4,6 +4,7 @@
     "deprecationNote": "Decision types are now managed by decidesk (procest-delegate-contract-decision). These templates are kept for historical read access until sunset.",
     "caseType": {
         "identifier": "bvw-raadsbesluit",
+        "initialStatusName": "Voorstel opstellen",
         "title": "Raadsbesluit",
         "description": "Formeel besluit van de gemeenteraad, inclusief moties en amendementen",
         "purpose": "Vaststellen van raadsbesluiten en verordeningen",
@@ -47,9 +48,9 @@
             { "name": "Bekendmakingsbewijs", "description": "Bevestiging van publicatie via DROP/LVBB", "isRequired": true }
         ],
         "resultTypes": [
-            { "name": "Besluit genomen", "description": "Raadsbesluit is genomen en vastgelegd", "archivalPeriod": "P20Y", "archivalAction": "keep" },
-            { "name": "Aangehouden", "description": "Besluit is aangehouden voor een volgende vergadering", "archivalPeriod": "P5Y", "archivalAction": "destroy" },
-            { "name": "Ingetrokken", "description": "Voorstel is ingetrokken", "archivalPeriod": "P5Y", "archivalAction": "destroy" }
+            { "name": "Besluit genomen", "description": "Raadsbesluit is genomen en vastgelegd", "archivalPeriod": "P20Y", "archivalAction": "bewaren" },
+            { "name": "Aangehouden", "description": "Besluit is aangehouden voor een volgende vergadering", "archivalPeriod": "P5Y", "archivalAction": "vernietigen" },
+            { "name": "Ingetrokken", "description": "Voorstel is ingetrokken", "archivalPeriod": "P5Y", "archivalAction": "vernietigen" }
         ],
         "workflowTemplate": {
             "title": "Raadsbesluit workflow v1",
@@ -60,54 +61,40 @@
             "steps": [
                 { "title": "Voorstel opstellen", "statusName": "Voorstel opstellen", "order": 1, "isRequired": true, "description": "Steller stelt het raadsvoorstel op" },
                 { "title": "Ambtelijk advies", "statusName": "Ambtelijk advies", "order": 2, "isRequired": true, "description": "Inhoudelijk advies" },
-                { "title": "Parafering", "statusName": "Parafering", "order": 3, "isRequired": true, "description": "Sequentiele goedkeuring inclusief griffier", "automaticActions": [{ "type": "besluitvormingActivate" }] },
+                { "title": "Parafering", "statusName": "Parafering", "order": 3, "isRequired": true, "description": "Sequentiele goedkeuring inclusief griffier" },
                 { "title": "Gereed voor agendering", "statusName": "Gereed voor agendering", "order": 4, "isRequired": true, "description": "Klaar voor agendacompilatie" },
                 { "title": "Geagendeerd", "statusName": "Geagendeerd", "order": 5, "isRequired": true, "description": "Op de raadsagenda gezet" },
                 { "title": "Vergadering", "statusName": "Vergadering", "order": 6, "isRequired": true, "description": "Behandeling tijdens de raadsvergadering" },
                 { "title": "Besluit genomen", "statusName": "Besluit genomen", "order": 7, "isRequired": true, "description": "Raadsbesluit vastgelegd" },
-                { "title": "Bekendmaking", "statusName": "Bekendmaking", "order": 8, "isRequired": true, "description": "Publicatie via DROP/LVBB", "automaticActions": [{ "type": "besluitvormingPublish" }] },
+                { "title": "Bekendmaking", "statusName": "Bekendmaking", "order": 8, "isRequired": true, "description": "Publicatie via DROP/LVBB" },
                 { "title": "Gearchiveerd", "statusName": "Gearchiveerd", "order": 9, "isRequired": true, "description": "Dossier gearchiveerd", "isFinal": true }
             ],
             "transitions": [
                 { "fromStatusName": "Voorstel opstellen", "toStatusName": "Ambtelijk advies", "label": "Naar advies" },
                 { "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering" },
-                {
-                    "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
-                    "guards": [{ "type": "requiredField", "config": { "field": "paraferingCompleet" } }]
-                },
+                { "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet" },
                 { "fromStatusName": "Gereed voor agendering", "toStatusName": "Geagendeerd", "label": "Agenderen" },
                 { "fromStatusName": "Geagendeerd", "toStatusName": "Vergadering", "label": "Naar vergadering" },
                 {
                     "fromStatusName": "Vergadering", "toStatusName": "Besluit genomen", "label": "Besluit vastleggen",
-                    "guards": [{ "type": "requiredField", "config": { "field": "stemuitslag" } }]
+                    "guards": [{ "type": "requiredField", "field": "stemuitslag" }]
                 },
                 {
                     "fromStatusName": "Besluit genomen", "toStatusName": "Bekendmaking", "label": "Bekendmaken",
-                    "guards": [{ "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } }]
+                    "guards": [{ "type": "requiredDocument", "documentType": "Besluitdocument" }],
+                    "automaticActions": [{ "type": "besluitvormingPublish" }]
                 },
                 {
                     "fromStatusName": "Bekendmaking", "toStatusName": "Gearchiveerd", "label": "Archiveren",
                     "guards": [
-                        { "type": "requiredDocument", "config": { "documentType": "Raadsvoorstel" } },
-                        { "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } },
-                        { "type": "requiredDocument", "config": { "documentType": "Bekendmakingsbewijs" } }
+                        { "type": "requiredDocument", "documentType": "Raadsvoorstel" },
+                        { "type": "requiredDocument", "documentType": "Besluitdocument" },
+                        { "type": "requiredDocument", "documentType": "Bekendmakingsbewijs" }
                     ],
                     "automaticActions": [
                         { "type": "setField", "field": "archiveStatus", "value": "gearchiveerd" }
                     ]
                 }
-            ]
-        },
-        "parafeerroute": {
-            "name": "Raadsvoorstel - 4 stappen",
-            "proposalType": "raadsvoorstel",
-            "isDefault": true,
-            "description": "Parafeerketen voor raadsvoorstellen met griffier als eindstap",
-            "steps": [
-                { "order": 1, "type": "parafering", "actor": "Beleidsadviseur", "actorType": "role", "mandatory": true },
-                { "order": 2, "type": "parafering", "actor": "Afdelingshoofd", "actorType": "role", "mandatory": true },
-                { "order": 3, "type": "parafering", "actor": "Gemeentesecretaris", "actorType": "role", "mandatory": true },
-                { "order": 4, "type": "parafering", "actor": "Griffier", "actorType": "role", "mandatory": true }
             ]
         }
     }

@@ -63,8 +63,8 @@ function recordWarning(messageKey, status) {
  * Other errors: rethrows so the caller can decide.
  *
  * @param {Error} error    The axios error.
- * @param {*}     fallback The result shape to return on degraded paths.
- * @return {*} The fallback or null based on degraded type.
+ * @param {unknown} fallback The result shape to return on degraded paths.
+ * @return {unknown} The fallback or null based on degraded type.
  * @throws {Error} For unhandled errors.
  */
 function handleNetworkError(error, fallback) {
@@ -90,9 +90,6 @@ function handleNetworkError(error, fallback) {
  *
  * @param {string} query Search query (min 3 characters).
  * @return {Promise<Array|null>} Suggestions array, empty array, or null.
- */
-/**
- * @param query
  * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
  */
 export async function suggest(query) {
@@ -124,9 +121,6 @@ export async function suggest(query) {
  *
  * @param {string} id The PDOK object id.
  * @return {Promise<object|null>} The full result object, or null when degraded.
- */
-/**
- * @param id
  * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
  */
 export async function lookup(id) {
@@ -148,10 +142,6 @@ export async function lookup(id) {
  * @param {string} query Search query.
  * @param {number} rows  Max results (default 10).
  * @return {Promise<Array|null>} Results array, empty array, or null.
- */
-/**
- * @param query
- * @param rows
  * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
  */
 export async function free(query, rows = 10) {
@@ -175,10 +165,6 @@ export async function free(query, rows = 10) {
  * @param {number} lat Latitude (WGS84).
  * @param {number} lng Longitude (WGS84).
  * @return {Promise<object|null>} Nearest address, or null when degraded.
- */
-/**
- * @param lat
- * @param lng
  * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
  */
 export async function reverse(lat, lng) {
@@ -204,9 +190,6 @@ export async function reverse(lat, lng) {
  *
  * @param {object|string} resultOrWkt A PDOK result object or a raw WKT string.
  * @return {{ lat: number, lng: number }|null} Coordinates or null.
- */
-/**
- * @param resultOrWkt
  * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
  */
 export function extractCoordinates(resultOrWkt) {
@@ -251,9 +234,6 @@ function parseWkt(wkt) {
  *
  * @param {object} result A result object.
  * @return {string} Formatted address.
- */
-/**
- * @param result
  * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
  */
 export function formatAddress(result) {

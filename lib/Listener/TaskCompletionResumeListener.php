@@ -9,22 +9,19 @@
  * closes: it sees the update, recognises a task that a flow is waiting on, and
  * signals the run.
  *
- * 🔴 IT PERFORMS THE AUTHORIZATION CHECK ITSELF, AND MUST.
- *
- * OpenRegister's HTTP resume endpoint refuses a signal from anyone but the
- * step's assignee. This path does not go through that endpoint — it calls
- * `FlowRunService::signal()` directly — so the guard is NOT inherited. Without
- * the check here, any user who can write a task object could advance somebody
- * else's decision, and nothing about the resulting run would look wrong.
- *
- * The rule is not re-implemented: {@see FlowRunAssignee} is the same object the
- * HTTP endpoint consults. Two copies of one access rule drift, and the copy
- * that drifts is the one nobody looks at.
+ * THE GUARD IS THE ENGINE'S NOW. This path used to consult the assignee rule
+ * itself, because `FlowRunService::signal()` delivers unconditionally and the
+ * HTTP guard was not inherited. openregister#3332 turned that duty into one
+ * seam: {@see FlowRunSignalService::signalAs()} resolves the run, applies the
+ * recorded-assignee rule (group resolution included), audits a refusal, and
+ * delivers — so there is nothing left here to remember. A refusal arrives as
+ * one typed {@see FlowSignalRefused}, whose reason says exactly what was
+ * withheld and why.
  *
  * WHY IT NEVER BLOCKS THE UPDATE. The task is already saved by the time this
  * runs. Refusing here cannot un-complete it, so a refusal means "the task is
  * completed but the run is not resumed" — recorded loudly, because the
- * alternative (resuming anyway) is the security hole this exists to close.
+ * alternative (resuming anyway) is the security hole the seam exists to close.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -45,13 +42,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\OpenRegister\Service\Flow\FlowRunAssignee;
-use OCA\OpenRegister\Service\Flow\FlowRunService;
+use OCA\OpenRegister\Exception\FlowSignalRefused;
+use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
-use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -74,26 +69,16 @@ class TaskCompletionResumeListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param FlowRunMapper    $runs        Resolves the run a task names.
-	 * @param FlowRunService   $runner      Delivers the signal that resumes it.
-	 * @param IUserSession     $userSession Identifies who completed the task.
-	 * @param IGroupManager    $groups      Resolves group assignment.
-	 * @param LoggerInterface  $logger      The logger.
-	 * @param FlowRunAssignee|null $assignees The rule deciding who may answer. INJECTED
-	 *                                        rather than constructed here so this class
-	 *                                        can be tested against the real rule's
-	 *                                        contract instead of a copy of it — dossiq's
-	 *                                        suite resolves OpenRegister to stubs, so a
-	 *                                        locally-built guard would have the test
-	 *                                        validating a fake. Defaults to the real one.
+	 * @param FlowRunSignalService $signals     The engine's guarded signal seam:
+	 *                                          resolve, assignee guard, audit and
+	 *                                          delivery in one call.
+	 * @param IUserSession         $userSession Identifies who completed the task.
+	 * @param LoggerInterface      $logger      The logger.
 	 */
 	public function __construct(
-		private readonly FlowRunMapper $runs,
-		private readonly FlowRunService $runner,
+		private readonly FlowRunSignalService $signals,
 		private readonly IUserSession $userSession,
-		private readonly IGroupManager $groups,
 		private readonly LoggerInterface $logger,
-		private readonly ?FlowRunAssignee $assignees = null,
 	) {
 	}//end __construct()
 
@@ -104,7 +89,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof ObjectUpdatedEvent) === false) {
@@ -117,37 +102,11 @@ class TaskCompletionResumeListener implements IEventListener {
 		}
 
 		$runUuid = (string)$task['flowRun'];
-
-		try {
-			$run = $this->runs->findByUuid($runUuid);
-		} catch (Throwable $e) {
-			// A task naming a run that no longer exists is completable; it
-			// simply has nothing left to wake. Recorded rather than raised —
-			// the person completing it did nothing wrong.
-			$this->logger->info(
-				'Dossiq: a completed task named flow run ' . $runUuid . ', which no longer exists',
-				['task' => ($task['id'] ?? null)]
-			);
-			return;
-		}
-
 		$uid = $this->userSession->getUser()?->getUID();
 
-		$assignees = ($this->assignees ?? new FlowRunAssignee(groupManager: $this->groups));
-		if ($assignees->mayAnswer(run: $run, uid: $uid) === false) {
-			// 🔴 The refusal that matters. The task is already saved; what is
-			// withheld is the RESUME.
-			$this->logger->warning(
-				'Dossiq: refusing to resume flow run ' . $runUuid
-					. ' — the user who completed the task is not the assignee of the awaiting step',
-				['task' => ($task['id'] ?? null), 'user' => $uid, 'node' => $task['flowNode']]
-			);
-			return;
-		}
-
 		try {
-			$this->runner->signal(
-				run: $run,
+			$this->signals->signalAs(
+				runUuid: $runUuid,
 				payload: [
 					// A resume with no `decision` is a nudge, not an answer, and
 					// the awaiting node suspends again. Saying `completed`
@@ -156,15 +115,57 @@ class TaskCompletionResumeListener implements IEventListener {
 					'node' => (string)$task['flowNode'],
 					'taskId' => (string)($task['id'] ?? ''),
 					'completedBy' => (string)$uid,
-				]
+				],
+				actorUid: $uid,
+				// Addressing the node the task names makes the guard check THAT
+				// node's recorded assignee, so a run awaiting two steps never
+				// refuses this one for the other's audience.
+				nodeId: (string)$task['flowNode'],
 			);
+		} catch (FlowSignalRefused $e) {
+			$this->recordRefusal(refusal: $e, runUuid: $runUuid, task: $task, uid: $uid);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not resume flow run ' . $runUuid . ' after its task was completed',
 				['error' => $e->getMessage(), 'task' => ($task['id'] ?? null)]
 			);
-		}
+		}//end try
 	}//end handle()
+
+	/**
+	 * Record a refusal at the loudness its reason deserves.
+	 *
+	 * Only NOT_ASSIGNEE is an access refusal — the wrong person tried to
+	 * advance somebody else's step, and the engine has already audited it; the
+	 * warning here ties that audit to the task. The other reasons are ordinary
+	 * life: a task naming a run that no longer exists is completable, it simply
+	 * has nothing left to wake, and a run that is no longer suspended needed no
+	 * waking. Neither is the completer's fault, so neither is raised.
+	 *
+	 * @param FlowSignalRefused    $refusal The typed refusal.
+	 * @param string               $runUuid The run the task named.
+	 * @param array<string, mixed> $task    The completed task.
+	 * @param string|null          $uid     Who completed it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 */
+	private function recordRefusal(FlowSignalRefused $refusal, string $runUuid, array $task, ?string $uid): void {
+		if ($refusal->getReason() === FlowSignalRefused::NOT_ASSIGNEE) {
+			$this->logger->warning(
+				'Dossiq: the engine refused to resume flow run ' . $runUuid
+					. ' — the user who completed the task is not the assignee of the awaiting step',
+				['task' => ($task['id'] ?? null), 'user' => $uid, 'node' => $task['flowNode']]
+			);
+			return;
+		}
+
+		$this->logger->info(
+			'Dossiq: a completed task named flow run ' . $runUuid . ', which could not be signalled: ' . $refusal->getMessage(),
+			['task' => ($task['id'] ?? null), 'reason' => $refusal->getReason()]
+		);
+	}//end recordRefusal()
 
 	/**
 	 * The task this event just completed, when it is one a flow is waiting on.

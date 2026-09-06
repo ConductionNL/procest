@@ -86,8 +86,10 @@
  * @param {import('@playwright/test').Locator} locator The locator to poll.
  *        `.first()` is applied so a strict-mode violation on a multi-match
  *        selector cannot masquerade as an absence.
+ *
  * @param {number} [timeout] Milliseconds to poll for. Default 10s — enough for
  *        a Nextcloud SPA route to mount and fetch.
+ *
  * @return {Promise<boolean>} `true` when the element became visible within
  *         `timeout`, else `false`. Never throws.
  */

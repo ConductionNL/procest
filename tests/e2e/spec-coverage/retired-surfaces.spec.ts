@@ -16,8 +16,8 @@
  * would pass just as happily on a build where the capability vanished entirely.
  */
 
-import { test, expect } from '@playwright/test'
-import { navToRoute } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navToRoute } from '../helpers/nav.ts'
 
 // NO trackDossiqErrors HERE, deliberately.
 //

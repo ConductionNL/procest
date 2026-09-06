@@ -41,6 +41,8 @@ use Throwable;
  *
  * So the session decides, a switch is an explicit act, and membership is
  * verified at the moment of switching rather than trusted per request.
+ *
+ * @spec openspec/specs/multi-tenancy/spec.md#req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
  */
 class TenantSessionService {
 	/**

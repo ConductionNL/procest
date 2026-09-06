@@ -5,7 +5,7 @@
  *
  * Strategy-pattern registry mapping action `type` strings to the corresponding
  * ActionHandlerInterface implementations. Built-in handlers are injected via
- * DI; downstream specs (`bezwaar-lifecycle`, `parafeerroute-engine`) MAY add
+ * DI; downstream specs (`bezwaar-lifecycle`) MAY add
  * additional types via `registerHandler()` in their bootstrap so the engine
  * itself does not need to know about them at compile time.
  *
@@ -51,7 +51,6 @@ class ActionHandlerRegistry {
 	 * @param WebhookHandler $webhook Built-in webhook handler
 	 * @param SetFieldHandler $setField Built-in field-set handler
 	 * @param NotifyHandler $notify Built-in notification handler
-	 * @param BesluitvormingActivateHandler $decisionActivate Parafering-chain activation handler
 	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
 	 * @param EvaluateDecisionHandler $evaluateDecision DMN decision-evaluation handler
 	 */
@@ -62,7 +61,6 @@ class ActionHandlerRegistry {
 		WebhookHandler $webhook,
 		SetFieldHandler $setField,
 		NotifyHandler $notify,
-		BesluitvormingActivateHandler $decisionActivate,
 		BesluitvormingPublishHandler $decisionPublish,
 		EvaluateDecisionHandler $evaluateDecision,
 	) {
@@ -73,7 +71,6 @@ class ActionHandlerRegistry {
 			'webhook' => $webhook,
 			'setField' => $setField,
 			'notify' => $notify,
-			'besluitvormingActivate' => $decisionActivate,
 			'besluitvormingPublish' => $decisionPublish,
 			'evaluateDecision' => $evaluateDecision,
 		];
@@ -99,6 +96,8 @@ class ActionHandlerRegistry {
 	 * @param string $type Action type
 	 *
 	 * @return ActionHandlerInterface|null
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function getHandler(string $type): ?ActionHandlerInterface {
 		return ($this->handlers[$type] ?? null);
@@ -108,6 +107,8 @@ class ActionHandlerRegistry {
 	 * Get all registered action types.
 	 *
 	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function getRegisteredTypes(): array {
 		return array_keys($this->handlers);

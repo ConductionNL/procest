@@ -128,9 +128,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {string} caseId The case UUID
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param caseId
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async loadBezwaarData(caseId) {
@@ -142,7 +139,7 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 
 				// Load objection.
 				const objections = await objectStore.fetchCollection('objection', {
-					'_filters[case]': caseId,
+					case: caseId,
 					_limit: 1,
 				})
 				this.currentObjection = objections?.[0] || null
@@ -151,14 +148,14 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 				const hearings = await objectStore.fetchCollection(
 					'hearingSession',
 					{
-						'_filters[case]': caseId,
+						case: caseId,
 					},
 				)
 				this.hearingSessions = hearings || []
 
 				// Load advisory report.
 				const reports = await objectStore.fetchCollection('advisoryReport', {
-					'_filters[case]': caseId,
+					case: caseId,
 					_limit: 1,
 				})
 				this.currentAdvisoryReport = reports?.[0] || null
@@ -167,7 +164,7 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 				const decisions = await objectStore.fetchCollection(
 					'appealDecision',
 					{
-						'_filters[case]': caseId,
+						case: caseId,
 						_limit: 1,
 					},
 				)
@@ -187,9 +184,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The objection data
 		 * @return {Promise<object|null>} The created objection
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async createObjection(data) {
@@ -215,9 +209,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The updated objection data
 		 * @return {Promise<object|null>} The updated objection
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async updateObjection(data) {
@@ -243,9 +234,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {string} objectionId The objection UUID
 		 * @return {Promise<boolean>} Whether the deletion succeeded
-		 */
-		/**
-		 * @param objectionId
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async deleteObjection(objectionId) {
@@ -273,9 +261,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The hearing session data
 		 * @return {Promise<object|null>} The created hearing
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async createHearingSession(data) {
@@ -301,9 +286,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The updated hearing data
 		 * @return {Promise<object|null>} The updated hearing
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async updateHearingSession(data) {
@@ -336,9 +318,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The advisory report data
 		 * @return {Promise<object|null>} The created report
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async createAdvisoryReport(data) {
@@ -364,9 +343,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The updated report data
 		 * @return {Promise<object|null>} The updated report
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async updateAdvisoryReport(data) {
@@ -394,9 +370,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The appeal decision data
 		 * @return {Promise<object|null>} The created decision
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async createAppealDecision(data) {
@@ -422,9 +395,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {object} data The updated decision data
 		 * @return {Promise<object|null>} The updated decision
-		 */
-		/**
-		 * @param data
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async updateAppealDecision(data) {
@@ -452,9 +422,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {string} ontvangstDatum The date the bezwaarschrift was received (ISO string)
 		 * @return {object} Calculated deadlines
-		 */
-		/**
-		 * @param ontvangstDatum
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		calculateDeadlines(ontvangstDatum) {
@@ -486,9 +453,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 *
 		 * @param {string} currentDeadline The current deadline (ISO string)
 		 * @return {string} The new extended deadline (ISO date string)
-		 */
-		/**
-		 * @param currentDeadline
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		calculateExtendedDeadline(currentDeadline) {
@@ -503,10 +467,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 * @param {string} deadline The deadline date (ISO string)
 		 * @param {boolean} isSuspended Whether the deadline is currently suspended
 		 * @return {object} Deadline status with daysRemaining, isAtRisk, isOverdue
-		 */
-		/**
-		 * @param deadline
-		 * @param isSuspended
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		getDeadlineStatus(deadline, isSuspended = false) {
@@ -555,10 +515,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 * @param {object} bezwaarCase The bezwaar case data
 		 * @param {object} options Additional options (voorzieningRequested)
 		 * @return {Promise<object|null>} The created beroep case
-		 */
-		/**
-		 * @param bezwaarCase
-		 * @param options
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		async escalateToBeroep(bezwaarCase, options = {}) {
@@ -570,7 +526,7 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 
 				// Find the Beroep case type.
 				const caseTypes = await objectStore.fetchCollection('caseType', {
-					'_filters[identifier]': 'beroep',
+					identifier: 'beroep',
 					_limit: 1,
 				})
 				const beroepCaseType = caseTypes?.[0]
@@ -609,10 +565,6 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 		 * @param {string} besluitDate The date the original besluit was published
 		 * @param {string} bezwaarReceivedDate The date the bezwaar was received
 		 * @return {object} Timeliness assessment
-		 */
-		/**
-		 * @param besluitDate
-		 * @param bezwaarReceivedDate
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
 		 */
 		checkTimeliness(besluitDate, bezwaarReceivedDate) {

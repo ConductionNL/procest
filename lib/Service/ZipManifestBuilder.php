@@ -38,6 +38,8 @@ use ZipArchive;
 
 /**
  * Builds a manifest-bearing, type-foldered ZIP export of a dossier.
+ *
+ * @spec openspec/changes/document-zaakdossier/tasks.md#T04
  */
 class ZipManifestBuilder {
 	/**

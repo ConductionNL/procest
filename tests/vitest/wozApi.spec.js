@@ -15,18 +15,19 @@
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
+	lookupWozObject,
 	lookupWozValue,
 	lookupWozValueByNummeraanduiding,
-	lookupWozObject,
 } from '../../src/services/wozApi.js'
 
 const BASE = '/index.php/apps/dossiq/api/external/woz'
 
 /**
  * Build an axios-style success response.
+ *
  * @param {*} data The response payload.
  * @return {{data: *}} An axios-shaped response.
  */

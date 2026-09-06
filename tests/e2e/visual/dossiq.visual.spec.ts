@@ -1,3 +1,5 @@
+import type { APIRequestContext } from '@playwright/test'
+
 /*
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
@@ -13,17 +15,17 @@
  * NOTE: dossiq serves its SPA at /apps/dossiq/index (the bare
  * /apps/dossiq/ route 404s), so navigation targets the /index entrypoint.
  */
-import { test, request, type APIRequestContext } from '@playwright/test'
-import { shootSurface, shootByNav } from './_visual-helpers'
-import { STORAGE_STATE } from '../helpers/auth'
+import { request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	getRequestToken,
-	ensureCaseType,
-	seedCase,
-	objectId,
 	cleanupRunObjects,
-	deleteObject,
-} from '../helpers/fixtures'
+	ensureCaseType,
+	getRequestToken,
+	objectId,
+	purgeObject,
+	seedCase,
+} from '../helpers/fixtures.ts'
+import { shootByNav, shootSurface } from './_visual-helpers.ts'
 
 const APP = '/index.php/apps/dossiq/index'
 
@@ -33,7 +35,20 @@ test.describe('Dossiq — visual baselines', () => {
 	})
 
 	test('cases list', async ({ page }) => {
-		await shootByNav(page, `${APP}#/`, 'Cases', 'cases.png')
+		// The label is 'All cases', NOT 'Cases'. dossiq#1646 renamed this entry
+		// and shootByNav resolves the label behind `if (isVisible)`, so a stale
+		// label does not fail: it silently skips the click and shoots the
+		// DASHBOARD under the name cases.png. The baseline was that dashboard.
+		await shootByNav(page, `${APP}#/`, 'All cases', 'cases.png')
+	})
+
+	// Baselines src/views/store/StoreGallery.vue, the manifest's `Store` page.
+	test('store (StoreGallery)', async ({ page }) => {
+		// Shot with no registry configured, which is the state a fresh install
+		// is in: the not-configured note plus the built-in templates.
+		// A PATH: dossiq is on createWebHistory, so `#/store` would shoot the
+		// Dashboard under this baseline's name.
+		await shootSurface(page, '/index.php/apps/dossiq/store', 'StoreGallery.png')
 	})
 
 	// The "verwerkingen overview (AVG)" baseline was retired with the page it
@@ -61,14 +76,12 @@ test.describe('Dossiq — case detail (deelzaak/email host) visual', () => {
 	let token: string
 	let caseId: string
 	let caseTypeId: string
-	let caseTypeSeeded = false
 
 	test.beforeAll(async ({ baseURL }) => {
 		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
 		token = await getRequestToken(api)
 		const ct = await ensureCaseType(api, token)
 		caseTypeId = ct.id
-		caseTypeSeeded = ct.seeded
 		const kase = await seedCase(api, token, {
 			title: 'VISUAL-BASELINE Case detail',
 			caseType: caseTypeId,
@@ -79,8 +92,11 @@ test.describe('Dossiq — case detail (deelzaak/email host) visual', () => {
 	})
 
 	test.afterAll(async () => {
-		await cleanupRunObjects(api, token, ['case'])
-		if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
+		// The baseline case is named for the SCREENSHOT, not for the run, so no
+		// prefix sweep finds it — purge it by the id we kept. The prefix sweep
+		// still runs for anything else the fixtures produced.
+		await purgeObject(api, token, 'case', caseId)
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 

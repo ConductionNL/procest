@@ -33,6 +33,8 @@ use RuntimeException;
 
 /**
  * Service for loading and activating zaaktype templates.
+ *
+ * @spec openspec/specs/template-library/spec.md
  */
 class TemplateLibraryService {
 

@@ -21,6 +21,7 @@ use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHan
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
+use UnexpectedValueException;
 
 /**
  * Flow node for the `setStatus` transition action.
@@ -81,12 +82,51 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
     /**
      * Config keys without which this action cannot run.
      *
+     * Empty, because the requirement is "one of two" rather than "all of
+     * these", which the base class's per-key loop cannot express.
+     * {@see self::validateConfig()} states it instead.
+     *
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['status'];
+        return [];
 
     }//end requiredConfigKeys()
+
+
+    /**
+     * A step must say WHICH status it means, by role or by name.
+     *
+     * `role` is the one to reach for: it is a machine key that survives both
+     * translation and a case type that spells its working phase `Beoordeling`.
+     * `status` is the literal name, kept because a case type nobody has
+     * annotated still has to work. Either alone is a complete instruction;
+     * together, the role is tried first and the name is the fallback.
+     *
+     * Neither is the one thing this refuses, because a step that names no
+     * status at all cannot move a case and would otherwise only reveal that at
+     * run time, on somebody's case.
+     *
+     * @param array<string, mixed> $config The step config.
+     *
+     * @return void
+     *
+     * @throws UnexpectedValueException When the step names no status.
+     *
+     * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+     */
+    public function validateConfig(array $config): void {
+        parent::validateConfig(config: $config);
+
+        if (trim((string) ($config['status'] ?? '')) !== '' || trim((string) ($config['role'] ?? '')) !== '') {
+            return;
+        }
+
+        throw new UnexpectedValueException(
+            $this->l10n->t('%s needs a status to move the case to: either a "role" or a literal "status" name.', [$this->getDisplayName()])
+        );
+
+    }//end validateConfig()
 
 
     /**

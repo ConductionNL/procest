@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Repair;
 
+use InvalidArgumentException;
 use OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\Verwerkingsactiviteit;
@@ -132,12 +133,38 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 
 		$default = $this->mapper->findByCode(code: 'zaakafhandeling');
 		$this->assertNotNull($default, 'the default attribution activity must be seeded');
-		$this->assertSame('draft', $default->getStatus(), 'seeded activities are drafts for FG review');
-		$this->assertNotEmpty($default->getNaam());
-		$this->assertNotEmpty($default->getDoelbinding());
-		$this->assertContains($default->getRechtsgrond(), Verwerkingsactiviteit::RECHTSGROND_VOCABULARY);
+		$this->assertSame('concept', $default->getStatus(), 'seeded activities are concepts for FG review');
+		$this->assertNotEmpty($default->getName());
+		$this->assertNotEmpty($default->getPurpose());
+		$this->assertContains($default->getLegalBasis(), Verwerkingsactiviteit::LEGAL_BASIS_VOCABULARY);
 
 	}//end testFreshRunInsertsCatalogueAsDrafts()
+
+	/**
+	 * A refused catalogue is REPORTED, not summarised as an empty success.
+	 *
+	 * This is the shape of the defect the acceptance proof caught. Every row
+	 * was refused by OpenRegister's Art. 6 validation, and the step printed
+	 * `Verwerkingsactiviteiten catalogue seeded: 0 created (draft), 0
+	 * refreshed.` through `$output->info()` — which is exactly what an
+	 * already-seeded instance prints. The AVG art. 30 catalogue was absent on
+	 * every fresh install and nothing said so.
+	 *
+	 * @return void
+	 */
+	public function testARefusedCatalogueWarnsInsteadOfReportingAnEmptySuccess(): void {
+		$this->settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+		$this->container->method('get')->willReturn(new RefusingVerwerkingsactiviteitMapperDouble());
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->never())->method('info');
+		$output->expects($this->once())
+			->method('warning')
+			->with($this->stringContains('REFUSED'));
+
+		$this->step->run($output);
+
+	}//end testARefusedCatalogueWarnsInsteadOfReportingAnEmptySuccess()
 
 	/**
 	 * A re-run refreshes descriptive fields but never touches the
@@ -153,14 +180,14 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 		$this->step->run($this->createMock(IOutput::class));
 		$published = $this->mapper->findByCode(code: 'zaakafhandeling');
 		$published->setStatus('published');
-		$published->setNaam('FG-renamed');
+		$published->setName('FG-renamed');
 
 		// Second run (app upgrade) refreshes fields, preserves status.
 		$this->step->run($this->createMock(IOutput::class));
 
 		$after = $this->mapper->findByCode(code: 'zaakafhandeling');
 		$this->assertSame('published', $after->getStatus(), 'FG activation must survive dossiq upgrades');
-		$this->assertNotSame('FG-renamed', $after->getNaam(), 'descriptive fields refresh from the catalogue');
+		$this->assertNotSame('FG-renamed', $after->getName(), 'descriptive fields refresh from the catalogue');
 		$this->assertGreaterThan(0, $this->mapper->updates);
 
 	}//end testRerunPreservesFgActivatedStatus()
@@ -188,8 +215,8 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 			$this->assertNotEmpty($activity['doelbinding'], "{$activity['code']}: doelbinding required (Art 30 §1(b))");
 			$this->assertContains(
 				$activity['rechtsgrond'],
-				Verwerkingsactiviteit::RECHTSGROND_VOCABULARY,
-				"{$activity['code']}: rechtsgrond must be an AVG art. 6 ground"
+				Verwerkingsactiviteit::LEGAL_BASIS_VOCABULARY,
+				"{$activity['code']}: rechtsgrond must be a member of OpenRegister's AVG art. 6 vocabulary"
 			);
 			$this->assertNotEmpty($activity['bewaartermijn'], "{$activity['code']}: bewaartermijn required");
 			$this->assertNotEmpty($activity['categorieenBetrokkenen'], "{$activity['code']}: betrokkene categories required");
@@ -322,13 +349,66 @@ final class InMemoryVerwerkingsactiviteitMapperDouble {
 	 */
 	public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
 		if ($entity->getStatus() === null || $entity->getStatus() === '') {
-			$entity->setStatus('draft');
+			$entity->setStatus('concept');
 		}
+
+		$this->validate(entity: $entity);
 
 		$this->inserts++;
 		$this->byCode[$entity->getCode()] = $entity;
 		return $entity;
 	}//end insert()
+
+	/**
+	 * Refuse exactly what the real mapper refuses.
+	 *
+	 * A DOUBLE THAT ACCEPTS EVERYTHING CANNOT FAIL, AND THIS ONE DID NOT.
+	 * It stored whatever it was handed, so the seed tests could not tell a
+	 * catalogue OpenRegister accepts from one it rejects — and the shipped
+	 * catalogue was the second kind: seven rows carrying pre-openregister#2555
+	 * Dutch legal-basis spellings, refused on every fresh install, under a
+	 * green suite. The messages below are the real mapper's.
+	 *
+	 * Mirrors openregister `lib/Db/VerwerkingsactiviteitMapper::validate()`.
+	 *
+	 * @param Verwerkingsactiviteit $entity The entity to validate.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When OpenRegister would refuse the row.
+	 */
+	private function validate(Verwerkingsactiviteit $entity): void {
+		if ($entity->getName() === null || trim((string)$entity->getName()) === '') {
+			throw new InvalidArgumentException('Verwerkingsactiviteit MUST have a name (AVG Art 30 §1(a))');
+		}
+
+		if ($entity->getPurpose() === null || trim((string)$entity->getPurpose()) === '') {
+			throw new InvalidArgumentException('Verwerkingsactiviteit MUST have a purpose (AVG Art 30 §1(b))');
+		}
+
+		if (in_array($entity->getLegalBasis(), Verwerkingsactiviteit::LEGAL_BASIS_VOCABULARY, true) === false) {
+			throw new InvalidArgumentException(
+				sprintf(
+					'Invalid legalBasis "%s"; expected one of: %s (AVG Art 6)',
+					(string)$entity->getLegalBasis(),
+					implode(', ', Verwerkingsactiviteit::LEGAL_BASIS_VOCABULARY)
+				)
+			);
+		}
+
+		if ($entity->getStatus() !== null
+			&& $entity->getStatus() !== ''
+			&& in_array($entity->getStatus(), Verwerkingsactiviteit::STATUS_VOCABULARY, true) === false
+		) {
+			throw new InvalidArgumentException(
+				sprintf(
+					'Invalid status "%s"; expected one of: %s',
+					(string)$entity->getStatus(),
+					implode(', ', Verwerkingsactiviteit::STATUS_VOCABULARY)
+				)
+			);
+		}
+	}//end validate()
 
 	/**
 	 * Record an update.
@@ -343,4 +423,53 @@ final class InMemoryVerwerkingsactiviteitMapperDouble {
 		return $entity;
 	}//end update()
 
+}//end class
+
+/**
+ * A mapper that refuses every row, the way OpenRegister refuses an invalid one.
+ *
+ * The catalogue itself is now valid, so a refusal has to be produced some other
+ * way — but the branch it exercises is the one every fresh install took.
+ */
+final class RefusingVerwerkingsactiviteitMapperDouble {
+
+	/**
+	 * Find a stored activity by code. Nothing is ever stored.
+	 *
+	 * @param string $code The catalogue code.
+	 *
+	 * @return Verwerkingsactiviteit|null Always null.
+	 */
+	public function findByCode(string $code): ?Verwerkingsactiviteit {
+		return null;
+	}//end findByCode()
+
+	/**
+	 * Refuse the insert.
+	 *
+	 * @param Verwerkingsactiviteit $entity The entity offered.
+	 *
+	 * @return Verwerkingsactiviteit Never returns.
+	 *
+	 * @throws InvalidArgumentException Always.
+	 */
+	public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
+		throw new InvalidArgumentException(
+			'Invalid legalBasis "publieke_taak"; expected one of: '
+			. implode(', ', Verwerkingsactiviteit::LEGAL_BASIS_VOCABULARY) . ' (AVG Art 6)'
+		);
+	}//end insert()
+
+	/**
+	 * Refuse the update.
+	 *
+	 * @param Verwerkingsactiviteit $entity The entity offered.
+	 *
+	 * @return Verwerkingsactiviteit Never returns.
+	 *
+	 * @throws InvalidArgumentException Always.
+	 */
+	public function update(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
+		throw new InvalidArgumentException('refused');
+	}//end update()
 }//end class

@@ -28,7 +28,7 @@
 					<NcTextArea
 						:modelValue="rationale"
 						:label="t('dossiq', 'Motivering')"
-						@update:modelValue="(v) => (motivering = v)" />
+						@update:modelValue="(v) => (rationale = v)" />
 				</div>
 				<NcNoteCard v-if="error" type="error">
 					{{ error }}

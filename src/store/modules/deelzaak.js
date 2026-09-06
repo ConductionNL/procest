@@ -35,7 +35,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 	},
 	actions: {
 		/**
-		 * @param parentCaseUuid
+		 * @param {string} parentCaseUuid UUID of the parent case.
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T01
 		 */
 		async fetchSubCases(parentCaseUuid) {
@@ -54,7 +54,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 		},
 
 		/**
-		 * @param parentCaseUuid
+		 * @param {string} parentCaseUuid UUID of the parent case.
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T02
 		 */
 		async fetchParentCase(parentCaseUuid) {
@@ -68,7 +68,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 		},
 
 		/**
-		 * @param caseUuidArray
+		 * @param {Array} caseUuidArray The case array.
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T03
 		 */
 		async fetchSubCaseCounts(caseUuidArray) {
@@ -81,7 +81,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 		},
 
 		/**
-		 * @param params
+		 * @param {object} params The params.
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
 		 */
 		async validateSubCase(params) {

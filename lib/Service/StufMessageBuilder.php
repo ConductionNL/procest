@@ -54,6 +54,8 @@ use Psr\Log\LoggerInterface;
  * Service for constructing the outbound StUF-ZKN request envelopes.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
  */
 class StufMessageBuilder {
 	/**

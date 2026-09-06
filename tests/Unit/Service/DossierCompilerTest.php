@@ -139,8 +139,11 @@ class DossierCompilerTest extends TestCase {
 			) {
 			}
 
-			public function find(string $id, string $register = '', string $schema = ''): array {
-				return $this->case;
+			/**
+			 * Entity-shaped find, mirroring the real ObjectService contract.
+			 */
+			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+				return new FakeStoredObject($this->case);
 			}
 
 			/**
@@ -190,8 +193,11 @@ class DossierCompilerTest extends TestCase {
 
 		$objectService = new class {
 
-			public function find(string $id, string $register = '', string $schema = ''): array {
-				return ['relatedCases' => []];
+			/**
+			 * Entity-shaped find, mirroring the real ObjectService contract.
+			 */
+			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+				return new FakeStoredObject(['relatedCases' => []]);
 			}
 
 			/**

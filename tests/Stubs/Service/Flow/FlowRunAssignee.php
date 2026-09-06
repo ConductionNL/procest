@@ -43,23 +43,30 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee', false) =
         /**
          * The recorded assignee.
          *
-         * @param FlowRun $run The run.
+         * `$nodeId` is not optional decoration. A run accumulates one resume
+         * slot PER NODE, so "who is this run assigned to" has no single answer
+         * once a flow asks twice; the real method takes the node and this stub
+         * must too, or a caller that names one is green here and fatals there.
+         *
+         * @param FlowRun     $run    The run.
+         * @param string|null $nodeId The node whose slot records the assignee.
          *
          * @return string The assignee.
          */
-        public function recordedFor(FlowRun $run): string {
+        public function recordedFor(FlowRun $run, ?string $nodeId = null): string {
             return '';
         }
 
         /**
          * Whether this user may answer.
          *
-         * @param FlowRun     $run The run.
-         * @param string|null $uid The user.
+         * @param FlowRun     $run    The run.
+         * @param string|null $uid    The user.
+         * @param string|null $nodeId The node being answered.
          *
          * @return boolean Always true — see the file docblock.
          */
-        public function mayAnswer(FlowRun $run, ?string $uid): bool {
+        public function mayAnswer(FlowRun $run, ?string $uid, ?string $nodeId = null): bool {
             return true;
         }
     }

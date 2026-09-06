@@ -9,12 +9,12 @@
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
+	applySubstitutedFilter,
 	buildSubstitutedMap,
 	mergeSubstitutedCases,
 	substitutedFor,
-	applySubstitutedFilter,
 } from '../../src/utils/substitutionHelpers.js'
 
 describe('buildSubstitutedMap', () => {

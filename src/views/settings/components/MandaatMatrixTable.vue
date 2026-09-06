@@ -99,7 +99,7 @@ export default {
 	methods: {
 		t,
 		/**
-		 * @param status
+		 * @param {string} status The status.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		badgeClass(status) {

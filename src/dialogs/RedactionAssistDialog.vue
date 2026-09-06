@@ -186,8 +186,12 @@ export default {
 	},
 
 	props: {
+		// Defaults to true deliberately: nothing passes this, and the dialog is
+		// mounted to be shown. Flipping the default to satisfy the rule would
+		// change behaviour, not style, and the dialog would mount closed.
 		open: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 

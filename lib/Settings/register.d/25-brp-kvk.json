@@ -141,7 +141,7 @@
                     "address": {
                         "type": "object",
                         "title": "Adres",
-                        "description": "Address block per KvK Zoeken naming (straatnaam, huisnummer, postcode, plaats). Fields are optional — some fixtures carry only a partial or foreign address.",
+                        "description": "Address block per KvK Zoeken naming (straatnaam, huisnummer, postcode, plaats). Fields are optional: some fixtures carry only a partial or foreign address.",
                         "properties": {
                             "streetName": {
                                 "type": "string",
@@ -185,7 +185,7 @@
                 "birth": { "date": "1975-04-06" },
                 "residence": { "street": "Mandelaplein", "houseNumber": 2, "postcode": "2572HT", "city": "'s-Gravenhage" },
                 "displayName": "Stephan Janssen",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999992570" },
@@ -194,7 +194,7 @@
                 "birth": { "date": "1958-07-19" },
                 "residence": { "street": "Poolsestraat", "houseNumber": 36, "postcode": "3028EN", "city": "Rotterdam" },
                 "displayName": "Albert Vogel",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999995091" },
@@ -203,7 +203,7 @@
                 "birth": { "date": "1988-04-01" },
                 "residence": { "street": "'t Haantje", "houseNumber": 86, "postcode": "8646TK", "city": "Noord-Sleen" },
                 "displayName": "Thanatos Olympos",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999996277" },
@@ -212,7 +212,7 @@
                 "birth": { "date": "1970-07-17" },
                 "residence": { "street": "Franciscus Romanusweg", "houseNumber": 60, "postcode": "6221AH", "city": "Maastricht" },
                 "displayName": "Christina Annabel Christiaansen",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-900194054" },
@@ -221,7 +221,7 @@
                 "birth": { "date": "1990-12-11" },
                 "residence": { "street": "Croeselaan", "houseNumber": 15, "postcode": "3521BJ", "city": "Utrecht" },
                 "displayName": "Tina-Antïna de Bruin",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999997609" },
@@ -230,7 +230,7 @@
                 "birth": { "date": "1969-12-27" },
                 "residence": { "street": "Loosduinse Hoofdstraat", "houseNumber": 189, "postcode": "2552AB", "city": "'s-Gravenhage" },
                 "displayName": "Eleonora de Crooy",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999993355" },
@@ -239,7 +239,7 @@
                 "birth": { "date": "1978-03-31" },
                 "residence": { "street": "Belcampostraat", "houseNumber": 10, "postcode": "3544NG", "city": "Utrecht" },
                 "displayName": "Jan-Kees Brouwers",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999990949" },
@@ -248,7 +248,7 @@
                 "birth": { "date": "1952-04-22" },
                 "residence": { "street": "Mississippidreef", "houseNumber": 151, "postcode": "3565CE", "city": "Utrecht" },
                 "displayName": "Marianne de Jong",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999990792" },
@@ -257,7 +257,7 @@
                 "birth": { "date": "1977-12-10" },
                 "residence": { "street": "Thorbeckelaan", "houseNumber": 731, "postcode": "2564CJ", "city": "'s-Gravenhage" },
                 "displayName": "Jan de Cuykelaer",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999999655" },
@@ -266,7 +266,7 @@
                 "birth": { "date": "1974-12-16" },
                 "residence": { "street": "Turfmarkt", "houseNumber": 39, "postcode": "2511CA", "city": "'s-Gravenhage" },
                 "displayName": "Astrid Abels",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-69599084" },
@@ -274,7 +274,7 @@
                 "tradeName": "Test EMZ Dagobert",
                 "legalForm": "Eenmanszaak",
                 "address": { "streetName": "Abebe Bikilalaan", "place": "Amsterdam" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-68750110" },
@@ -282,7 +282,7 @@
                 "tradeName": "Test BV Donald",
                 "legalForm": "BV",
                 "address": { "streetName": "Hizzaarderlaan", "place": "Lollum" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-69599068" },
@@ -290,7 +290,7 @@
                 "tradeName": "Test Stichting Bolderbast",
                 "legalForm": "Stichting",
                 "address": { "streetName": "Oosterwal", "place": "Lochem" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-55344526" },
@@ -298,7 +298,7 @@
                 "tradeName": "Regional Stimflex Coöperatie",
                 "legalForm": "Coöperatie",
                 "address": { "place": "Spanje" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-68727720" },
@@ -306,7 +306,7 @@
                 "tradeName": "Test NV Katrien - Handelsnaam",
                 "legalForm": "NV",
                 "address": { "streetName": "Rietdekkershof", "place": "Veendam" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90004760" },
@@ -314,7 +314,7 @@
                 "tradeName": "Local Funzoom N.V. - Statutory Naam",
                 "legalForm": "NV",
                 "address": { "streetName": "Klepelstraat 1581346628486 9010", "place": "Denekamp" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90001354" },
@@ -322,7 +322,7 @@
                 "tradeName": "Grand Joyflex B.V.",
                 "legalForm": "BV",
                 "address": { "place": "Sterksel" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90000102" },
@@ -330,7 +330,7 @@
                 "tradeName": "Stichting Free opentrans - Eigenaar",
                 "legalForm": "Stichting",
                 "address": { "streetName": "Rijnsburgerweg", "place": "Leiden" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-69599076" },
@@ -338,7 +338,7 @@
                 "tradeName": "Test VOF Guus",
                 "legalForm": "VoF",
                 "address": { "streetName": "Benny Goodmanstraat", "place": "Almere" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             },
             {
                 "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90001745" },
@@ -346,7 +346,7 @@
                 "tradeName": "Free Movelax",
                 "legalForm": "Maatschap",
                 "address": { "streetName": "Burg G van Andellaan", "place": "Zuidland" },
-                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl): geen echt bedrijf."
             }
         ]
     }

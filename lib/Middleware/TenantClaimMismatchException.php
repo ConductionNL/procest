@@ -29,6 +29,8 @@ use Exception;
 
 /**
  * Tenant-claim mismatch exception (always 403).
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
  */
 class TenantClaimMismatchException extends Exception {
 }//end class

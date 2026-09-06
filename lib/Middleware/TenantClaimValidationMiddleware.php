@@ -42,6 +42,8 @@ use Throwable;
 
 /**
  * Validate JWT tenant_id ↔ request-tenant match. Fail-closed.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
  */
 class TenantClaimValidationMiddleware extends Middleware {
 	/**
@@ -98,6 +100,8 @@ class TenantClaimValidationMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::beforeController(); this middleware
 	 * validates the bound tenant claim instead.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		// No bearer header → not a JWT-authenticated request; let other auth layers handle.
@@ -145,6 +149,8 @@ class TenantClaimValidationMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
 	 * inspected.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		if ($exception instanceof TenantClaimMismatchException) {

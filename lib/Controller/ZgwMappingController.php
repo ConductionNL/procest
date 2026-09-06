@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Controller for managing ZGW API mapping configurations.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwMappingController extends Controller {
 	/**

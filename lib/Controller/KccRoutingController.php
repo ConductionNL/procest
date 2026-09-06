@@ -44,6 +44,8 @@ use OCP\IUserSession;
  * Controller exposing KCC routing-rule and routing-evaluation endpoints.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 class KccRoutingController extends Controller {
 	/**
@@ -102,6 +104,8 @@ class KccRoutingController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function create(): JSONResponse {
@@ -130,6 +134,8 @@ class KccRoutingController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function update(string $id): JSONResponse {
@@ -246,7 +252,7 @@ class KccRoutingController extends Controller {
 	 */
 	private function bodyParams(): array {
 		$params = $this->request->getParams();
-		unset($params['id'], $params['_route']);
+		unset($params['id'], $params['uuid'], $params['@self'], $params['_route']);
 		return $params;
 	}//end bodyParams()
 

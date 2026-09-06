@@ -4,7 +4,7 @@
 			<h3>{{ t('dossiq', 'Inspections') }}</h3>
 			<NcButton
 				v-if="canInspect"
-				type="primary"
+				variant="primary"
 				@click="showChecklistForm = true">
 				{{ t('dossiq', 'New inspection') }}
 			</NcButton>
@@ -239,12 +239,12 @@
 
 					<div class="inspection-panel__form-actions">
 						<NcButton
-							type="primary"
+							variant="primary"
 							:disabled="submitting"
 							@click="submitReport">
 							{{
 								submitting
-									? t('dossiq', 'Submitting...')
+									? t('dossiq', 'Submitting…')
 									: t('dossiq', 'Submit report')
 							}}
 						</NcButton>
@@ -259,6 +259,7 @@
 </template>
 
 <script>
+import { getCurrentUser } from '@nextcloud/auth'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useInspectionStore } from '../../../store/modules/inspection.js'
@@ -282,8 +283,12 @@ export default {
 			required: true,
 		},
 
+		// Defaults to true deliberately: nothing passes this, and the panel is
+		// permissive until a caller says otherwise. Flipping the default to
+		// satisfy the rule would silently disable inspection everywhere.
 		canInspect: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 	},
@@ -347,7 +352,7 @@ export default {
 		caseId: {
 			immediate: true,
 			/**
-			 * @param newId
+			 * @param {string} newId Identifier of the new id.
 			 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 			 */
 			handler(newId) {
@@ -360,7 +365,7 @@ export default {
 		caseTypeId: {
 			immediate: true,
 			/**
-			 * @param newId
+			 * @param {string} newId Identifier of the new id.
 			 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 			 */
 			handler(newId) {
@@ -371,7 +376,7 @@ export default {
 		},
 
 		/**
-		 * @param checklist
+		 * @param {object} checklist The checklist.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		selectedChecklist(checklist) {
@@ -391,7 +396,7 @@ export default {
 		t,
 
 		/**
-		 * @param result
+		 * @param {object} result The result.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		resultLabel(result) {
@@ -404,7 +409,7 @@ export default {
 		},
 
 		/**
-		 * @param dateStr
+		 * @param {string} dateStr The date str, as a string.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		formatDate(dateStr) {
@@ -415,7 +420,7 @@ export default {
 		},
 
 		/**
-		 * @param reportId
+		 * @param {string} reportId Identifier of the report id.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		toggleReport(reportId) {
@@ -436,7 +441,7 @@ export default {
 				await this.inspectionStore.createReport({
 					case: this.caseId,
 					checklist: this.selectedChecklist.id,
-					inspector: OC.currentUser,
+					inspector: (getCurrentUser() && getCurrentUser().uid) || '',
 					items: this.formResults,
 				})
 				this.closeForm()

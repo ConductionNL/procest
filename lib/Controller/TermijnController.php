@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\TermijnService;
@@ -64,6 +65,7 @@ class TermijnController extends Controller {
 	 * @param TermijnService $term Termijn service.
 	 * @param DeadlinePauseService $pause Pause service.
 	 * @param DeadlineExtensionService $extension Extension service.
+	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
 	 */
@@ -73,6 +75,7 @@ class TermijnController extends Controller {
 		private readonly TermijnService $term,
 		private readonly DeadlinePauseService $pause,
 		private readonly DeadlineExtensionService $extension,
+		private readonly CaseTypeSlugResolver $caseTypeSlugs,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -118,9 +121,17 @@ class TermijnController extends Controller {
 
 		$body = $this->jsonBody();
 		$caseId = (string)($body['caseId'] ?? '');
-		$caseType = (string)($body['caseType'] ?? '');
-		if ($caseId === '' || $caseType === '') {
+		$caseTypeRef = (string)($body['caseType'] ?? '');
+		if ($caseId === '' || $caseTypeRef === '') {
 			return $this->badRequest(msg: 'zaakId and zaaktype are required');
+		}
+
+		// A caller holding a case reads its `caseType` as a uuid, while a
+		// deadlineDefinition binds by slug. Both are accepted here and resolve
+		// to the slug, so this endpoint and the created-case listener agree.
+		$caseType = $this->caseTypeSlugs->toSlug(reference: $caseTypeRef);
+		if ($caseType === '') {
+			return $this->badRequest(msg: 'zaaktype could not be resolved');
 		}
 
 		try {

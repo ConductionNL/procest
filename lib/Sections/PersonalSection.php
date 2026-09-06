@@ -51,6 +51,8 @@ class PersonalSection implements IIconSection {
 	 * Get the section id.
 	 *
 	 * @return string The section id.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
 	 */
 	public function getID(): string {
 		return 'dossiq';
@@ -60,6 +62,8 @@ class PersonalSection implements IIconSection {
 	 * Get the section display name.
 	 *
 	 * @return string The translated section name.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
 	 */
 	public function getName(): string {
 		return $this->l->t('Dossiq');
@@ -69,6 +73,8 @@ class PersonalSection implements IIconSection {
 	 * Get the ordering priority.
 	 *
 	 * @return int The priority.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
 	 */
 	public function getPriority(): int {
 		return 75;
@@ -78,6 +84,8 @@ class PersonalSection implements IIconSection {
 	 * Get the icon path for this section.
 	 *
 	 * @return string The icon path.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
 	 */
 	public function getIcon(): string {
 		// MUST be the live app id. imagePath() throws when the app does not

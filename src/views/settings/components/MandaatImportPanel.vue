@@ -125,7 +125,7 @@ export default {
 	methods: {
 		t,
 		/**
-		 * @param e
+		 * @param {Event} e The originating DOM event.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		onFileChange(e) {

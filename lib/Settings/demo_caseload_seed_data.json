@@ -1,0 +1,524 @@
+{
+  "$comment": "Demo caseload for dossiq. Dates are RELATIVE DAY OFFSETS resolved against the moment the seed runs, never absolute dates, so the dashboard buckets stay correct however long this file sits in the repo. Give a case either deadlineInDays or startInDays, never both: the case schema materialises deadline from startDate plus the case type's processingDeadline, so writing deadline directly is overwritten on save.",
+  "cases": [
+    {
+      "key": "demo-ov-beethovenlaan",
+      "caseType": "omgevingsvergunning",
+      "status": "In behandeling",
+      "title": "Aanbouw Beethovenlaan 8",
+      "description": "De aanvrager wil de woonkamer aan de tuinzijde uitbouwen. De welstandscommissie vroeg om een aangepaste geveltekening.",
+      "assignee": "admin",
+      "priority": "high",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "deadlineInDays": -21,
+      "tasks": [
+        {
+          "title": "Aangepaste geveltekening opvragen",
+          "description": "De aanvrager heeft de tekening nog niet aangeleverd.",
+          "assignee": "admin",
+          "dueInDays": -9,
+          "status": "active",
+          "priority": "high"
+        },
+        {
+          "title": "Welstandsadvies verwerken",
+          "description": "Neem het advies van de commissie op in het dossier.",
+          "assignee": "admin",
+          "dueInDays": -2,
+          "status": "active",
+          "priority": "normal"
+        },
+        {
+          "title": "Ontvangstbevestiging versturen",
+          "description": "Standaardbrief naar de aanvrager.",
+          "assignee": "admin",
+          "dueInDays": -18,
+          "status": "completed",
+          "priority": "normal",
+          "completedInDays": -18
+        }
+      ]
+    },
+    {
+      "key": "demo-sub-buurttuin",
+      "caseType": "subsidieaanvraag",
+      "status": "Beoordeling",
+      "title": "Subsidie buurttuin Vogelwijk",
+      "description": "Een bewonersgroep vraagt subsidie voor het aanleggen van een buurttuin. De begroting mist een dekking voor het onderhoud.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "email",
+      "confidentiality": "openbaar",
+      "deadlineInDays": -14,
+      "tasks": [
+        {
+          "title": "Sluitende begroting opvragen",
+          "description": "Vraag de bewonersgroep om een onderhoudsbegroting.",
+          "assignee": "admin",
+          "dueInDays": -6,
+          "status": "active",
+          "priority": "high"
+        },
+        {
+          "title": "Toets aan subsidieplafond",
+          "description": "Controleer of het plafond voor dit jaar nog ruimte biedt.",
+          "assignee": "admin",
+          "dueInDays": -1,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-mor-stoeptegel",
+      "caseType": "klacht-behandeling",
+      "status": "In behandeling",
+      "title": "Losliggende stoeptegel Marktplein",
+      "description": "Een voorbijganger is gestruikeld over een losse tegel voor de markt. De locatie is afgezet met hekken.",
+      "assignee": "admin",
+      "priority": "urgent",
+      "intakeChannel": "phone",
+      "confidentiality": "openbaar",
+      "deadlineInDays": -9,
+      "tasks": [
+        {
+          "title": "Herstel inplannen bij de aannemer",
+          "description": "De afzetting staat er nu twee weken.",
+          "assignee": "admin",
+          "dueInDays": -4,
+          "status": "active",
+          "priority": "urgent"
+        },
+        {
+          "title": "Melder terugkoppelen",
+          "description": "Bel de melder over de herstelafspraak.",
+          "assignee": "admin",
+          "dueInDays": -1,
+          "status": "active",
+          "priority": "high"
+        }
+      ]
+    },
+    {
+      "key": "demo-kla-terras",
+      "caseType": "melding-openbare-ruimte",
+      "status": "Onderzoek",
+      "title": "Klacht over geluidsoverlast terras",
+      "description": "Omwonenden klagen over muziek op het terras na sluitingstijd. Toezicht heeft twee metingen gedaan.",
+      "assignee": "admin",
+      "priority": "high",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "deadlineInDays": -5,
+      "tasks": [
+        {
+          "title": "Meetrapport toezicht opvragen",
+          "description": "De tweede meting ontbreekt nog in het dossier.",
+          "assignee": "admin",
+          "dueInDays": -2,
+          "status": "active",
+          "priority": "high"
+        },
+        {
+          "title": "Hoorgesprek met de ondernemer plannen",
+          "description": "Nodig de ondernemer uit voor een gesprek.",
+          "assignee": "admin",
+          "dueInDays": -1,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-ov-essen-parkweg",
+      "caseType": "omgevingsvergunning",
+      "status": "Besluitvorming",
+      "title": "Kappen van vier essen Parkweg",
+      "description": "De gemeente wil vier zieke essen kappen. Een omwonende diende een zienswijze in over de herplant.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "manual",
+      "confidentiality": "openbaar",
+      "deadlineInDays": -2,
+      "tasks": [
+        {
+          "title": "Zienswijze beantwoorden",
+          "description": "Beantwoord de zienswijze over de herplantplicht.",
+          "assignee": "admin",
+          "dueInDays": -1,
+          "status": "active",
+          "priority": "high"
+        },
+        {
+          "title": "Herplantplicht vastleggen",
+          "description": "Leg de herplant vast in het conceptbesluit.",
+          "assignee": "admin",
+          "dueInDays": 2,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-mor-lantaarnpaal",
+      "caseType": "klacht-behandeling",
+      "status": "In behandeling",
+      "title": "Kapotte lantaarnpaal Stationsstraat",
+      "description": "Twee lantaarnpalen bij de fietsenstalling branden niet. Reizigers melden dat het er 's avonds donker is.",
+      "assignee": "admin",
+      "priority": "high",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "deadlineInDays": 0,
+      "tasks": [
+        {
+          "title": "Storingsmelding bij de netbeheerder",
+          "description": "Zet de storing door naar de netbeheerder.",
+          "assignee": "admin",
+          "dueInDays": 0,
+          "status": "active",
+          "priority": "high"
+        },
+        {
+          "title": "Melder informeren over de doorlooptijd",
+          "description": "Laat weten wanneer het herstel staat gepland.",
+          "assignee": "admin",
+          "dueInDays": 1,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-sub-jeugdteams",
+      "caseType": "subsidieaanvraag",
+      "status": "Beoordeling",
+      "title": "Subsidie sportvereniging jeugdteams",
+      "description": "Een sportvereniging vraagt subsidie voor twee extra jeugdteams. De ledenlijst is aangeleverd.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "deadlineInDays": 1,
+      "tasks": [
+        {
+          "title": "Ledenaantallen controleren",
+          "description": "Vergelijk de ledenlijst met de aanvraag.",
+          "assignee": "admin",
+          "dueInDays": 1,
+          "status": "active",
+          "priority": "normal"
+        },
+        {
+          "title": "Conceptbeschikking opstellen",
+          "description": "Stel de beschikking op voor de teamleider.",
+          "assignee": "admin",
+          "dueInDays": 3,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-ov-rembrandtkade",
+      "caseType": "omgevingsvergunning",
+      "status": "In behandeling",
+      "title": "Uitbouw keuken Rembrandtkade 21",
+      "description": "De aanvrager wil de keuken vier meter uitbouwen. De constructieberekening is compleet.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "deadlineInDays": 2,
+      "tasks": [
+        {
+          "title": "Constructieberekening laten toetsen",
+          "description": "Leg de berekening voor aan de constructeur.",
+          "assignee": "admin",
+          "dueInDays": 2,
+          "status": "active",
+          "priority": "normal"
+        },
+        {
+          "title": "Buren informeren",
+          "description": "Stuur de omwonenden een kennisgeving.",
+          "assignee": "admin",
+          "dueInDays": 3,
+          "status": "active",
+          "priority": "low"
+        }
+      ]
+    },
+    {
+      "key": "demo-kla-afvalinzameling",
+      "caseType": "melding-openbare-ruimte",
+      "status": "Onderzoek",
+      "title": "Klacht over afvalinzameling Zuiderpark",
+      "description": "Een bewoner meldt dat het gft al drie weken niet is opgehaald. De inzamelaar bevestigt een routewijziging.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "phone",
+      "confidentiality": "openbaar",
+      "deadlineInDays": 3,
+      "tasks": [
+        {
+          "title": "Routewijziging navragen bij de inzamelaar",
+          "description": "Vraag om de nieuwe route en de ingangsdatum.",
+          "assignee": "admin",
+          "dueInDays": 3,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-ov-grote-kerk",
+      "caseType": "omgevingsvergunning",
+      "status": "Ontvangen",
+      "title": "Zonnepanelen op monument Grote Kerk",
+      "description": "De kerkbestuurder vraagt vergunning voor zonnepanelen op het dak. Het pand is een rijksmonument.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "balie",
+      "confidentiality": "openbaar",
+      "startInDays": 0,
+      "tasks": [
+        {
+          "title": "Advies monumentencommissie aanvragen",
+          "description": "Vraag advies over de zichtbaarheid vanaf de straat.",
+          "assignee": "admin",
+          "dueInDays": 5,
+          "status": "available",
+          "priority": "normal"
+        },
+        {
+          "title": "Volledigheidstoets uitvoeren",
+          "description": "Controleer of alle bijlagen zijn meegestuurd.",
+          "assignee": "admin",
+          "dueInDays": 2,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-ov-weidezoom",
+      "caseType": "omgevingsvergunning",
+      "status": "In behandeling",
+      "title": "Nieuwbouw twee woningen Weidezoom",
+      "description": "Een ontwikkelaar wil twee vrijstaande woningen bouwen. De bodemtoets loopt nog.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "post",
+      "confidentiality": "openbaar",
+      "startInDays": -1,
+      "tasks": [
+        {
+          "title": "Bodemonderzoek beoordelen",
+          "description": "Beoordeel het rapport zodra het binnen is.",
+          "assignee": "admin",
+          "dueInDays": 12,
+          "status": "available",
+          "priority": "normal"
+        },
+        {
+          "title": "Watertoets uitzetten",
+          "description": "Zet de watertoets uit bij het waterschap.",
+          "assignee": "admin",
+          "dueInDays": 8,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-sub-energiecoach",
+      "caseType": "subsidieaanvraag",
+      "status": "Ontvangen",
+      "title": "Subsidie energiecoach wijkaanpak",
+      "description": "Een wijkorganisatie vraagt subsidie voor twee energiecoaches. De aanvraag past binnen de wijkaanpak.",
+      "assignee": "rbac-editor",
+      "priority": "normal",
+      "intakeChannel": "email",
+      "confidentiality": "openbaar",
+      "startInDays": -2,
+      "tasks": [
+        {
+          "title": "Aanvraag inhoudelijk beoordelen",
+          "description": "Toets de aanvraag aan de subsidieregeling.",
+          "assignee": "rbac-editor",
+          "dueInDays": 15,
+          "status": "available",
+          "priority": "normal"
+        },
+        {
+          "title": "Cofinanciering navragen",
+          "description": "Vraag na of de provincie meebetaalt.",
+          "assignee": "admin",
+          "dueInDays": 20,
+          "status": "available",
+          "priority": "low"
+        }
+      ]
+    },
+    {
+      "key": "demo-mor-overhangend-groen",
+      "caseType": "klacht-behandeling",
+      "status": "Ontvangen",
+      "title": "Overhangend groen fietspad Dorpslaan",
+      "description": "Struiken hangen over het fietspad en beperken het zicht in de bocht.",
+      "assignee": "admin",
+      "priority": "low",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "startInDays": -1,
+      "tasks": [
+        {
+          "title": "Schouw inplannen",
+          "description": "Laat de buitendienst de situatie beoordelen.",
+          "assignee": "admin",
+          "dueInDays": 5,
+          "status": "active",
+          "priority": "normal"
+        }
+      ]
+    },
+    {
+      "key": "demo-kla-wachttijd-balie",
+      "caseType": "melding-openbare-ruimte",
+      "status": "Ontvangen",
+      "title": "Klacht over wachttijd aan de balie",
+      "description": "Een inwoner wachtte ruim een uur op een afspraak die op tijd stond ingepland.",
+      "assignee": "rbac-editor",
+      "priority": "low",
+      "intakeChannel": "balie",
+      "confidentiality": "openbaar",
+      "startInDays": -3,
+      "tasks": [
+        {
+          "title": "Baliegegevens van die dag opvragen",
+          "description": "Vraag de wachtrijgegevens op bij het KCC.",
+          "assignee": "rbac-editor",
+          "dueInDays": 25,
+          "status": "available",
+          "priority": "low"
+        }
+      ]
+    },
+    {
+      "key": "demo-ov-vondellaan",
+      "caseType": "omgevingsvergunning",
+      "status": "Afgehandeld",
+      "title": "Dakkapel Vondellaan 44",
+      "description": "De vergunning voor een dakkapel aan de voorzijde is verleend. Het besluit is gepubliceerd.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "startInDays": -70,
+      "endInDays": 0,
+      "tasks": [
+        {
+          "title": "Besluit publiceren",
+          "description": "Publiceer het besluit op de gemeentepagina.",
+          "assignee": "admin",
+          "dueInDays": -2,
+          "status": "completed",
+          "priority": "normal",
+          "completedInDays": -1
+        },
+        {
+          "title": "Leges factureren",
+          "description": "Factureer de leges aan de aanvrager.",
+          "assignee": "admin",
+          "dueInDays": -3,
+          "status": "completed",
+          "priority": "normal",
+          "completedInDays": -3
+        }
+      ]
+    },
+    {
+      "key": "demo-sub-oranjebuurt",
+      "caseType": "subsidieaanvraag",
+      "status": "Afgehandeld",
+      "title": "Subsidie buurtfeest Oranjebuurt",
+      "description": "De subsidie voor het jaarlijkse buurtfeest is verleend en uitbetaald.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "email",
+      "confidentiality": "openbaar",
+      "startInDays": -50,
+      "endInDays": -1,
+      "tasks": [
+        {
+          "title": "Beschikking versturen",
+          "description": "Stuur de beschikking naar de aanvrager.",
+          "assignee": "admin",
+          "dueInDays": -4,
+          "status": "completed",
+          "priority": "normal",
+          "completedInDays": -4
+        }
+      ]
+    },
+    {
+      "key": "demo-mor-fietsbrug",
+      "caseType": "klacht-behandeling",
+      "status": "Afgehandeld",
+      "title": "Gladheid fietsbrug Kanaalweg",
+      "description": "De fietsbrug is opgenomen in de strooiroute. De melder is op de hoogte gesteld.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "phone",
+      "confidentiality": "openbaar",
+      "startInDays": -30,
+      "endInDays": -2,
+      "tasks": [
+        {
+          "title": "Strooiroute aanpassen",
+          "description": "Voeg de brug toe aan de winterroute.",
+          "assignee": "admin",
+          "dueInDays": -5,
+          "status": "completed",
+          "priority": "normal",
+          "completedInDays": -5
+        }
+      ]
+    },
+    {
+      "key": "demo-kla-aanslag",
+      "caseType": "melding-openbare-ruimte",
+      "status": "Afgehandeld",
+      "title": "Klacht over onjuiste aanslag",
+      "description": "De aanslag is herzien en de klacht is gegrond verklaard.",
+      "assignee": "admin",
+      "priority": "normal",
+      "intakeChannel": "post",
+      "confidentiality": "openbaar",
+      "startInDays": -40,
+      "endInDays": -4,
+      "tasks": [
+        {
+          "title": "Herziene aanslag versturen",
+          "description": "Stuur de herziene aanslag naar de inwoner.",
+          "assignee": "admin",
+          "dueInDays": -6,
+          "status": "completed",
+          "priority": "normal",
+          "completedInDays": -6
+        },
+        {
+          "title": "Klachtafhandeling vastleggen",
+          "description": "Leg de afhandeling vast in het klachtenregister.",
+          "assignee": "admin",
+          "dueInDays": -5,
+          "status": "completed",
+          "priority": "normal",
+          "completedInDays": -5
+        }
+      ]
+    }
+  ]
+}

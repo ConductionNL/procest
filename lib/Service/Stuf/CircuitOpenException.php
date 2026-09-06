@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Short-circuited: circuit breaker is open for the endpoint.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 class CircuitOpenException extends StufException {
 }//end class

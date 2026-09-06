@@ -66,6 +66,8 @@ export default {
 		InitiatorPicker,
 	},
 
+	emits: ['close', 'confirm', 'skip'],
+
 	data() {
 		return {
 			selection: null,

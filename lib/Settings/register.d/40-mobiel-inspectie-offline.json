@@ -1,5 +1,17 @@
 {
   "components": {
+    "registers": {
+      "dossiq": {
+        "_comment": "A SCHEMA THIS FRAGMENT DEFINES BUT DOES NOT LIST HERE IS IMPORTED AND THEN UNREACHABLE. OpenRegister resolves a schema slug WITHIN the register a caller names (components.registers.*.schemas is the boundary), so an unlisted slug answers `Schema slug \"x\" is not carried by register \"dossiq\"` at the first read or write. Measured on a fresh rig: 16 lhsMatrixCell seed rows failed exactly this way.",
+        "schemas": [
+          "fieldInspection",
+          "checklistResult",
+          "fieldEvidence",
+          "syncQueue",
+          "conflictRecord"
+        ]
+      }
+    },
     "schemas": {
       "fieldInspection": {
         "slug": "fieldInspection",

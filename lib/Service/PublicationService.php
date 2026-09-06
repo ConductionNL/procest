@@ -32,12 +32,15 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
 
 /**
  * Service for besluitvorming publication.
+ *
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class PublicationService {
 	/**
@@ -46,13 +49,33 @@ class PublicationService {
 	public const CHANNELS = ['gemeenteblad', 'website', 'open_raadsinformatie', 'pdc'];
 
 	/**
+	 * Integriq's ADR-041 delivery-request event, by FQN string so dossiq
+	 * carries no compile-time dependency on the optional integriq app. A
+	 * cross-app event class name is a RUNTIME lookup — this app cannot move
+	 * it, only follow it (see WorkflowListenerRegistrar for the rename
+	 * incident that shaped this rule).
+	 *
+	 * @var string
+	 */
+	private const DELIVERY_EVENT = 'OCA\Integriq\Event\DeliveryRequestedEvent';
+
+	/**
+	 * What this service delivers, as named on the integriq seam.
+	 *
+	 * @var string
+	 */
+	private const DELIVERY_KIND = 'besluit-publication';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
+	 * @param IEventDispatcher $eventDispatcher Dispatches the integriq delivery request (ADR-041).
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -118,6 +141,22 @@ class PublicationService {
 			notes: $notes
 		);
 
+		// Hand the outbound leg to integriq (ADR-041 seam): dossiq composes
+		// WHAT is published; integriq owns HOW it travels. The outcome —
+		// including a refusal when integriq is absent or unrouted — is
+		// recorded on the publication record so the case shows the delivery
+		// status, and it never rolls back the publication itself.
+		$delivery = $this->requestDelivery(
+			caseId: $caseId,
+			channel: $channel,
+			publishedAt: $publishedAt,
+			notes: $notes,
+			case: $case,
+			register: $register,
+			schema: $schema
+		);
+		$publications = $this->attachDelivery(publications: $publications, channel: $channel, delivery: $delivery);
+
 		$case['publications'] = $publications;
 		$case['publishedAt'] = $publishedAt;
 
@@ -132,8 +171,139 @@ class PublicationService {
 			'channel' => $channel,
 			'publishedAt' => $publishedAt,
 			'publications' => $publications,
+			'delivery' => $delivery,
 		];
 	}//end publish()
+
+	/**
+	 * Request cross-app delivery of the publication via integriq's ADR-041
+	 * delivery seam.
+	 *
+	 * Fail-closed: when integriq is absent, does not handle the event, or has
+	 * no delivery route configured, the returned record says so explicitly —
+	 * a publication is never reported as travelling when nothing carries it.
+	 * Terminal status later arrives through integriq's DeliveryConcludedEvent
+	 * and is projected by {@see \OCA\Dossiq\Listener\DeliveryConcludedListener}.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $channel The publication channel.
+	 * @param string $publishedAt The publication timestamp.
+	 * @param string|null $notes Optional publication notes.
+	 * @param array<string, mixed> $case The loaded case data.
+	 * @param mixed $register The configured register id.
+	 * @param mixed $schema The configured case schema id.
+	 *
+	 * @return array<string, mixed> The delivery record for the publication entry.
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/specs/besluitvorming-delivery/spec.md
+	 */
+	private function requestDelivery(
+		string $caseId,
+		string $channel,
+		string $publishedAt,
+		?string $notes,
+		array $case,
+		mixed $register,
+		mixed $schema,
+	): array {
+		$requestedAt = date(format: 'c');
+		if (class_exists('\\' . self::DELIVERY_EVENT) === false) {
+			$this->logger->warning(
+				'Publication delivery refused: integriq is not installed',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'channel' => $channel]
+			);
+			return [
+				'status' => 'refused',
+				'reason' => 'integriq_not_installed',
+				'requestedAt' => $requestedAt,
+			];
+		}
+
+		$correlationId = bin2hex(string: random_bytes(length: 16));
+		$eventClass = '\\' . self::DELIVERY_EVENT;
+		$event = new $eventClass(
+			sourceApp: Application::APP_ID,
+			subjectRegister: (string)$register,
+			subjectSchema: (string)$schema,
+			subjectId: $caseId,
+			subjectLabel: (string)($case['title'] ?? $caseId),
+			deliveryKind: self::DELIVERY_KIND,
+			channel: $channel,
+			payload: [
+				'caseId' => $caseId,
+				'channel' => $channel,
+				'publishedAt' => $publishedAt,
+				'notes' => $notes,
+				'besluitDocument' => ($case['besluitDocument'] ?? null),
+				'identifier' => ($case['identifier'] ?? null),
+			],
+			correlationId: $correlationId,
+			externalReference: (string)($case['identifier'] ?? ''),
+		);
+
+		try {
+			$this->eventDispatcher->dispatchTyped($event);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Publication delivery dispatch failed',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'channel' => $channel, 'error' => $e->getMessage()]
+			);
+			return [
+				'status' => 'refused',
+				'reason' => 'dispatch_failed',
+				'correlationId' => $correlationId,
+				'requestedAt' => $requestedAt,
+			];
+		}
+
+		if ($event->isHandled() === false) {
+			return [
+				'status' => 'refused',
+				'reason' => 'not_handled',
+				'correlationId' => $correlationId,
+				'requestedAt' => $requestedAt,
+			];
+		}
+
+		if ((int)$event->getMatchedSubscriptions() === 0) {
+			// Accepted by integriq, but no delivery route is configured —
+			// fail closed rather than implying the publication travelled.
+			return [
+				'status' => 'unrouted',
+				'eventId' => (string)$event->getResultId(),
+				'correlationId' => $correlationId,
+				'requestedAt' => $requestedAt,
+			];
+		}
+
+		return [
+			'status' => 'requested',
+			'eventId' => (string)$event->getResultId(),
+			'correlationId' => $correlationId,
+			'matchedSubscriptions' => (int)$event->getMatchedSubscriptions(),
+			'requestedAt' => $requestedAt,
+		];
+	}//end requestDelivery()
+
+	/**
+	 * Attach a delivery record to the publication entry for a channel.
+	 *
+	 * @param array<int, array<string, mixed>> $publications The publications list.
+	 * @param string $channel The channel whose entry carries the delivery.
+	 * @param array<string, mixed> $delivery The delivery record.
+	 *
+	 * @return array<int, array<string, mixed>> The updated publications list.
+	 */
+	private function attachDelivery(array $publications, string $channel, array $delivery): array {
+		foreach ($publications as $i => $pub) {
+			if ((string)($pub['channel'] ?? '') === $channel) {
+				$publications[$i]['delivery'] = $delivery;
+				break;
+			}
+		}
+
+		return $publications;
+	}//end attachDelivery()
 
 	/**
 	 * Load a case from OpenRegister and normalise it to its array form.

@@ -39,6 +39,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\ReassignmentBatch;
+use OCA\Dossiq\Service\Support\WritesReassignments;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
@@ -50,6 +51,8 @@ use RuntimeException;
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 class CaseReassignmentService {
+
+	use WritesReassignments;
 	use SearchesObjects;
 
 	/**
@@ -279,85 +282,9 @@ class CaseReassignmentService {
 		return ['batchId' => $batchId, 'results' => $results, 'succeeded' => $succeeded, 'failed' => $failed];
 	}//end execute()
 
-	/**
-	 * Reassign a single item and append a batch audit entry.
-	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id (case or task).
-	 * @param string $id Object id.
-	 * @param array<string, mixed> $item The object payload.
-	 * @param ReassignmentBatch $batch The shared batch header.
-	 *
-	 * @return bool Whether the item was reassigned.
-	 */
-	private function reassignItem(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $id,
-		array $item,
-		ReassignmentBatch $batch,
-	): bool {
-		if ($id === '' || $schema === '') {
-			return false;
-		}
 
-		try {
-			$item['assignee'] = $batch->toUser;
 
-			// Append a batch audit entry onto the activity log when present
-			// (cases carry an activity property; tasks may not).
-			$activity = $this->extractActivityLog(item: $item);
 
-			$activity[] = [
-				'type' => 'reassignment',
-				'reassignedFrom' => $batch->fromUser,
-				'reassignedTo' => $batch->toUser,
-				'reassignedBy' => $batch->actorId,
-				'batchId' => $batch->batchId,
-				'timestamp' => $batch->now,
-			];
-			if (array_key_exists('activity', $item) === true || $schema === (string)$this->settingsService->getConfigValue('case_schema')) {
-				$item['activity'] = json_encode($activity);
-			}
-
-			$objectService->updateObject($register, $schema, $id, $item);
-			return true;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reassignment item failed',
-				['id' => $id, 'batchId' => $batch->batchId, 'error' => $e->getMessage()]
-			);
-			return false;
-		}//end try
-	}//end reassignItem()
-
-	/**
-	 * Read an item's existing activity log, accepting both the array and the
-	 * JSON-string storage shapes and falling back to an empty log.
-	 *
-	 * @param array<string, mixed> $item The object payload.
-	 *
-	 * @return array<int, mixed> The decoded activity log.
-	 */
-	private function extractActivityLog(array $item): array {
-		$raw = ($item['activity'] ?? null);
-		if (is_array($raw) === true) {
-			return $raw;
-		}
-
-		if (is_string($raw) === true) {
-			// An empty string decodes to null, so it falls through to the
-			// empty log below without a separate guard.
-			$decoded = json_decode($raw, true);
-			if (is_array($decoded) === true) {
-				return $decoded;
-			}
-		}
-
-		return [];
-	}//end extractActivityLog()
 
 	/**
 	 * Send a single digest notification to the receiving handler.
@@ -420,33 +347,5 @@ class CaseReassignmentService {
 		return array_values(array_filter($ids));
 	}//end finalStatusIds()
 
-	/**
-	 * Generate a unique batch id.
-	 *
-	 * @return string
-	 */
-	private function generateBatchId(): string {
-		try {
-			return 'batch-' . bin2hex(random_bytes(8));
-		} catch (\Throwable $e) {
-			return 'batch-' . uniqid('', true);
-		}
-	}//end generateBatchId()
 
-	/**
-	 * Resolve ObjectService + register, throwing when unavailable.
-	 *
-	 * @return array{0: object, 1: string}
-	 *
-	 * @throws \RuntimeException When OpenRegister is not available.
-	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return [$objectService, $register];
-	}//end context()
 }//end class

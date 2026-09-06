@@ -68,6 +68,8 @@ export default {
 		},
 	},
 
+	emits: ['published'],
+
 	data() {
 		return {
 			state: this.initialState,

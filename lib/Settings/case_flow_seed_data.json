@@ -1,5 +1,5 @@
 {
-    "description": "Demo data for the shipped `Case behandeling` flow. The flow moves a case between statuses BY NAME, resolved within the case type at run time, because a statusType uuid is minted per installation and a shipped flow cannot carry one. These six names are therefore not decorative: they are the flow's contract with the case type, and a name changed on one side without the other stops the case moving.",
+    "description": "Demo data for the shipped `Case behandeling` flow. The flow moves a case by the ROLE each status plays, resolved within the case type at run time, because a statusType uuid is minted per installation and a shipped flow cannot carry one. The names below are the readable fallback, not the contract: they were the contract once, and that is exactly why 8 of 18 demo runs died — a subsidy is under `Beoordeling` and a complaint under `Onderzoek`, both correctly, and `name` is `x-translatable` on top of that. The `role` is the contract. This case type is the one that models all six, which is what makes it the flow's happy path; a case type modelling no `pending-info`, `review` or `stranded` skips those steps, and one modelling no `intake`, `in-progress` or `closed` fails the run visibly rather than half-walking it.",
     "version": "1.0.0",
     "caseTypes": [
         {
@@ -9,7 +9,7 @@
             "processingDeadline": "P56D",
             "suspensionAllowed": true,
             "extensionAllowed": true,
-            "extensionDuration": "P42D",
+            "extensionPeriod": "P42D",
             "confidentiality": "openbaar",
             "origin": "aanvragen",
             "statusTypes": [
@@ -17,37 +17,43 @@
                     "name": "Ontvangen",
                     "description": "De aanvraag is binnengekomen en staat geregistreerd.",
                     "order": 1,
-                    "isFinal": false
+                    "isFinal": false,
+                    "role": "intake"
                 },
                 {
                     "name": "Wacht op aanvulling",
                     "description": "De aanvraag is niet compleet; de indiener is gevraagd om aanvullende gegevens.",
                     "order": 2,
-                    "isFinal": false
+                    "isFinal": false,
+                    "role": "pending-info"
                 },
                 {
                     "name": "In behandeling",
                     "description": "De aanvraag is compleet en wordt inhoudelijk beoordeeld.",
                     "order": 3,
-                    "isFinal": false
+                    "isFinal": false,
+                    "role": "in-progress"
                 },
                 {
                     "name": "Bij commissie",
                     "description": "De aanvraag ligt voor bij de planningscommissie voor een definitief besluit.",
                     "order": 4,
-                    "isFinal": false
+                    "isFinal": false,
+                    "role": "review"
                 },
                 {
                     "name": "Afgehandeld",
                     "description": "Er is een besluit genomen en het besluitdocument is aan de zaak toegevoegd.",
                     "order": 5,
-                    "isFinal": true
+                    "isFinal": true,
+                    "role": "closed"
                 },
                 {
                     "name": "Gestrand",
                     "description": "De gevraagde aanvulling is uitgebleven. De zaak is bewust beëindigd in plaats van te blijven rondlopen.",
                     "order": 6,
-                    "isFinal": true
+                    "isFinal": true,
+                    "role": "stranded"
                 }
             ]
         }

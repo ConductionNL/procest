@@ -30,8 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Service\BerichtenboxRoutingService;
-use OCA\Dossiq\Service\DeadlineDailyScanService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -42,6 +42,8 @@ use OCA\Dossiq\Service\NoticeOfDefaultService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Db\FlowTimer;
+use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -59,7 +61,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	private DwangsomUitbetalingService $outService;
 	private DwangsomBezwaarService $bezService;
 	private TermijnNotificationService $notifService;
-	private DeadlineDailyScanService $scanService;
+	private TermijnTimerFiredListener $firedListener;
 
 	protected function setUp(): void {
 		$this->objects = new FakeTermijnStore();
@@ -94,16 +96,18 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			new BerichtenboxRoutingService($logger),
 			$logger
 		);
-		$this->scanService = new DeadlineDailyScanService(
-			$settings,
+		// The retired daily scan's role is now split: the engine sweep
+		// fires the armed timers, and this listener does the domain side.
+		$this->firedListener = new TermijnTimerFiredListener(
 			$this->termService,
 			new DeadlineEscalationService($this->termService, $logger),
-			$logger,
-			$this->calcService
+			$this->calcService,
+			$settings,
+			$logger
 		);
 
 		// Seed AWB-default Wmo definition.
-		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
+		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
@@ -191,17 +195,43 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 * @return void
 	 */
 	public function testScenario4OverschrijdingAndDwangsom(): void {
-		// Seed overdue instance directly to simulate elapsed time without sleeping.
-		$instance = $this->objects->saveObject('dossiq', 'deadlineInstance', [
+		// Seed an overdue but still-lopend instance; the ENGINE's breach
+		// rung (slaBreached:0), consumed by the fired-listener, is what
+		// flips it to exceeded now that the daily scan is retired.
+		$instance = $this->objects->seed('deadlineInstance', [
 			'case' => 'Z/2026/S4',
 			'deadlineDefinition' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-02-26',
 			'endDateCurrent' => '2026-02-26',
-			'status' => 'exceeded',
+			'status' => 'lopend',
 			'notificatiesVerstuurd' => [],
+			'engineTimerId' => 'timer-s4',
 		]);
 		$instanceId = (string)$instance['id'];
+
+		$timer = new FlowTimer();
+		$timer->setUuid('timer-s4');
+		$timer->setAppId('dossiq');
+		$timer->setMetadata([
+			'source' => 'dossiq-termijn',
+			'kind' => 'beslistermijn',
+			'termijnInstanceId' => $instanceId,
+			'caseId' => 'Z/2026/S4',
+			'basis' => 'Wabo 3.9 lid 1',
+		]);
+		$this->firedListener->handle(new FlowTimerFiredEvent(
+			timer: $timer,
+			kind: FlowTimerFiredEvent::KIND_RUNG,
+			transition: 'escalation:slaBreached:0',
+			rungKey: 'slaBreached:0',
+			recipients: [],
+			priority: 'critical',
+			message: 'termijn-overschreden'
+		));
+
+		$flipped = $this->termService->getTermijnInstance($instanceId);
+		self::assertSame('exceeded', $flipped['status']);
 
 		// Register ingebrekestelling (after deadline).
 		$row = $this->ingService->registerNoticeOfDefault(
@@ -214,16 +244,15 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
 		$calculationId = (string)$row['penaltyPaymentCalculation']['id'];
 
-		// Accrue 5 days.
-		for ($i = 0; $i < 5; $i++) {
-			$this->calcService->calculateDaily($calculationId);
-		}
+		// Settle the accrual 5 days past the (receipt + 14d grace) start:
+		// the derivation lands where 5 legacy daily ticks landed.
+		$this->calcService->accrueThrough($calculationId, new DateTimeImmutable('2026-04-03'));
 		$accrued = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
 		self::assertSame(5, $accrued['currentDag']);
 		self::assertSame(11500, $accrued['cumulativeAmount']);
 
-		// Beschikking arrives — stop.
-		$stopped = $this->calcService->stopForBeschikking($calculationId);
+		// Beschikking arrives — stop, settling through the stop moment.
+		$stopped = $this->calcService->stopForBeschikking($calculationId, new DateTimeImmutable('2026-04-03'));
 		self::assertSame('gestopt-wegens-decision', $stopped['status']);
 		self::assertSame(11500, $stopped['definitiveAmount']);
 
@@ -254,13 +283,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario5Bezwaar(): void {
 		// Stand up a stopped berekening + linked uitbetaling.
-		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
+		$this->objects->seed('penaltyPaymentCalculation', [
 			'id' => 'b-s5',
 			'deadlineInstance' => 'ti-s5',
 			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
-		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
+		$this->objects->seed('dwangsomUitbetaling', [
 			'id' => 'u-s5',
 			'penaltyPaymentCalculation' => 'b-s5',
 			'amount' => 50000,

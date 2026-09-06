@@ -118,9 +118,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} caseTypeId UUID of the case type
 		 * @return {Promise<Array>} Array of workflow templates
-		 */
-		/**
-		 * @param caseTypeId
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async listVersions(caseTypeId) {
@@ -131,7 +128,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				const results = await objectStore.fetchCollection(
 					'workflowTemplate',
 					{
-						'_filters[caseType]': caseTypeId,
+						caseType: caseTypeId,
 						_limit: 100,
 						_order: { version: 'desc' },
 					},
@@ -151,9 +148,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} templateId UUID of the workflow template
 		 * @return {Promise<object|null>} The workflow template or null
-		 */
-		/**
-		 * @param templateId
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async getTemplate(templateId) {
@@ -180,9 +174,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} caseTypeId UUID of the case type
 		 * @return {Promise<object|null>} The active workflow template or null
-		 */
-		/**
-		 * @param caseTypeId
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async getActiveVersion(caseTypeId) {
@@ -193,9 +184,9 @@ export const useWorkflowStore = defineStore('workflow', {
 				const results = await objectStore.fetchCollection(
 					'workflowTemplate',
 					{
-						'_filters[caseType]': caseTypeId,
-						'_filters[isActive]': true,
-						'_filters[isDraft]': false,
+						caseType: caseTypeId,
+						isActive: true,
+						isDraft: false,
 						_limit: 1,
 					},
 				)
@@ -215,10 +206,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} caseTypeId UUID of the case type
 		 * @param {string} title      Name of the workflow
 		 * @return {Promise<object|null>} The created template or null
-		 */
-		/**
-		 * @param caseTypeId
-		 * @param title
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async createTemplate(caseTypeId, title) {
@@ -251,9 +238,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {object} templateData The template data to save
 		 * @return {Promise<object|null>} The saved template or null
-		 */
-		/**
-		 * @param templateData
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async saveTemplate(templateData) {
@@ -288,9 +272,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} templateId UUID of the template
 		 * @return {Promise<boolean>} Success
-		 */
-		/**
-		 * @param templateId
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async deleteTemplate(templateId) {
@@ -332,11 +313,8 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *  validation (see `validateWorkflow`) — defense in depth; the caller
 		 *  (`WorkflowTab.vue::publish()`) already validates via the editor's
 		 *  `validate()` before invoking this action.
+		 *
 		 * @return {Promise<object|null>} The published template or null
-		 */
-		/**
-		 * @param templateId
-		 * @param statusNodes
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-publish-uses-the-canonical-write-path
 		 */
 		async publishVersion(templateId, statusNodes = []) {
@@ -390,9 +368,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} sourceTemplateId UUID of the source template
 		 * @return {Promise<object|null>} The new draft version or null
-		 */
-		/**
-		 * @param sourceTemplateId
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async createDraftFromVersion(sourceTemplateId) {
@@ -449,13 +424,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  caseTasks    Tasks linked to this case
 		 * @param {Array}  caseDocuments Documents linked to this case
 		 * @return {Array} Available transitions with guard status
-		 */
-		/**
-		 * @param caseData
-		 * @param userRoles
-		 * @param workflow
-		 * @param caseTasks
-		 * @param caseDocuments
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		computeAvailableTransitions(
@@ -538,14 +506,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  steps         Workflow steps
 		 * @param {string} currentStatus Current status UUID
 		 * @return {Array} Array of {met: boolean, message: string}
-		 */
-		/**
-		 * @param guards
-		 * @param caseData
-		 * @param caseTasks
-		 * @param caseDocuments
-		 * @param steps
-		 * @param currentStatus
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		evaluateGuards(
@@ -582,10 +542,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} guard     The checklist guard definition
 		 * @param {Array}  caseTasks Tasks linked to the case
 		 * @return {object} {met: boolean, message: string}
-		 */
-		/**
-		 * @param guard
-		 * @param caseTasks
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		evaluateChecklistGuard(guard, caseTasks) {
@@ -629,10 +585,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} guard    The required field guard definition
 		 * @param {object} caseData The case object
 		 * @return {object} {met: boolean, message: string}
-		 */
-		/**
-		 * @param guard
-		 * @param caseData
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		evaluateRequiredFieldGuard(guard, caseData) {
@@ -655,10 +607,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} guard         The required document guard definition
 		 * @param {Array}  caseDocuments Documents linked to the case
 		 * @return {object} {met: boolean, message: string}
-		 */
-		/**
-		 * @param guard
-		 * @param caseDocuments
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		evaluateRequiredDocumentGuard(guard, caseDocuments) {
@@ -685,11 +633,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} currentStatus Current status UUID
 		 * @param {Array}  caseTasks     Tasks linked to the case
 		 * @return {object} {met: boolean, messages: Array<string>}
-		 */
-		/**
-		 * @param steps
-		 * @param currentStatus
-		 * @param caseTasks
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		evaluateRequiredSteps(steps, currentStatus, caseTasks) {
@@ -726,11 +669,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData   The case object
 		 * @param {object} transition The transition that triggered the actions
 		 * @return {Promise<Array>} Array of {action, success, error} results
-		 */
-		/**
-		 * @param actions
-		 * @param caseData
-		 * @param transition
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchActions(actions, caseData, transition) {
@@ -796,11 +734,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData   The case object
 		 * @param {object} transition The transition context
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param action
-		 * @param caseData
-		 * @param transition
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchEmailAction(action, caseData, transition) {
@@ -844,15 +777,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} action   The task creation action
 		 * @param {object} caseData The case object
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param action
-		 * @param caseData
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchCreateTaskAction(action, caseData) {
 			const objectStore = useObjectStore()
-			await objectStore.saveObject('task', {
+			await objectStore.saveObject('caseTask', {
 				title: action.title || t('dossiq', 'New task'),
 				description: action.description || '',
 				case: caseData.id,
@@ -868,10 +797,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} action   The sub-case creation action
 		 * @param {object} caseData The parent case object
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param action
-		 * @param caseData
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchCreateSubCaseAction(action, caseData) {
@@ -895,11 +820,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData   The case object
 		 * @param {object} transition The transition context
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param action
-		 * @param caseData
-		 * @param transition
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchWebhookAction(action, caseData, transition) {
@@ -938,10 +858,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} action   The setField action
 		 * @param {object} caseData The case object
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param action
-		 * @param caseData
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchSetFieldAction(action, caseData) {
@@ -958,10 +874,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} action   The notify action
 		 * @param {object} caseData The case object
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param action
-		 * @param caseData
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchNotifyAction(action, caseData) {
@@ -994,11 +906,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData   The case object
 		 * @param {object} transition The transition context (optional)
 		 * @return {string} Interpolated string
-		 */
-		/**
-		 * @param template
-		 * @param caseData
-		 * @param transition
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		interpolateTemplate(template, caseData, transition) {
@@ -1033,10 +940,8 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *  component (which loads them) has this list, so callers must pass
 		 *  it through; defaults to [] which yields no NO_FINAL_STATUS-style
 		 *  findings (nothing to validate against yet).
+		 *
 		 * @return {Array} Array of {type, code, message} issue objects
-		 */
-		/**
-		 * @param statusNodes
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
 		 */
 		validateWorkflow(statusNodes = []) {
@@ -1056,12 +961,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}    roleTypes   Role types of the case type
 		 * @param {Array}    docTypes    Document types of the case type
 		 * @return {object} Portable workflow definition
-		 */
-		/**
-		 * @param template
-		 * @param statusTypes
-		 * @param roleTypes
-		 * @param docTypes
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		exportWorkflow(template, statusTypes, roleTypes, docTypes) {
@@ -1134,13 +1033,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  roleTypes    Role types of the target case type
 		 * @param {Array}  docTypes     Document types of the target case type
 		 * @return {object} {success, template, missingTypes}
-		 */
-		/**
-		 * @param importData
-		 * @param caseTypeId
-		 * @param statusTypes
-		 * @param roleTypes
-		 * @param docTypes
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async importWorkflow(
@@ -1228,10 +1120,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} statusId UUID of the status to add the step to
 		 * @param {object} stepData Step properties (optional overrides)
 		 * @return {object} The new step
-		 */
-		/**
-		 * @param statusId
-		 * @param stepData
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		addStep(statusId, stepData = {}) {
@@ -1259,9 +1147,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * Remove a step from the current workflow template.
 		 *
 		 * @param {string} stepId UUID of the step to remove
-		 */
-		/**
-		 * @param stepId
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		removeStep(stepId) {
@@ -1289,10 +1174,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} stepId  UUID of the step to update
 		 * @param {object} updates Properties to update
-		 */
-		/**
-		 * @param stepId
-		 * @param updates
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		updateStep(stepId, updates) {
@@ -1313,11 +1194,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} toStatus   UUID of the target status
 		 * @param {object} data       Optional transition properties
 		 * @return {object} The new transition
-		 */
-		/**
-		 * @param fromStatus
-		 * @param toStatus
-		 * @param data
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		addTransition(fromStatus, toStatus, data = {}) {
@@ -1342,9 +1218,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * Remove a transition from the current workflow template.
 		 *
 		 * @param {string} transitionId UUID of the transition to remove
-		 */
-		/**
-		 * @param transitionId
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		removeTransition(transitionId) {
@@ -1361,10 +1234,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} transitionId UUID of the transition to update
 		 * @param {object} updates      Properties to update
-		 */
-		/**
-		 * @param transitionId
-		 * @param updates
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		updateTransition(transitionId, updates) {
@@ -1384,11 +1253,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} statusId UUID of the status
 		 * @param {number} x        X coordinate
 		 * @param {number} y        Y coordinate
-		 */
-		/**
-		 * @param statusId
-		 * @param x
-		 * @param y
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		updateNodePosition(statusId, x, y) {
@@ -1409,9 +1273,6 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * `StatusesTab.vue::deleteStatusType()` already enforces.
 		 *
 		 * @param {string} statusId UUID of the status to remove
-		 */
-		/**
-		 * @param statusId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
 		 */
 		removeStatusNode(statusId) {

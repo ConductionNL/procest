@@ -44,6 +44,8 @@ use OCP\IRequest;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class NrcController extends ZgwController {
 	/**

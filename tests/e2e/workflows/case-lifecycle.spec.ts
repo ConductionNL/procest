@@ -36,31 +36,26 @@
  * the engine REST calls are fixture-level correctness checks (per the prompt).
  */
 
+import type { APIRequestContext, Page } from '@playwright/test'
+import type { StateMachine } from '../helpers/fixtures.ts'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog, navTo } from '../helpers/nav'
-import {
-	RUN_PREFIX,
+	cleanupRunObjects,
+	executeTransition,
+	getAvailableTransitions,
 	getRequestToken,
-	seedStateMachine,
-	seedCase,
-	showObject,
-	updateObject,
-	deleteObject,
+	getTransitionHistory,
 	listObjects,
 	objectId,
-	cleanupRunObjects,
-	getAvailableTransitions,
-	executeTransition,
-	getTransitionHistory,
-	type StateMachine,
-} from '../helpers/fixtures'
+	RUN_PREFIX,
+	seedCase,
+	seedStateMachine,
+	showObject,
+	updateObject,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string
@@ -76,17 +71,21 @@ test.describe('Case lifecycle — state machine', () => {
 	})
 
 	test.afterAll(async () => {
-		// Child-first cleanup: cases + statusRecords this run produced, then the
-		// seeded machine (template, statusTypes, caseType).
-		await cleanupRunObjects(api, token, ['statusRecord', 'case'])
-		for (const [schema, id] of [...sm.created].reverse()) {
-			await deleteObject(api, token, schema, id)
-		}
+		// Child-first cleanup across every fixture schema: the statusRecords the
+		// transition engine wrote against this run's cases, then the cases, then
+		// the seeded machine (template, statusTypes, caseType).
+		//
+		// This used to delete `sm.created` while its own cases survived — the
+		// `case` schema is archival and refused the delete — which left the
+		// cases pointing at statusTypes that no longer resolved. `purgeObject`
+		// removes the cases for real, so the machine can go with them.
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 
 	/**
 	 * Open the Workflow Board via the sidebar and wait for its columns to load.
+	 *
 	 * @param page The page.
 	 */
 	async function openBoard(page: Page): Promise<void> {

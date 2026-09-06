@@ -75,6 +75,12 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'no_case_id');
 			}
 
+			// The dispatcher records its outcome on the case via
+			// ObjectService. On the flow path the engine's
+			// RegistryStepDispatcher already runs this handler inside
+			// `ObjectService::runAs()` as the run's acting identity
+			// (openregister#3332); on the interactive path the ambient session
+			// user answers the permission checks. No local wrap needed.
 			$result = $this->publicationService->publish($caseId, ['channel' => 'website']);
 			if (($result['ok'] ?? false) === true) {
 				return new ActionResult(succeeded: true, data: $result);

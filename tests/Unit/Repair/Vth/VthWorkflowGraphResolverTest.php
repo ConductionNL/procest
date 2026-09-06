@@ -96,7 +96,7 @@ class VthWorkflowGraphResolverTest extends TestCase {
 			statusMap: $this->statusMap(),
 			spawnTargets: $spawnTargets,
 		);
-		$this->assertNotNull($graph);
+		$this->assertSame([], $graph['unresolved']);
 
 		return $graph['transitions'][0]['automaticActions'];
 	}
@@ -179,6 +179,71 @@ class VthWorkflowGraphResolverTest extends TestCase {
 	}
 
 	/**
+	 * 🔴 IT NAMES THE STATUS IT COULD NOT FIND. The old resolver returned null
+	 * and logged "unresolved status in steps", so the one fact an operator
+	 * needed was the one it withheld. `toezichtbezoek` named `Inspectie`,
+	 * which belongs to `toezichtzaak-milieu`, while its own case type
+	 * `toezichtzaak-bouw` carries `Inspectie fase 1` to `fase 3`.
+	 *
+	 * @return void
+	 */
+	public function testItNamesTheStatusThatDoesNotResolve(): void {
+		$graph = $this->resolver->resolve(
+			data: [
+				'steps' => [
+					['slug' => 'rapport', 'statusName' => 'Rapport', 'order' => 1],
+					['slug' => 'uitgevoerd', 'statusName' => 'Inspectie', 'order' => 2],
+				],
+				'transitions' => [],
+			],
+			slug: 'toezichtbezoek',
+			statusMap: $this->statusMap(),
+		);
+
+		$this->assertSame(['Inspectie'], $graph['unresolved']);
+	}
+
+	/**
+	 * Every unresolvable name is collected, not just the first one.
+	 *
+	 * Stopping at the first miss turns one repair run per missing status into
+	 * the fix loop, which is how a two-status mismatch reads as one.
+	 *
+	 * @return void
+	 */
+	public function testItCollectsEveryUnresolvedStatus(): void {
+		$graph = $this->resolver->resolve(
+			data: [
+				'steps' => [['slug' => 'fase-1', 'statusName' => 'Inspectie fase 1', 'order' => 1]],
+				'transitions' => [
+					['slug' => 'naar-fase-2', 'fromStatus' => 'Inspectie fase 1', 'toStatus' => 'Inspectie fase 2'],
+				],
+			],
+			slug: 'toezichtbezoek',
+			statusMap: $this->statusMap(),
+		);
+
+		$this->assertSame(['Inspectie fase 1', 'Inspectie fase 2'], $graph['unresolved']);
+	}
+
+	/**
+	 * An entry every status of which resolves reports nothing unresolved.
+	 *
+	 * @return void
+	 */
+	public function testAResolvableEntryReportsNothingUnresolved(): void {
+		$graph = $this->resolver->resolve(
+			data: $this->entry([]),
+			slug: 'toezichtbezoek',
+			statusMap: $this->statusMap(),
+		);
+
+		$this->assertSame([], $graph['unresolved']);
+		$this->assertCount(1, $graph['steps']);
+		$this->assertCount(1, $graph['transitions']);
+	}
+
+	/**
 	 * A malformed (non-array) action entry is skipped rather than fatal.
 	 *
 	 * @return void
@@ -191,7 +256,7 @@ class VthWorkflowGraphResolverTest extends TestCase {
 			spawnTargets: [],
 		);
 
-		$this->assertNotNull($graph);
+		$this->assertSame([], $graph['unresolved']);
 		$this->assertSame([], $graph['transitions'][0]['automaticActions']);
 	}
 }

@@ -53,7 +53,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 		$this->service = new DwangsomUitbetalingService($settings);
 
 		// Seed a stopped berekening.
-		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
+		$this->objects->seed('penaltyPaymentCalculation', [
 			'id' => 'b-stopped',
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
@@ -112,7 +112,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testPrepareBetalingRejectsZeroAmount(): void {
-		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
+		$this->objects->seed('penaltyPaymentCalculation', [
 			'id' => 'b-zero',
 			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 0,

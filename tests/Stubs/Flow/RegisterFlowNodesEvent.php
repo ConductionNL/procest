@@ -31,15 +31,27 @@ use OCP\EventDispatcher\Event;
 
 /**
  * Stub of OpenRegister's RegisterFlowNodesEvent.
+ *
+ * ⚠️ IT CARRIES A REGISTRY, because the real one does. This stub used to
+ * take no constructor argument and expose a `getRegisteredNodes()` accessor of
+ * its own invention, so the listener's tests read the contribution from a
+ * place that does not exist in production and built the event in a way that
+ * fatals against the real class. The catalogue is where a contributed node
+ * lands; asking the event instead was asking the wrong object.
  */
 class RegisterFlowNodesEvent extends Event {
 
 	/**
-	 * The nodes registered on this event.
+	 * Constructor, mirroring the real class's.
 	 *
-	 * @var IFlowNode[]
+	 * @param FlowNodeRegistry $registry The registry to contribute to.
 	 */
-	private array $nodes = [];
+	public function __construct(
+		private readonly FlowNodeRegistry $registry,
+	) {
+		parent::__construct();
+
+	}//end __construct()
 
 	/**
 	 * Register one node on the catalogue.
@@ -49,17 +61,8 @@ class RegisterFlowNodesEvent extends Event {
 	 * @return void
 	 */
 	public function registerNode(IFlowNode $node): void {
-		$this->nodes[] = $node;
+		$this->registry->register(node: $node);
 
 	}//end registerNode()
-
-	/**
-	 * The nodes registered so far. Stub-only accessor.
-	 *
-	 * @return IFlowNode[] The registered nodes.
-	 */
-	public function getRegisteredNodes(): array {
-		return $this->nodes;
-	}//end getRegisteredNodes()
 
 }//end class

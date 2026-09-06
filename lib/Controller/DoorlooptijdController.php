@@ -37,6 +37,8 @@ use OCP\IUserSession;
 
 /**
  * REST controller for the throughput-time dashboard.
+ *
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
  */
 class DoorlooptijdController extends Controller {
 	/**

@@ -287,7 +287,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param period
+		 * @param {object} period The period.
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		formatPeriod(period) {
@@ -303,7 +303,7 @@ export default {
 			this.loading = true
 			try {
 				const result = await this.objectStore.fetchCollection('resultType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})
 				this.resultTypes = result || []
@@ -340,7 +340,7 @@ export default {
 		},
 
 		/**
-		 * @param rt
+		 * @param {object} rt The type being edited in this tab.
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		startEdit(rt) {
@@ -384,7 +384,7 @@ export default {
 		},
 
 		/**
-		 * @param rt
+		 * @param {object} rt The type being edited in this tab.
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async deleteResultType(rt) {

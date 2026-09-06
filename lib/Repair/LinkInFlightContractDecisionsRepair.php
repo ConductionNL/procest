@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TenantSaasService;
 use OCP\Migration\IOutput;
@@ -76,11 +77,13 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 *
 	 * @param ContractDecisionDelegationService $delegationService Decision delegation service.
 	 * @param SettingsService $settingsService Settings / ObjectService resolver.
+	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly ContractDecisionDelegationService $delegationService,
 		private readonly SettingsService $settingsService,
+		private readonly JsonEncodedStringProperties $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -89,6 +92,8 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/contract-decision-delegation/spec.md
 	 */
 	public function getName(): string {
 		return 'Link in-flight Dossiq contract/besluitvorming cases to decidesk Decisions';
@@ -233,8 +238,16 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 			);
 
 			// Persist the decisionRef on the case (does not alter the case outcome).
+			// A loaded case carries `statusHistory`, `activity`, `geometry`
+			// and `relatedCases` DECODED, and the schema still declares each
+			// of them a string — a bare array_merge writes arrays into them
+			// and OpenRegister refuses the whole save.
 			$objectService->saveObject(
-				object: array_merge($case, ['decisionRef' => $newDecisionRef]),
+				object: $this->jsonProperties->mergeForWrite(
+					stored: $case,
+					updates: ['decisionRef' => $newDecisionRef],
+					schemaSlug: 'case',
+				),
 				register: TenantSaasService::REGISTER,
 				schema: 'case',
 				uuid: $caseUuid,

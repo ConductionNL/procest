@@ -125,7 +125,7 @@ class StufAdapterService {
 				messageKind: 'Lk01',
 				role: 'creeerZaak',
 				caseId: $caseId,
-				bronEntiteit: 'case',
+				sourceEntity: 'case',
 				sourceId: (string)($case['id'] ?? '')
 			),
 			role: 'creeerZaak'
@@ -198,7 +198,7 @@ class StufAdapterService {
 				messageKind: 'Lk02',
 				role: 'actualiseerZaak',
 				caseId: (string)($mapping['externalIdentification'] ?? ''),
-				bronEntiteit: 'case',
+				sourceEntity: 'case',
 				sourceId: (string)($case['id'] ?? '')
 			),
 			role: 'actualiseerZaak'
@@ -250,7 +250,7 @@ class StufAdapterService {
 			$this->messageHandler->transitionStatus(
 				msg: $msg,
 				newStatus: 'fout',
-				extras: ['fout' => $response['fout'], 'duurMs' => $response['durationMs']]
+				extras: ['fout' => $response['fout'], 'durationMs' => $response['durationMs']]
 			);
 			$this->needsInput->dispatch(
 				type: 'stuf_timeout',
@@ -264,7 +264,7 @@ class StufAdapterService {
 			newStatus: $this->statusForHttp(httpStatus: (int)$response['httpStatus']),
 			extras: [
 				'httpStatus' => $response['httpStatus'],
-				'duurMs' => $response['durationMs'],
+				'durationMs' => $response['durationMs'],
 				'responseEnvelopeXml' => $response['responseXml'],
 				'fout' => $response['fout'],
 			]
@@ -356,7 +356,7 @@ class StufAdapterService {
 			newStatus: $this->statusForHttp(httpStatus: (int)$response['httpStatus']),
 			extras: [
 				'httpStatus' => $response['httpStatus'],
-				'duurMs' => $response['durationMs'],
+				'durationMs' => $response['durationMs'],
 				'responseEnvelopeXml' => $response['responseXml'],
 				'caseIdentification' => ($confirmation['caseIdentification'] ?? ''),
 			]
@@ -375,18 +375,18 @@ class StufAdapterService {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
 	 */
 	public function retrySend(string $stufMessageId): void {
-		$msg = $this->register->findOne(
+		$msg = $this->register->findById(
 			schema: StufRegisterAccess::SCHEMA_MESSAGE,
-			filters: ['id' => $stufMessageId]
+			id: $stufMessageId
 		);
 		if ($msg === null) {
 			$this->logger->warning(message: 'StUF retry: message {id} not found', context: ['id' => $stufMessageId]);
 			return;
 		}
 
-		$endpoint = $this->register->findOne(
+		$endpoint = $this->register->findById(
 			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-			filters: ['id' => (string)($msg['endpointId'] ?? '')]
+			id: (string)($msg['endpointId'] ?? '')
 		);
 		if ($endpoint === null) {
 			$this->logger->warning(message: 'StUF retry: endpoint {id} not found', context: ['id' => ($msg['endpointId'] ?? '')]);

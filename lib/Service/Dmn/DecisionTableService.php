@@ -9,6 +9,12 @@
  * evaluation logic, mirroring the `RoutingRuleService` / `RoutingEngine`
  * split already used for KCC routing.
  *
+ * DEPRECATED (dossiq-decisions-to-decidiq): decision-table storage and CRUD
+ * move to OpenRegister's flow-decision-tables, which is being built in
+ * parallel. This service keeps working until that change lands and is retired
+ * then; do not add new consumers. LocalDecisionAuthoringTest pins the
+ * consumer set closed.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service\Dmn
  *

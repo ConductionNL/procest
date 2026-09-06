@@ -114,18 +114,18 @@ fields are present before sending.
 The system SHALL persist one append-only `stufMessage` row per outbound
 envelope (and per inbound reception), recording the full envelope XML, HTTP
 status, duration, retry history, lifecycle status, and a generic source-ref
-(`bronEntiteit`/`bronId`/`gerelateerdeZaakId`) back to the dossiq entity that
+(`sourceEntity`/`sourceId`/`relatedCaseId`) back to the dossiq entity that
 triggered it.
 
 #### Scenario: Outbound send is logged
 
 - **WHEN** an outbound envelope is sent
-- **THEN** a `stufMessage` row MUST be persisted with `richting=uitgaand`, the referentienummer, and the source-ref of the originating case
+- **THEN** a `stufMessage` row MUST be persisted with `direction=outbound`, the `referenceNumber`, and the source-ref of the originating case
 
 ### Requirement: Bidirectional mapping
 
 The system SHALL maintain a `zaaksysteemMapping` linking a dossiq entity
-(`bronEntiteit` ∈ {case, contact} + `bronId`, plus `caseId` for case mappings)
+(`sourceEntity` ∈ {case, contact} + `sourceId`, plus `caseId` for case mappings)
 to its external zaaksysteem identifier, reused idempotently across retries and
 updates.
 

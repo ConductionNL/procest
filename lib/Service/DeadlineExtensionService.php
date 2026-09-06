@@ -36,6 +36,8 @@ use RuntimeException;
 
 /**
  * AWB 4:14 verlenging engine on a TermijnInstance.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlineExtensionService {
 	/**
@@ -58,9 +60,11 @@ class DeadlineExtensionService {
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService.
+	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -169,6 +173,17 @@ class DeadlineExtensionService {
 				'status' => 'verlengd',
 				'countExtensions' => ($consumed + 1),
 			]
+		);
+
+		// Mirror the verdaging to the engine timer: the domain refusal
+		// rules above are authoritative, the engine records the same
+		// decision on the clock (standard extend vs the separately
+		// authorized supervisor override, AWB 4:14).
+		$this->timerService?->extendBeslistermijn(
+			instance: $instance,
+			days: $daysImpact,
+			rationale: $rationale,
+			supervisor: ($mode === self::MODE_SUPERVISOR)
 		);
 
 		$context = $this->resolveExtensionContext(mode: $mode);

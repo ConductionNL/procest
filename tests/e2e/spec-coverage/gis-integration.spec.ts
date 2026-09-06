@@ -19,8 +19,8 @@
  * so the Vue history-mode router can resolve the route correctly.
  */
 
-import { test, expect } from '@playwright/test'
-import { dismissSupportDialog } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 test.describe('GIS integration spec coverage', () => {
 	// @e2e openspec/specs/gis-integration/spec.md#cases-on-map-view-renders-the-map-dashboard

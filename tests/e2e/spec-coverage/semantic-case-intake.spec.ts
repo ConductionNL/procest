@@ -13,15 +13,17 @@
  * detail overview.
  */
 
-import { test, expect } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
+import { request as pwRequest } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	getRequestToken,
 	ensureCaseType,
-	seedCase,
+	getRequestToken,
 	objectId,
-} from '../helpers/fixtures'
-import { STORAGE_STATE } from '../helpers/auth'
-import { request as pwRequest, type APIRequestContext } from '@playwright/test'
+	seedCase,
+} from '../helpers/fixtures.ts'
 
 const APP = '/index.php/apps/dossiq'
 

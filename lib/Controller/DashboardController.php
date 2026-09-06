@@ -56,6 +56,8 @@ use OCP\IRequest;
  * Controller for the main Dossiq dashboard page plus the PWA assets.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
  */
 class DashboardController extends Controller {
 	/**

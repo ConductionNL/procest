@@ -34,7 +34,7 @@ export const CASE_EXPORT_ENDPOINT =
  * array-valued query entries are repeated as multiple `key=value` pairs.
  *
  * @param {string} format Export format, e.g. `'csv'` or `'excel'`.
- * @param {{[key: string]: *}} [query] The current `$route.query` (or `{}` when unavailable).
+ * @param {Object<string, string>} [query] The current `$route.query` (or `{}` when unavailable).
  * @return {string} The export-leaf URL including the query string.
  *
  * @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md

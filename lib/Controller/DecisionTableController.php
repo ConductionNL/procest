@@ -7,6 +7,10 @@
  * mirroring `KccRoutingController`) and standalone decision evaluation
  * (any authenticated user).
  *
+ * DEPRECATED (dossiq-decisions-to-decidiq): decision tables move to
+ * OpenRegister's flow-decision-tables, which is being built in parallel.
+ * These endpoints keep working until that change lands and are retired then.
+ *
  * @category Controller
  * @package  OCA\Dossiq\Controller
  *
@@ -269,7 +273,7 @@ class DecisionTableController extends Controller {
 	 */
 	private function bodyParams(): array {
 		$params = $this->request->getParams();
-		unset($params['id'], $params['_route']);
+		unset($params['id'], $params['uuid'], $params['@self'], $params['_route']);
 		return $params;
 	}//end bodyParams()
 

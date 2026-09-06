@@ -26,7 +26,7 @@
  * @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
 	buildCaseExportUrl,
 	CASE_EXPORT_ENDPOINT,

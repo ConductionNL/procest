@@ -310,7 +310,7 @@ export default {
 		},
 
 		/**
-		 * @param idx
+		 * @param {number} idx The index.
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06
 		 */
 		removeVoorwaarde(idx) {
@@ -347,7 +347,7 @@ export default {
 		},
 
 		/**
-		 * @param dateStr
+		 * @param {string} dateStr The date str, as a string.
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06
 		 */
 		formatDate(dateStr) {

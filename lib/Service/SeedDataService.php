@@ -25,6 +25,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Besluitvorming\WorkflowReferenceResolver;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SeedSummary;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -37,6 +40,25 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class SeedDataService {
+	use SearchesObjects;
+
+	/**
+	 * The tally of the seed call in progress.
+	 *
+	 * Held on the instance because {@see createObject()} is where a refusal
+	 * becomes visible, several frames below the caller that reports it.
+	 *
+	 * @var SeedSummary|null
+	 */
+	private ?SeedSummary $summary = null;
+
+	/**
+	 * Lazily built workflow reference resolver.
+	 *
+	 * @var WorkflowReferenceResolver|null
+	 */
+	private ?WorkflowReferenceResolver $workflowResolver = null;
+
 	/**
 	 * Constructor for the SeedDataService.
 	 *
@@ -94,31 +116,47 @@ class SeedDataService {
 			return ['success' => false, 'message' => 'Register or schemas not configured'];
 		}
 
-		$summary = [
-			'success' => true,
-			'caseTypes' => 0,
-			'statusTypes' => 0,
-			'roleTypes' => 0,
-			'workflows' => 0,
-			'skipped' => 0,
-		];
+		$this->summary = new SeedSummary();
 
-		foreach (($seedData['caseTypes'] ?? []) as $caseTypeData) {
-			$result = $this->seedCaseType(
-				objectService: $objectService,
-				caseTypeData: $caseTypeData,
-				registerId: $registerId,
-				caseTypeSchema: $caseTypeSchema,
-				statusTypeSchema: $statusTypeSchema,
-				roleTypeSchema: $roleTypeSchema,
-				workflowSchema: $workflowSchema,
-			);
+		// A REPAIR STEP HAS NO SESSION, SO OPENREGISTER RESOLVES THE ACTOR AS
+		// 'Anonymous' AND REFUSES EVERY WRITE. `SeedBezwaarBeroepData` calls
+		// this from `<install>` and `<post-migration>`; the setup wizard and
+		// the occ command call it from a real session, where the elevation is
+		// a no-op because the inputs are the app's own shipped seed file
+		// either way. Same mechanism its sibling seeds already use.
+		$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: function () use (
+				$seedData,
+				$objectService,
+				$registerId,
+				$caseTypeSchema,
+				$statusTypeSchema,
+				$roleTypeSchema,
+				$workflowSchema
+			): void {
+				foreach (($seedData['caseTypes'] ?? []) as $caseTypeData) {
+					$result = $this->seedCaseType(
+						objectService: $objectService,
+						caseTypeData: $caseTypeData,
+						registerId: $registerId,
+						caseTypeSchema: $caseTypeSchema,
+						statusTypeSchema: $statusTypeSchema,
+						roleTypeSchema: $roleTypeSchema,
+						workflowSchema: $workflowSchema,
+					);
 
-			$summary['caseTypes'] += $result['caseTypes'];
-			$summary['statusTypes'] += $result['statusTypes'];
-			$summary['roleTypes'] += $result['roleTypes'];
-			$summary['workflows'] += $result['workflows'];
-			$summary['skipped'] += $result['skipped'];
+					$this->summary->addCaseTypeResult(result: $result);
+				}
+			}
+		);
+
+		$summary = $this->summary->toArray();
+
+		if ($this->summary->isClean() === false) {
+			$this->logger->error('Dossiq: Seed data refused writes', $summary);
+
+			return $summary;
 		}
 
 		$this->logger->info('Dossiq: Seed data complete', $summary);
@@ -399,7 +437,7 @@ class SeedDataService {
 			return 0;
 		}
 
-		$resolvedWorkflow = $this->resolveWorkflowReferences(
+		$resolvedWorkflow = $this->workflowResolver()->resolveWorkflowReferences(
 			workflowData: $workflowData,
 			statusNameMap: $statusNameMap,
 			roleNameMap: $roleNameMap,
@@ -415,92 +453,6 @@ class SeedDataService {
 
 		return (int)($workflowObj !== null);
 	}//end seedWorkflowTemplate()
-
-	/**
-	 * Resolve workflow step and transition references from names to UUIDs.
-	 *
-	 * @param array $workflowData The raw workflow template data
-	 * @param array $statusNameMap Status name to UUID mapping
-	 * @param array $roleNameMap Role name to UUID mapping
-	 * @param string $caseTypeId The case type UUID
-	 *
-	 * @return array The workflow data with resolved references
-	 */
-	private function resolveWorkflowReferences(
-		array $workflowData,
-		array $statusNameMap,
-		array $roleNameMap,
-		string $caseTypeId,
-	): array {
-		$workflowData['caseType'] = $caseTypeId;
-
-		// Resolve steps: map statusName to status UUID.
-		$resolvedSteps = [];
-		foreach (($workflowData['steps'] ?? []) as $step) {
-			$statusName = ($step['statusName'] ?? '');
-			unset($step['statusName']);
-
-			$step['id'] = $this->generateUUID();
-			$step['status'] = ($statusNameMap[$statusName] ?? '');
-
-			$resolvedSteps[] = $step;
-		}
-
-		$workflowData['steps'] = json_encode($resolvedSteps);
-
-		// Resolve transitions: map statusName to UUID, roleName to UUID.
-		$resolvedTransitions = [];
-		foreach (($workflowData['transitions'] ?? []) as $transition) {
-			$fromName = ($transition['fromStatusName'] ?? '');
-			$toName = ($transition['toStatusName'] ?? '');
-			unset($transition['fromStatusName'], $transition['toStatusName']);
-
-			$transition['id'] = $this->generateUUID();
-
-			// Handle wildcard "*" for "any active status".
-			$transition['fromStatus'] = ($statusNameMap[$fromName] ?? '');
-			if ($fromName === '*') {
-				$transition['fromStatus'] = '*';
-			}
-
-			$transition['toStatus'] = ($statusNameMap[$toName] ?? '');
-
-			// Resolve role guards.
-			$resolvedGuards = [];
-			foreach (($transition['guards'] ?? []) as $guard) {
-				if ($guard['type'] === 'roleGuard' && isset($guard['config']['roleName']) === true) {
-					$roleName = $guard['config']['roleName'];
-					$guard['config']['roleId'] = ($roleNameMap[$roleName] ?? '');
-				}
-
-				$resolvedGuards[] = $guard;
-			}
-
-			$transition['guards'] = $resolvedGuards;
-
-			// Resolve automatic action role references.
-			$resolvedActions = [];
-			foreach (($transition['automaticActions'] ?? []) as $action) {
-				if (isset($action['config']['roleName']) === true) {
-					$roleName = $action['config']['roleName'];
-					$action['config']['roleId'] = ($roleNameMap[$roleName] ?? '');
-				}
-
-				$resolvedActions[] = $action;
-			}
-
-			$transition['automaticActions'] = $resolvedActions;
-
-			$resolvedTransitions[] = $transition;
-		}//end foreach
-
-		$workflowData['transitions'] = json_encode($resolvedTransitions);
-
-		// Remove raw array data that was already JSON-encoded.
-		unset($workflowData['steps_raw'], $workflowData['transitions_raw']);
-
-		return $workflowData;
-	}//end resolveWorkflowReferences()
 
 	/**
 	 * Create an object in OpenRegister via ObjectService.
@@ -524,7 +476,12 @@ class SeedDataService {
 				schema: $schemaId,
 				object: $data,
 			);
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
+			// \Throwable, not \Exception: an OpenRegister refusal can surface
+			// as a PHP `Error` (a TypeError on a shifted signature, say), which
+			// `catch (\Exception)` does not catch — the seed would then abort
+			// the whole install instead of counting one refused row.
+			$this->summary?->recordFailure();
 			$this->logger->error(
 				'Dossiq: Failed to create seed object',
 				[
@@ -652,4 +609,19 @@ class SeedDataService {
 			str_split(bin2hex($data), 4)
 		);
 	}//end generateUUID()
+	/**
+	 * The one resolver that maps workflow name references onto created ids.
+	 *
+	 * Built here rather than injected so the constructor signature stays put:
+	 * it is stateless, and `TemplateBundleSeeder` already takes the same class
+	 * from the container. Two copies of this mapping is how a seeded workflow
+	 * ends up carrying role references the engine cannot address.
+	 *
+	 * @return WorkflowReferenceResolver The shared resolver.
+	 */
+	private function workflowResolver(): WorkflowReferenceResolver {
+		$this->workflowResolver ??= new WorkflowReferenceResolver();
+
+		return $this->workflowResolver;
+	}//end workflowResolver()
 }//end class

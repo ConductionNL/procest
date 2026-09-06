@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Immutable audit log for mandate uses.
+ *
+ * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
  */
 class MandaatGebruikService {
 	use SearchesObjects;
@@ -92,12 +94,13 @@ class MandaatGebruikService {
 		];
 
 		try {
-			$saved = $objectService->saveObject($register, $schema, $row);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return $row;
+			$saved = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $row
+			);
+			return ($saved ?? $row);
 		} catch (\Throwable $e) {
 			$this->logger->error('MandaatGebruik log failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
 			return $row;

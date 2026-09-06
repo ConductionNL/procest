@@ -10,15 +10,15 @@
  * @spec openspec/changes/document-zaakdossier/tasks.md#T06
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
+	canShare,
 	CONFIDENTIALITY_HIERARCHY,
 	confidentialityOrdinal,
-	canShare,
-	isTransitionAllowed,
-	isClassificationAllowed,
-	groupByType,
 	formatSize,
+	groupByType,
+	isClassificationAllowed,
+	isTransitionAllowed,
 } from '../../src/utils/dossierHelpers.js'
 
 describe('confidentialityOrdinal', () => {

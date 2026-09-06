@@ -150,14 +150,15 @@ class SubstitutionService {
 		];
 
 		[$objectService, $register, $schema] = $this->requireContext();
-		$saved = $objectService->saveObject($register, $schema, $row);
+		$saved = $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			object: $row
+		);
 		$this->activeCache = [];
 
-		if (is_array($saved) === true) {
-			return $saved;
-		}
-
-		return $row;
+		return ($saved ?? $row);
 	}//end create()
 
 	/**

@@ -39,15 +39,126 @@ use RuntimeException;
  */
 class ChecklistGuardTest extends TestCase {
 	/**
+	 * A guard naming no task reads every task on the case.
+	 *
+	 * A workflow TEMPLATE cannot know a runtime task uuid, so every shipped
+	 * checklist guard names none. Refusing those outright made them permanent
+	 * blockers that looked like unfinished work on the case.
+	 *
 	 * @return void
 	 */
-	public function testFailsWhenTaskIdMissing(): void {
-		$guard = new ChecklistGuard($this->createMock(SettingsService::class), new NullLogger());
+	public function testWithoutTaskIdReadsEveryTaskOnTheCase(): void {
+		$objectService = new class {
+			/**
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 * @param array<string, mixed> $filters The filters.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				return [
+					['checklist' => [['label' => 'Stuk 1', 'checked' => true]]],
+					['checklist' => [['label' => 'Stuk 2', 'checked' => false]]],
+				];
+			}
+		};
+
+		$guard = new ChecklistGuard($this->buildSettings($objectService), new NullLogger());
 		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
 
 		self::assertFalse($result->passed);
-		self::assertSame('Checklist guard missing taskId', $result->failureMessage);
-	}//end testFailsWhenTaskIdMissing()
+		self::assertSame(['Stuk 2'], $result->details['missing']);
+	}//end testWithoutTaskIdReadsEveryTaskOnTheCase()
+
+	/**
+	 * A checklist stored the way the schema stores it is still read.
+	 *
+	 * The task schema holds `checklist` as a JSON-encoded string. Reading it as
+	 * an array yielded no items at all, so the guard passed on the one shape
+	 * the store actually holds.
+	 *
+	 * @return void
+	 */
+	public function testDecodesAJsonEncodedChecklist(): void {
+		$objectService = new class {
+			/**
+			 * @param string $id The task id.
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(string $id, string $register, string $schema): array {
+				return ['checklist' => json_encode([['label' => 'Stuk 1', 'checked' => false]])];
+			}
+		};
+
+		$guard = new ChecklistGuard($this->buildSettings($objectService), new NullLogger());
+		$result = $guard->evaluate(guardConfig: ['taskId' => 't-1'], case: ['id' => 'c'], userId: 'u');
+
+		self::assertFalse($result->passed);
+		self::assertSame(['Stuk 1'], $result->details['missing']);
+	}//end testDecodesAJsonEncodedChecklist()
+
+	/**
+	 * A required item the checklist does not carry counts as missing.
+	 *
+	 * The allow-list only reported items that were present AND unticked, so an
+	 * item nobody had put on the checklist satisfied the guard.
+	 *
+	 * @return void
+	 */
+	public function testARequiredItemThatIsAbsentCountsAsMissing(): void {
+		$objectService = new class {
+			/**
+			 * @param string $id The task id.
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(string $id, string $register, string $schema): array {
+				return ['checklist' => [['label' => 'Iets anders', 'checked' => true]]];
+			}
+		};
+
+		$guard = new ChecklistGuard($this->buildSettings($objectService), new NullLogger());
+		$result = $guard->evaluate(
+			guardConfig: ['taskId' => 't-1', 'requiredItems' => ['Rechtsmiddelenclausule opgenomen']],
+			case: ['id' => 'c'],
+			userId: 'u',
+		);
+
+		self::assertFalse($result->passed);
+		self::assertSame(['Rechtsmiddelenclausule opgenomen'], $result->details['missing']);
+	}//end testARequiredItemThatIsAbsentCountsAsMissing()
+
+	/**
+	 * A case-wide check with no case to read fails closed.
+	 *
+	 * @return void
+	 */
+	public function testFailsWhenTheCaseCannotBeIdentified(): void {
+		$objectService = new class {
+			/**
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 * @param array<string, mixed> $filters The filters.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				return [];
+			}
+		};
+
+		$guard = new ChecklistGuard($this->buildSettings($objectService), new NullLogger());
+		$result = $guard->evaluate(guardConfig: [], case: [], userId: 'u');
+
+		self::assertFalse($result->passed);
+		self::assertSame('Zaak niet herkend voor checklistcontrole', $result->failureMessage);
+	}//end testFailsWhenTheCaseCannotBeIdentified()
 
 	/**
 	 * @return void

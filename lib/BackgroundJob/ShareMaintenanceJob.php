@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
  *
  * Checks for shares expiring within 3 days and sends reminder
  * notifications to case workers.
+ *
+ * @spec openspec/specs/case-management/spec.md
  */
 class ShareMaintenanceJob extends TimedJob {
 	/**

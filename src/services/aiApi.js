@@ -15,10 +15,6 @@ const baseUrl = generateUrl('/apps/dossiq/api/ai')
  * @param {string} caseId The case UUID
  * @param {string} documentId The document UUID
  * @return {Promise<object>} Classification suggestion with confidence
- */
-/**
- * @param caseId
- * @param documentId
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function classifyDocument(caseId, documentId) {
@@ -32,10 +28,6 @@ export async function classifyDocument(caseId, documentId) {
  * @param {string} caseId The case UUID
  * @param {string|null} documentId Optional document UUID
  * @return {Promise<object>} Extracted fields with confidence scores
- */
-/**
- * @param caseId
- * @param documentId
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function extractData(caseId, documentId = null) {
@@ -49,10 +41,6 @@ export async function extractData(caseId, documentId = null) {
  * @param {string} caseId The case UUID
  * @param {string} question The question to ask
  * @return {Promise<object>} Answer with source citations
- */
-/**
- * @param caseId
- * @param question
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function askQuestion(caseId, question) {
@@ -67,11 +55,6 @@ export async function askQuestion(caseId, question) {
  * @param {string} type Summary type: case, document, or timeline
  * @param {string|null} documentId Optional document UUID
  * @return {Promise<object>} Generated summary
- */
-/**
- * @param caseId
- * @param type
- * @param documentId
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function summarize(caseId, type = 'case', documentId = null) {
@@ -88,9 +71,6 @@ export async function summarize(caseId, type = 'case', documentId = null) {
  *
  * @param {string} caseId The case UUID
  * @return {Promise<object>} Routing suggestion
- */
-/**
- * @param caseId
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function suggestRouting(caseId) {
@@ -103,9 +83,6 @@ export async function suggestRouting(caseId) {
  *
  * @param {string} caseId The case UUID
  * @return {Promise<object>} Next-step suggestion
- */
-/**
- * @param caseId
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function suggestNext(caseId) {
@@ -118,9 +95,6 @@ export async function suggestNext(caseId) {
  *
  * @param {object} filters Query filters (caseId, type, limit, offset)
  * @return {Promise<object>} Audit log entries
- */
-/**
- * @param filters
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function getAuditLog(filters = {}) {
@@ -144,9 +118,6 @@ export async function getAiSettings() {
  *
  * @param {object} settings Settings to update
  * @return {Promise<object>} Updated settings
- */
-/**
- * @param settings
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function updateAiSettings(settings) {

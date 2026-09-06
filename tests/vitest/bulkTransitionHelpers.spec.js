@@ -7,15 +7,15 @@
  * (incl. cross-column reset), payload builders, and result summarisation.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	emptySelection,
-	toggleSelection,
-	isSelected,
-	clearSelection,
-	buildPreviewPayload,
 	buildExecutePayload,
+	buildPreviewPayload,
+	clearSelection,
+	emptySelection,
+	isSelected,
 	summarizeResults,
+	toggleSelection,
 } from '../../src/utils/bulkTransitionHelpers.js'
 
 describe('emptySelection', () => {

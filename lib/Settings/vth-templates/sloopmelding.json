@@ -1,7 +1,7 @@
 {
   "_format": "dossiq-workflow-v1",
   "title": "Sloopmelding",
-  "description": "Eenvoudige workflow voor sloopmelding — beoordelingstermijn 4 weken.",
+  "description": "Eenvoudige workflow voor sloopmelding: beoordelingstermijn 4 weken.",
   "version": 1,
   "steps": [
     {
@@ -41,10 +41,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Sloopmelding akkoord",
-            "targetRole": "Melder"
-          }
+          "message": "Sloopmelding akkoord",
+          "targetRole": "Melder"
         }
       ]
     },
@@ -83,9 +81,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Beoordeling moet zijn afgerond"
-          }
+          "message": "Beoordeling moet zijn afgerond"
         }
       ],
       "actions": []

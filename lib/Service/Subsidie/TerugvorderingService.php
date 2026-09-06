@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -43,6 +44,9 @@ use Throwable;
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class TerugvorderingService {
+
+	use SearchesObjects;
+
 	/**
 	 * Default bezwaartermijn (objection window) in weeks (AWB 6:7).
 	 */
@@ -77,6 +81,8 @@ class TerugvorderingService {
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
@@ -88,6 +94,8 @@ class TerugvorderingService {
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The betaaltermijn end.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBetaaltermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		return $publication->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
@@ -104,6 +112,8 @@ class TerugvorderingService {
 	 * @param float|null $yearFaction Annual rate fraction; defaults to the wettelijke rente.
 	 *
 	 * @return float The accrued rente in EUR.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeInvorderingsrente(
 		float $openstaandBedrag,
@@ -129,6 +139,8 @@ class TerugvorderingService {
 	 * @param float $paid The cumulative amount paid.
 	 *
 	 * @return string The resulting status.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function statusAfterPayment(float $amount, float $paid): string {
 		if ($paid <= 0.0) {
@@ -177,7 +189,7 @@ class TerugvorderingService {
 		];
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: createClawbackCase failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon terugvordering niet aanmaken');

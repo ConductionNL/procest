@@ -34,6 +34,8 @@ namespace OCA\Dossiq\Service\Kcc;
 
 /**
  * Belplan-driven KCC call routing.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 class BelplanRoutingService {
 	/**

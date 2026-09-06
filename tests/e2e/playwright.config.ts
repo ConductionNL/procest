@@ -57,8 +57,7 @@
 
 import { defineConfig, devices } from '@playwright/test'
 import * as path from 'path'
-
-import { BASE_URL } from './base-url'
+import { BASE_URL } from './base-url.ts'
 
 /**
  * Non-spec modules that live inside `testDir` and must never be collected.

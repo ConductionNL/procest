@@ -57,6 +57,7 @@ class SchemaAnnotationReconciler {
 	 * @param ContainerInterface $container The DI container.
 	 * @param RegisterFragmentMerger $fragments The register fragment merger.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param SchemaSlugResolver $slugResolver Resolves a slug inside our own register.
 	 *
 	 * @return void
 	 */
@@ -64,6 +65,7 @@ class SchemaAnnotationReconciler {
 		private ContainerInterface $container,
 		private RegisterFragmentMerger $fragments,
 		private LoggerInterface $logger,
+		private SchemaSlugResolver $slugResolver,
 	) {
 	}//end __construct()
 
@@ -197,13 +199,14 @@ class SchemaAnnotationReconciler {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function mergeOntoLiveSchema(object $schemaMapper, string $slug, array $annotations): int {
-		try {
-			// Find by slug with signature find($id, $_extend, $_rbac, $_multitenancy):
-			// bypass RBAC + tenancy — the repair runs in a system context with no
-			// active organisation.
-			$schema = $schemaMapper->find($slug, [], false, false);
-		} catch (\Throwable $e) {
-			// Slug not present in this OpenRegister instance — skip it.
+		// 🔴 RESOLVE INSIDE OUR OWN REGISTER. An unscoped slug lookup here merged
+		// Dossiq's task calculations onto ANOTHER APP'S `task` schema, so
+		// isTerminalStatus and daysUntilDue were installed where nothing read
+		// them while Dossiq's own task schema never got them. Completed tasks
+		// then stayed in "My Tasks" and every due-date column rendered blank.
+		$schema = $this->slugResolver->resolve(schemaMapper: $schemaMapper, slug: $slug);
+		if ($schema === null) {
+			// Slug not present in this OpenRegister instance, so skip it.
 			return 0;
 		}
 

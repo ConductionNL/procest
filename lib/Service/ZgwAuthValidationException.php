@@ -27,6 +27,8 @@ namespace OCA\Dossiq\Service;
 
 /**
  * Exception for ZGW JWT validation failures.
+ *
+ * @spec openspec/specs/zgw-autorisaties-api/spec.md
  */
 class ZgwAuthValidationException extends \Exception {
 }//end class

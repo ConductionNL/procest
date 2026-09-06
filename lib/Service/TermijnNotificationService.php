@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Burger notification template renderer + dispatcher.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 class TermijnNotificationService {
 	public const TEMPLATES = [

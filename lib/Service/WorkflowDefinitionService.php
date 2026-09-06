@@ -15,8 +15,10 @@
  *                              service to respect the immutability
  *                              invariant of published rows).
  *   - publish()              — flip a draft to published, deprecate the
- *                              previously active version, pin the
- *                              caseType.workflowDefinition reference.
+ *                              previously active version OF THE SAME ROUTE,
+ *                              and take the caseType's default route when
+ *                              this publish is entitled to it.
+ *   - setDefaultDefinition() — record which route new cases take.
  *   - deprecate()            — flip a published version to deprecated and
  *                              clear isActive (refuses if the caseType has
  *                              no other published version while open cases
@@ -26,7 +28,9 @@
  *                              version + 1.
  *   - getActiveDefinitionFor — read-only consumer entrypoint used by
  *                              status-transition-engine and
- *                              role-based-step-routing.
+ *                              role-based-step-routing. Answers for one route,
+ *                              or for the caseType's default route.
+ *   - listActiveDefinitionsFor — every active definition, one per route.
  *   - getDefinition          — read-only by UUID.
  *   - getDefinitionForCase   — resolves through case.workflowTemplate +
  *                              case.workflowVersion.
@@ -37,7 +41,9 @@
  * read/write, {@see Workflow\WorkflowLifecycleGuard} owns the preconditions a
  * publish or deprecate must satisfy, and
  * {@see Workflow\TransitionAuthorizationStamper} owns the publish-time
- * freezing of role routing into literal NC group ids.
+ * freezing of role routing into literal NC group ids. A fourth,
+ * {@see Workflow\WorkflowJsonProperty}, owns the coercion in and out of the
+ * JSON-string properties the schema stores.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -63,6 +69,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Workflow\TransitionAuthorizationStamper;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
+use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use Psr\Log\LoggerInterface;
 
@@ -85,52 +92,129 @@ class WorkflowDefinitionService {
 	public const STATUS_DEPRECATED = WorkflowLifecycleGuard::STATUS_DEPRECATED;
 
 	/**
+	 * The route a definition is on when it names none.
+	 *
+	 * Re-exported from WorkflowLifecycleGuard for the same reason as the
+	 * STATUS_* constants: callers read one source of truth.
+	 */
+	public const VARIANT_DEFAULT = WorkflowLifecycleGuard::VARIANT_DEFAULT;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WorkflowDefinitionRepository $repository The OpenRegister persistence layer
 	 * @param WorkflowLifecycleGuard $guard Publish/deprecate preconditions
 	 * @param TransitionAuthorizationStamper $stamper Publish-time role → group
 	 *                                                freezing
+	 * @param WorkflowJsonProperty $json The JSON-string property codec
 	 * @param LoggerInterface $logger The logger
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionRepository $repository,
 		private readonly WorkflowLifecycleGuard $guard,
 		private readonly TransitionAuthorizationStamper $stamper,
+		private readonly WorkflowJsonProperty $json,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
-	 * Resolve the latest published+active definition for a caseType, or
-	 * null when none exists. Read-only consumer entrypoint used by
-	 * status-transition-engine and role-based-step-routing.
+	 * Resolve the active definition for a caseType, or null when none exists.
+	 * Read-only consumer entrypoint used by status-transition-engine and
+	 * role-based-step-routing.
+	 *
+	 * A case type may carry several routes, with one active definition each.
+	 * Naming a route answers for that route. Naming none answers with the case
+	 * type's DEFAULT route, which is what every caller written before routes
+	 * existed means by "the active definition".
 	 *
 	 * @param string $caseTypeId The caseType UUID
+	 * @param string|null $variant The route to answer for, or null for the default route
 	 *
 	 * @return array<string, mixed>|null The definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/workflow-variants/spec.md
 	 */
-	public function getActiveDefinitionFor(string $caseTypeId): ?array {
-		if ($caseTypeId === '') {
+	public function getActiveDefinitionFor(string $caseTypeId, ?string $variant = null): ?array {
+		$active = $this->listActiveDefinitionsFor(caseTypeId: $caseTypeId);
+		if ($active === []) {
 			return null;
 		}
 
-		$versions = $this->repository->listVersionsForCaseType(caseTypeId: $caseTypeId);
+		if ($variant !== null) {
+			$wanted = $this->guard->variantOf(row: ['variant' => $variant]);
+			foreach ($active as $candidate) {
+				if ($this->guard->variantOf(row: $candidate) === $wanted) {
+					return $candidate;
+				}
+			}
 
-		foreach ($versions as $candidate) {
+			return null;
+		}
+
+		return $this->guard->defaultAmong(active: $active, caseTypeId: $caseTypeId);
+	}//end getActiveDefinitionFor()
+
+	/**
+	 * Every published+active definition of a caseType, at most one per route.
+	 *
+	 * @param string $caseTypeId The caseType UUID
+	 *
+	 * @return array<int, array<string, mixed>> The active definitions
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
+	 */
+	public function listActiveDefinitionsFor(string $caseTypeId): array {
+		if ($caseTypeId === '') {
+			return [];
+		}
+
+		$active = [];
+		foreach ($this->repository->listVersionsForCaseType(caseTypeId: $caseTypeId) as $candidate) {
 			if ($this->guard->statusOf(row: $candidate) !== self::STATUS_PUBLISHED) {
 				continue;
 			}
 
 			if ((bool)($candidate['isActive'] ?? false) === true) {
-				return $candidate;
+				$active[] = $candidate;
 			}
 		}
 
-		return null;
-	}//end getActiveDefinitionFor()
+		return $active;
+	}//end listActiveDefinitionsFor()
+
+	/**
+	 * Make a published definition the default route of its caseType.
+	 *
+	 * The default route is a decision somebody takes, not the order `glob()`
+	 * happened to hand a seeder its files. This is how that decision is
+	 * recorded.
+	 *
+	 * @param string $id The definition UUID
+	 *
+	 * @return bool True when the default was set
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
+	 */
+	public function setDefaultDefinition(string $id): bool {
+		$row = $this->repository->findById(id: $id);
+		if ($row === null) {
+			return false;
+		}
+
+		$caseTypeId = (string)($row['caseType'] ?? '');
+		if ($this->guard->statusOf(row: $row) !== self::STATUS_PUBLISHED || $caseTypeId === '') {
+			$this->logger->warning(
+				'Dossiq: setDefaultDefinition() refused, the definition is not a published definition of a case type',
+				['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
+			);
+			return false;
+		}
+
+		$this->repository->pinWorkflowDefinition(caseTypeId: $caseTypeId, definitionId: $id);
+
+		return true;
+	}//end setDefaultDefinition()
 
 	/**
 	 * Read a single definition by UUID. Returns null when not found.
@@ -214,7 +298,7 @@ class WorkflowDefinitionService {
 			return null;
 		}
 
-		$transitions = $this->decodeArray(raw: ($current['transitions'] ?? ''));
+		$transitions = $this->json->decodeList(raw: ($current['transitions'] ?? ''));
 		if ($this->guard->isPublishableDraft(current: $current, transitions: $transitions, id: $id) === false) {
 			return null;
 		}
@@ -230,12 +314,13 @@ class WorkflowDefinitionService {
 		}
 
 		$caseTypeId = (string)($current['caseType'] ?? '');
+		$variant = $this->guard->variantOf(row: $current);
 
 		// Resolve each transition's assignee role to its NC group id(s) and
 		// freeze the result into the transition `authorization` list (OR PR
 		// #153 declarative gate, ADR-022).
 		$authoredTransitions = $this->stamper->stamp(transitions: $transitions);
-		if ($this->deprecatePreviousActive(caseTypeId: $caseTypeId, id: $id) === false) {
+		if ($this->deprecatePreviousActive(caseTypeId: $caseTypeId, variant: $variant, id: $id) === false) {
 			return null;
 		}
 
@@ -250,8 +335,9 @@ class WorkflowDefinitionService {
 			return null;
 		}
 
-		// Pin caseType.workflowDefinition to the new active version.
-		$this->repository->pinWorkflowDefinition(caseTypeId: $caseTypeId, definitionId: $id);
+		// Take the case type's default route, but only when this publish is
+		// entitled to it. See takeDefaultWhenEntitled().
+		$this->takeDefaultWhenEntitled(caseTypeId: $caseTypeId, id: $id, variant: $variant);
 
 		return $updated;
 	}//end publish()
@@ -309,6 +395,10 @@ class WorkflowDefinitionService {
 			'title' => $this->cloneTitle(base: (string)($source['title'] ?? 'Workflow')),
 			'description' => (string)($source['description'] ?? ''),
 			'caseType' => $caseTypeId,
+			// A clone stays on its source's route. Cloning the spoedeisende
+			// route to get a draft of the ordinary one is not a thing anyone
+			// means, and it is what dropping this line would produce.
+			'variant' => $this->guard->variantOf(row: $source),
 			'version' => $nextVersion,
 			'isActive' => false,
 			'isDraft' => true,
@@ -331,6 +421,8 @@ class WorkflowDefinitionService {
 	 *   - description (string, optional)
 	 *   - caseType (UUID string, required)
 	 *   - version (int, optional — defaults to next version for caseType)
+	 *   - variant (string, optional — the route this definition describes;
+	 *     absent or empty means the route `standaard`)
 	 *   - steps (array of step rows, will be JSON-encoded if not already a string)
 	 *   - transitions (array of transition rows, will be JSON-encoded if not already a string)
 	 *
@@ -358,13 +450,14 @@ class WorkflowDefinitionService {
 			$version = $this->repository->nextVersionFor(caseTypeId: $caseTypeId);
 		}
 
-		$stepsValue = $this->encodeJsonProperty(value: ($payload['steps'] ?? []));
-		$transitionsValue = $this->encodeJsonProperty(value: ($payload['transitions'] ?? []));
+		$stepsValue = $this->json->encode(value: ($payload['steps'] ?? []));
+		$transitionsValue = $this->json->encode(value: ($payload['transitions'] ?? []));
 
 		$draft = [
 			'title' => (string)$payload['title'],
 			'description' => (string)($payload['description'] ?? ''),
 			'caseType' => $caseTypeId,
+			'variant' => $this->guard->variantOf(row: $payload),
 			'version' => $version,
 			'isActive' => false,
 			'isDraft' => true,
@@ -382,32 +475,68 @@ class WorkflowDefinitionService {
 	// -----------------------------------------------------------------
 
 	/**
-	 * Internal — coerce a draft payload property to the JSON string the workflowTemplate schema
-	 * stores. Values that are already strings are passed through untouched.
+	 * Internal — take the caseType's default route for the row just published,
+	 * when this publish is entitled to it.
 	 *
-	 * @param mixed $value The raw payload property value.
+	 * 🔴 THIS USED TO PIN UNCONDITIONALLY, AND THAT IS WHY TWO TEMPLATES ON ONE
+	 * CASE TYPE ENDED WITH THE SECOND ONE OWNING IT. Publishing a new version
+	 * of the default route should keep the default on the new version.
+	 * Publishing a DIFFERENT route should not touch the default at all: the
+	 * spoedeisende route becoming the route every handhavingszaak takes is
+	 * exactly the accident this change exists to stop.
 	 *
-	 * @return string|false The JSON string, or false when encoding fails.
-	 */
-	private function encodeJsonProperty(mixed $value): string|false {
-		if (is_string($value) === true) {
-			return $value;
-		}
-
-		return json_encode($value);
-	}//end encodeJsonProperty()
-
-	/**
-	 * Internal — move the currently active definition of a caseType to deprecated+inactive, unless
-	 * it is the row being published itself.
+	 * Entitled means one of:
+	 *   - nothing is recorded yet, so the first published route is the default;
+	 *   - the recorded default no longer resolves, so it is repaired;
+	 *   - the recorded default is on the same route.
 	 *
 	 * @param string $caseTypeId The caseType UUID.
+	 * @param string $id The definition UUID just published.
+	 * @param string $variant The route it is on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
+	 */
+	private function takeDefaultWhenEntitled(string $caseTypeId, string $id, string $variant): void {
+		$pinned = $this->guard->defaultDefinitionIdFor(caseTypeId: $caseTypeId);
+		if ($pinned !== '' && $pinned !== $id) {
+			$pinnedRow = $this->repository->findById(id: $pinned);
+			if ($pinnedRow !== null && $this->guard->variantOf(row: $pinnedRow) !== $variant) {
+				$this->logger->info(
+					'Dossiq: publish() left the default route alone, this definition is on another route',
+					[
+						'app' => Application::APP_ID,
+						'id' => $id,
+						'caseType' => $caseTypeId,
+						'route' => $variant,
+						'defaultRoute' => $this->guard->variantOf(row: $pinnedRow),
+					]
+				);
+				return;
+			}
+		}
+
+		$this->repository->pinWorkflowDefinition(caseTypeId: $caseTypeId, definitionId: $id);
+	}//end takeDefaultWhenEntitled()
+
+	/**
+	 * Internal — move the currently active definition of a caseType's ROUTE to
+	 * deprecated+inactive, unless it is the row being published itself.
+	 *
+	 * Scoped to the route on purpose. A case type may carry several routes, and
+	 * publishing one of them must leave the others backing new cases.
+	 *
+	 * @param string $caseTypeId The caseType UUID.
+	 * @param string $variant The route being published.
 	 * @param string $id The definition UUID being published.
 	 *
 	 * @return bool True when nothing had to change or the write succeeded.
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
 	 */
-	private function deprecatePreviousActive(string $caseTypeId, string $id): bool {
-		$previousActive = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId);
+	private function deprecatePreviousActive(string $caseTypeId, string $variant, string $id): bool {
+		$previousActive = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId, variant: $variant);
 		if ($previousActive === null || (string)($previousActive['id'] ?? '') === $id) {
 			return true;
 		}
@@ -444,31 +573,6 @@ class WorkflowDefinitionService {
 
 		return $payload;
 	}//end buildPublishPayload()
-
-	/**
-	 * Decode a JSON-encoded array property; returns an empty array on any
-	 * decoding error or non-array payload.
-	 *
-	 * @param mixed $raw The raw property value
-	 *
-	 * @return array<int, mixed>
-	 */
-	private function decodeArray(mixed $raw): array {
-		if (is_array($raw) === true) {
-			return $raw;
-		}
-
-		if (is_string($raw) === false || $raw === '') {
-			return [];
-		}
-
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === true) {
-			return $decoded;
-		}
-
-		return [];
-	}//end decodeArray()
 
 	/**
 	 * Build a title for a cloned draft.

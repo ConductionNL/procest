@@ -81,6 +81,10 @@ class CreateTaskHandler implements ActionHandlerInterface {
 				'assignee' => (string)($actionConfig['assignee'] ?? ''),
 			];
 
+			// On the flow path the engine's RegistryStepDispatcher already runs
+			// this handler inside `ObjectService::runAs()` as the run's acting
+			// identity (openregister#3332); on the interactive path the ambient
+			// session user answers the permission checks. No local wrap needed.
 			$created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
 			$taskId = '';
 			if (is_array($created) === true) {

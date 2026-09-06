@@ -5,6 +5,9 @@
   "description": "Workflow voor een handhavingstraject conform de Landelijke Handhavingsstrategie (LHS). Volgt de Awb-procedure 5:24 met redelijke termijn voor herstel.",
   "version": 1,
   "caseTypeSlug": "handhavingszaak",
+  "variant": "regulier",
+  "isDefaultVariant": true,
+  "_sharesItsCaseTypeWith": "This case type also carries \"spoedig-herstel\", the Awb 5:31 route. They are two routes through one case type, not two versions of one workflow. This entry declares the variant \"regulier\" and that one declares \"spoedeisend\", so both stay published and active and neither deprecates the other. This entry is the default route: a new handhavingszaak follows it, because acting before deciding is the exception in law. See openspec/specs/workflow-variants/spec.md.",
   "statutoryFramework": "Awb 5:24 + LHS",
   "steps": [
     {

@@ -5,8 +5,8 @@
  *
  * Turns a saved note's `@mention` tokens (nc-vue #207, `CnNotesTab`'s
  * `mention` event) into real Nextcloud notifications for each mentioned
- * user. Mirrors ParaferingNotificationService's imperative
- * IManager-based create/notify/try-catch-warn shape.
+ * user. Built on Nextcloud's IManager with the imperative
+ * create/notify/try-catch-warn shape.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for sending Nextcloud notifications for note `@mention`s.
+ *
+ * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 class MentionNotificationService {
 	/**

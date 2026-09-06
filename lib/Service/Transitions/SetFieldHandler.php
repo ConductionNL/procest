@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -40,10 +41,12 @@ class SetFieldHandler implements ActionHandlerInterface {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config
+	 * @param CaseFieldWriter $caseWriter Applies ONLY this handler's field to the stored case
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly CaseFieldWriter $caseWriter,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -84,10 +87,29 @@ class SetFieldHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
 			}
 
-			$case[$field] = $value;
-			$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
+			// On the flow path the engine's RegistryStepDispatcher already runs
+			// this handler inside `ObjectService::runAs()` as the run's acting
+			// identity (openregister#3332), and on the interactive path the
+			// ambient session user answers the permission checks — so no local
+			// runAs wrap is needed here any more.
+			//
+			// ONLY the configured field is written. `$case` is a snapshot of
+			// the flow item, and full-saving a snapshot erases whatever other
+			// writers stored after it was taken (the besluitDocument clobber,
+			// measured live on the closure rig).
+			$this->caseWriter->write(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				case: $case,
+				changes: [$field => $value]
+			);
 
-			return new ActionResult(succeeded: true, data: ['field' => $field]);
+			return new ActionResult(
+				succeeded: true,
+				data: ['field' => $field],
+				caseChanges: [$field => $value]
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'SetFieldHandler failed',

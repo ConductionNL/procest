@@ -13,7 +13,7 @@
  * display (including the no-initiator empty case).
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 // The app is history-mode, not hash-mode: `/index.php/apps/dossiq/index#/`
 // loaded a non-route and left the dashboard unrendered, so the StartCaseWidget

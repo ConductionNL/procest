@@ -58,6 +58,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -68,6 +69,9 @@ use Throwable;
  * @spec openspec/specs/beroep-escalation/spec.md
  */
 class BeroepService {
+
+	use SearchesObjects;
+
 	/*
 	 * NO VALID_OUTCOMES HERE — it was the whitelist `recordJudgment()` validated
 	 * against, and that method is gone (see the note further down). The list of
@@ -178,8 +182,13 @@ class BeroepService {
 			);
 		}
 
-		$contested = $objectService->find($contestedDecisionId, register: $register, schema: $appealDecisionSchema);
-		if (is_array($contested) === false) {
+		$contested = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $appealDecisionSchema,
+			id: $contestedDecisionId
+		);
+		if ($contested === null) {
 			throw new RuntimeException('Contested beslissing not found');
 		}
 
@@ -207,7 +216,7 @@ class BeroepService {
 		);
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $appealSchema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $appealSchema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq beroep: failed to register: ' . $e->getMessage()
@@ -249,8 +258,13 @@ class BeroepService {
 			key: 'beroep_schema'
 		);
 
-		$current = $objectService->find($appealId, register: $register, schema: $appealSchema);
-		if (is_array($current) === false) {
+		$current = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $appealSchema,
+			id: $appealId
+		);
+		if ($current === null) {
 			throw new RuntimeException('Beroep not found');
 		}
 
@@ -271,12 +285,13 @@ class BeroepService {
 		$requests[] = $entry;
 
 		try {
-			return $objectService->saveObject(
-				object: ['fileInspectionRequests' => $requests],
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $appealSchema,
+				object: ['fileInspectionRequests' => $requests],
 				uuid: (string)$appealId
-			);
+			) ?? array_merge($current, ['fileInspectionRequests' => $requests]));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq beroep: failed to add file-inspection request: '
@@ -343,8 +358,13 @@ class BeroepService {
 			key: 'bezwaar_schema'
 		);
 
-		$current = $objectService->find($appealId, register: $register, schema: $appealSchema);
-		if (is_array($current) === false) {
+		$current = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $appealSchema,
+			id: $appealId
+		);
+		if ($current === null) {
 			throw new RuntimeException('Beroep not found');
 		}
 
@@ -382,12 +402,13 @@ class BeroepService {
 		}
 
 		try {
-			return $objectService->saveObject(
-				object: $patch,
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $appealSchema,
+				object: $patch,
 				uuid: (string)$appealId
-			);
+			) ?? array_merge($current, $patch));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq beroep: failed to persist cascade: ' . $e->getMessage()
@@ -423,8 +444,13 @@ class BeroepService {
 			return null;
 		}
 
-		$sourceObjection = $objectService->find($sourceObjectionId, register: $register, schema: $objectionSchema);
-		if (is_array($sourceObjection) === false) {
+		$sourceObjection = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $objectionSchema,
+			id: $sourceObjectionId
+		);
+		if ($sourceObjection === null) {
 			return null;
 		}
 

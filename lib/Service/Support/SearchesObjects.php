@@ -161,19 +161,24 @@ trait SearchesObjects {
 	 * @param int|string $register Register id, UUID or slug.
 	 * @param int|string $schema Schema id, UUID or slug.
 	 * @param array<string,mixed> $object The object to store.
+	 * @param string|null $uuid The UUID of the object to update, or null to create.
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function saveObjectAsArray(
 		object $objectService,
 		int|string $register,
 		int|string $schema,
 		array $object,
+		?string $uuid = null,
 	): ?array {
 		$saved = $objectService->saveObject(
+			object: $object,
 			register: $register,
 			schema: $schema,
-			object: $object
+			uuid: $uuid
 		);
 
 		if (is_array($saved) === true) {
@@ -210,6 +215,11 @@ trait SearchesObjects {
 	 * @param callable $operation The trusted, code/seed-data-driven operation to run.
 	 *
 	 * @return mixed Whatever the callable returns.
+	 *
+	 * @phpstan-impure This RUNS the caller's closure, so anything it touches —
+	 *      instance counters included — has changed by the time this returns.
+	 *      Without the tag PHPStan carries the pre-call state across, and
+	 *      reported a counter incremented inside the closure as "always 0".
 	 *
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */

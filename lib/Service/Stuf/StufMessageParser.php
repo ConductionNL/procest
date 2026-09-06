@@ -37,6 +37,8 @@ use SimpleXMLElement;
 
 /**
  * Parses StUF response envelopes.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
  */
 class StufMessageParser {
 	public const NS_SOAPENV = StufMessageBuilder::NS_SOAPENV;

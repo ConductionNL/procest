@@ -57,6 +57,7 @@ interface ReconcileSchemaStub {
  *
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
  */
 class SettingsServiceReconcileRegressionTest extends TestCase {
 

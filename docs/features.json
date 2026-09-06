@@ -72,16 +72,6 @@
     "summary_nl": "Je berekent leges uit je verordening en factureert ze via Shillinq."
   },
   {
-    "slug": "parafeerroute-engine",
-    "title": "Parafering en mandaat",
-    "summary": "You route sign-offs along the mandate matrix with a hash-chained audit trail.",
-    "status": "stable",
-    "docsUrl": "openspec/specs/parafeerroute-engine/spec.md",
-    "providedBy": "openregister",
-    "title_nl": "Parafering en mandaat",
-    "summary_nl": "Je routeert paraferingen langs de mandaatmatrix met een hash-geketende audittrail."
-  },
-  {
     "slug": "archief-edepot-handover",
     "title": "Archivering naar e-Depot",
     "summary": "You hand over cases to the e-Depot with MDTO metadata and proof of transfer.",

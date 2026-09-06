@@ -38,6 +38,8 @@ use OCP\AppFramework\Http\JSONResponse;
  * controllers fall under ZGW JWT authentication and scope enforcement.
  * Any controller that handles a ZGW API endpoint must extend this class
  * so the middleware's guard is actually exercised.
+ *
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 abstract class ZgwController extends Controller {
 	use NormalisesObjectRows;

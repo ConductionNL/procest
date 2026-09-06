@@ -45,6 +45,7 @@ use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,6 +56,8 @@ use RuntimeException;
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
  */
 class AdvisoryCommitteeService {
+
+	use SearchesObjects;
 
 	/**
 	 * Allowed advice-request lifecycle states.
@@ -151,9 +154,15 @@ class AdvisoryCommitteeService {
 			);
 		}
 
-		// Validate committee exists and is active.
-		$committee = $objectService->find($commissieId, register: $register, schema: $committeeSchema);
-		if (is_array($committee) === false) {
+		// Validate committee exists and is active. find() returns an
+		// ObjectEntity (never an array), so go through the array bridge.
+		$committee = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $committeeSchema,
+			id: $commissieId
+		);
+		if ($committee === null) {
 			throw new RuntimeException('Committee not found');
 		}
 
@@ -202,7 +211,7 @@ class AdvisoryCommitteeService {
 		);
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $requestSchema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $requestSchema, object: $record) ?? $record);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()
@@ -249,8 +258,13 @@ class AdvisoryCommitteeService {
 			key: 'bac_advice_request_schema'
 		);
 
-		$current = $objectService->find($requestId, register: $register, schema: $requestSchema);
-		if (is_array($current) === false) {
+		$current = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $requestSchema,
+			id: $requestId
+		);
+		if ($current === null) {
 			throw new RuntimeException('Advice request not found');
 		}
 
@@ -293,12 +307,13 @@ class AdvisoryCommitteeService {
 		);
 
 		try {
-			return $objectService->saveObject(
-				object: $update,
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $requestSchema,
+				object: $update,
 				uuid: (string)$requestId
-			);
+			) ?? array_merge($current, $update));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to transition advice request '
@@ -376,8 +391,13 @@ class AdvisoryCommitteeService {
 		);
 
 		try {
-			$current = $objectService->find($requestId, register: $register, schema: $requestSchema);
-			if (is_array($current) === false) {
+			$current = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $requestSchema,
+				id: $requestId
+			);
+			if ($current === null) {
 				return;
 			}
 

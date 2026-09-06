@@ -40,6 +40,8 @@ use RuntimeException;
 
 /**
  * Service for case-integrated email functionality.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class CaseEmailService {
 

@@ -24,6 +24,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
+use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -46,6 +48,7 @@ interface WorkflowTemplateObjectServiceStub {
  * Regression tests for WorkflowTemplateLoader::getActiveTemplate().
  *
  * @covers \OCA\Dossiq\Service\WorkflowTemplateLoader
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
  */
 class WorkflowTemplateLoaderRegressionTest extends TestCase {
 
@@ -75,8 +78,12 @@ class WorkflowTemplateLoaderRegressionTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$repository = $this->createMock(WorkflowDefinitionRepository::class);
+
 		$this->loader = new WorkflowTemplateLoader(
 			$this->settingsService,
+			$repository,
+			new WorkflowLifecycleGuard($repository, $this->logger),
 			$this->logger,
 		);
 

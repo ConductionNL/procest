@@ -13,7 +13,7 @@
  * @spec openspec/specs/cmmn-adaptive-case/spec.md
  */
 
-import { describe, it, expect, beforeAll } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 beforeAll(() => {
 	globalThis.t = (app, text) => text

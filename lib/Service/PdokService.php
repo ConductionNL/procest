@@ -61,6 +61,8 @@ use Throwable;
 
 /**
  * Backend-side PDOK shim consuming the openconnector PDOK source adapters.
+ *
+ * @spec openspec/specs/gis-integration/spec.md
  */
 class PdokService {
 	/**
@@ -125,6 +127,8 @@ class PdokService {
 	 * @param int $rows Maximum suggestions to return.
 	 *
 	 * @return array<int, array<string,mixed>> Normalised suggestion list.
+	 *
+	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function searchAddress(string $query, array $filters = [], int $rows = 10): array {
 		$this->lastWarning = null;
@@ -154,6 +158,8 @@ class PdokService {
 	 *
 	 * @return array<string,mixed>|null The normalised address envelope,
 	 *                                  or null when not found / degraded.
+	 *
+	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function lookupAddress(string $id): ?array {
 		$this->lastWarning = null;
@@ -233,6 +239,8 @@ class PdokService {
 	 *     featureFlagActive: bool,
 	 *     lastWarning: array{messageKey:string,status:int}|null,
 	 * }
+	 *
+	 * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
 	 */
 	public function getServiceStatus(): array {
 		return [
@@ -247,6 +255,8 @@ class PdokService {
 	 * `messageKey` to the UI for an i18n-backed banner.
 	 *
 	 * @return array{messageKey:string,status:int}|null
+	 *
+	 * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
 	 */
 	public function lastWarning(): ?array {
 		return $this->lastWarning;

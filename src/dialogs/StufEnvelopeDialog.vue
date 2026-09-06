@@ -77,7 +77,7 @@ export default {
 		/**
 		 * Pretty-print a value as indented JSON for display.
 		 *
-		 * @param {*} value The value to render.
+		 * @param {unknown} value The value to render.
 		 * @spec exclude presentational JSON formatter — no business logic
 		 */
 		pretty(value) {

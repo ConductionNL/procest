@@ -59,6 +59,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Backfill the Awb legal holds the dead bezwaar listener never placed.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Remediation spans several OpenRegister collaborators.
+ *
+ * @spec openspec/specs/archief-edepot-handover/spec.md#requirement-legal-proceedings-must-suspend-archival-via-or-legal-holds
  */
 class BackfillLegalHoldsCommand extends Command {
 

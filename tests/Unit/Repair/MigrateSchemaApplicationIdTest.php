@@ -75,7 +75,7 @@ final class MigrateSchemaApplicationIdTest extends TestCase {
 	 */
 	public function testMovesASchemaThatHasNoTwin(): void {
 		$written = [];
-		$db = $this->db([], ['case', 'task'], $written);
+		$db = $this->db([], ['case', 'caseTask'], $written);
 
 		$step = new MigrateSchemaApplicationId($db, $this->createMock(LoggerInterface::class));
 
@@ -85,7 +85,7 @@ final class MigrateSchemaApplicationIdTest extends TestCase {
 		$step->run($output);
 
 		self::assertSame(
-			[['dossiq', 'procest', 'case'], ['dossiq', 'procest', 'task']],
+			[['dossiq', 'procest', 'case'], ['dossiq', 'procest', 'caseTask']],
 			$written
 		);
 
@@ -102,7 +102,7 @@ final class MigrateSchemaApplicationIdTest extends TestCase {
 	 */
 	public function testRefusesASlugThatWouldCollide(): void {
 		$written = [];
-		$db = $this->db(['case'], ['case', 'task'], $written);
+		$db = $this->db(['case'], ['case', 'caseTask'], $written);
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects(self::once())->method('warning')->with(self::stringContains('refusing to create a duplicate'));
@@ -114,7 +114,7 @@ final class MigrateSchemaApplicationIdTest extends TestCase {
 
 		$step->run($output);
 
-		self::assertSame([['dossiq', 'procest', 'task']], $written);
+		self::assertSame([['dossiq', 'procest', 'caseTask']], $written);
 
 	}//end testRefusesASlugThatWouldCollide()
 

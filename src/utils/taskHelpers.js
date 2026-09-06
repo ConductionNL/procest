@@ -42,9 +42,6 @@ export function getPriorityLevels() {
  *
  * @param {object} task Task object with dueDate and status
  * @return {boolean}
- */
-/**
- * @param task
  * @spec openspec/specs/task-management/spec.md
  */
 export function isOverdue(task) {
@@ -62,9 +59,6 @@ export function isOverdue(task) {
  *
  * @param {object} task Task object with dueDate and status
  * @return {boolean}
- */
-/**
- * @param task
  * @spec openspec/specs/task-management/spec.md
  */
 export function isDueToday(task) {
@@ -84,9 +78,6 @@ export function isDueToday(task) {
  *
  * @param {object} task Task object with dueDate
  * @return {string|null} Overdue text or null if not overdue
- */
-/**
- * @param task
  * @spec openspec/specs/task-management/spec.md
  */
 export function getOverdueText(task) {
@@ -108,9 +99,6 @@ export function getOverdueText(task) {
  *
  * @param {string} dateString ISO 8601 date string
  * @return {string} Formatted date
- */
-/**
- * @param dateString
  * @spec openspec/specs/task-management/spec.md
  */
 export function formatDueDate(dateString) {
@@ -124,9 +112,6 @@ export function formatDueDate(dateString) {
  *
  * @param {string} priority One of urgent, high, normal, low
  * @return {number}
- */
-/**
- * @param priority
  * @spec openspec/specs/task-management/spec.md
  */
 export function prioritySortWeight(priority) {
@@ -162,9 +147,6 @@ function statusGroupWeight(status) {
  *
  * @param {object[]} tasks Array of task objects
  * @return {object[]} Sorted copy of the array
- */
-/**
- * @param tasks
  * @spec openspec/specs/task-management/spec.md
  */
 export function sortTasks(tasks) {

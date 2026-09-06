@@ -40,6 +40,8 @@ use Throwable;
  *
  * Returns the provisioning result (schemaName + steps performed) or throws
  * after rolling back any partial work.
+ *
+ * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
  */
 class TenantProvisioningService {
 	/**
@@ -167,6 +169,8 @@ class TenantProvisioningService {
 	 * @return string Schema name (≤63 chars, lowercase, identifier-safe).
 	 *
 	 * @throws InvalidArgumentException When uuid or slug is empty.
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function buildSchemaName(string $uuid, string $slug): string {
 		if ($uuid === '' || $slug === '') {
@@ -223,6 +227,8 @@ class TenantProvisioningService {
 	 * Return the default roles seeded per tenant.
 	 *
 	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function getDefaultRoles(): array {
 		return self::DEFAULT_ROLES;

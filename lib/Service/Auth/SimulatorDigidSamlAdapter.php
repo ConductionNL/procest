@@ -89,6 +89,8 @@ final class SimulatorDigidSamlAdapter implements DigidSamlAdapterInterface {
 	 * broker — callers surface the simulation label.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/external-integration-test-wiring/spec.md
 	 */
 	public function isActive(): bool {
 		return true;

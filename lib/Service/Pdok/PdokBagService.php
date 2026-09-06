@@ -45,6 +45,8 @@ use Throwable;
 
 /**
  * Single ingress for PDOK BAG WFS v2_0 lookups.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class PdokBagService {
 

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\DeadlineMonitoringSeedDataService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
@@ -38,9 +39,17 @@ use Psr\Log\LoggerInterface;
 /**
  * Repair step that seeds termijnbewaking demo data into OpenRegister.
  *
+ * Runs under OpenRegister's system identity: a repair step executes during
+ * `occ upgrade` with no session, and OpenRegister refuses Anonymous writes
+ * per row. Without the identity every row failed, the failures were counted
+ * as nothing, and the step reported "0 definities (0 overgeslagen)" as
+ * success — so no TermijnDefinitie ever existed on a fresh install and no
+ * termijn timer could arm.
+ *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 class SeedDeadlineMonitoringData implements IRepairStep {
+	use RunsUnderSystemIdentity;
 	/**
 	 * Constructor.
 	 *
@@ -84,8 +93,16 @@ class SeedDeadlineMonitoringData implements IRepairStep {
 		}
 
 		try {
-			$result = $this->seedService->seed();
-			if (($result['success'] ?? false) === true) {
+			$result = [];
+			$this->withSystemIdentity(
+				objectService: $this->settingsService->getObjectService(),
+				work: function () use (&$result): void {
+					$result = $this->seedService->seed();
+				}
+			);
+
+			$failed = (int)($result['failed'] ?? 0);
+			if (($result['success'] ?? false) === true && $failed === 0) {
 				$output->info(
 					'Termijnbewaking seed complete: '
 					. ((int)($result['definities'] ?? 0)) . ' definities ('
@@ -94,10 +111,18 @@ class SeedDeadlineMonitoringData implements IRepairStep {
 				return;
 			}
 
-			$output->warning('Termijnbewaking seed issue: ' . ((string)($result['message'] ?? 'unknown error')));
+			// A seed that seeded nothing must not report success-shaped output:
+			// every failed row is named in the count, so an operator sees a
+			// broken fresh install instead of "0 definities (0 overgeslagen)".
+			$output->warning(
+				'Termijnbewaking seed issue: '
+				. ((int)($result['definities'] ?? 0)) . ' definities, '
+				. $failed . ' rijen geweigerd ('
+				. ((string)($result['message'] ?? 'per-row failures, see the log')) . ')'
+			);
 		} catch (\Throwable $e) {
 			$output->warning('Could not seed termijnbewaking data: ' . $e->getMessage());
 			$this->logger->error('Dossiq termijnbewaking seed failed', ['exception' => $e->getMessage()]);
-		}
+		}//end try
 	}//end run()
 }//end class

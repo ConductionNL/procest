@@ -82,7 +82,6 @@ class DossiqFlowNodeListener implements IEventListener {
         DossiqRequestDecisionNode::class,
         DossiqEnsureCommitteeNode::class,
         DossiqTxNotifyNode::class,
-        DossiqTxBesluitvormingActivateNode::class,
         DossiqTxBesluitvormingPublishNode::class,
         DossiqTxEvaluateDecisionNode::class,
         // The configured-action catalogue.

@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Subsidie;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -48,6 +49,9 @@ use Throwable;
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class VaststellingService {
+
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -163,12 +167,18 @@ class VaststellingService {
 		];
 
 		try {
-			$current = $objectService->find($determinationId, register: $register, schema: $schema);
-			if (is_array($current) === false) {
+			$current = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $determinationId);
+			if ($current === null) {
 				throw new OCSBadRequestException('Vaststelling niet gevonden');
 			}
 
-			$saved = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$determinationId);
+			$saved = ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $patch,
+				uuid: (string)$determinationId
+			) ?? array_merge($current, $patch));
 		} catch (OCSBadRequestException $e) {
 			throw $e;
 		} catch (Throwable $e) {

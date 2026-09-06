@@ -48,7 +48,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.3.8-unstable.20260831052324</version>
+    <version>0.3.16-unstable.20260905153509</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -128,12 +128,23 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <background-jobs>
         <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
-        <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
+        <!--
+            VergaderingDeadlineJob is RETIRED as dead machinery: it scanned
+            for cases with a literal status 'planned', which case.status
+            (a statusType reference) can never hold, and the only writer of
+            such cases was removed earlier. Nothing migrated to a timer.
+            See openspec/changes/case-status-onto-engine-lifecycle.
+        -->
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
-        <job>OCA\Dossiq\BackgroundJob\DailyDeadlineScanJob</job>
+        <!--
+            The daily termijn scan (DailyDeadlineScanJob) is RETIRED: the
+            OpenRegister FlowTimerWorker sweep fires the armed termijn
+            timers, and TermijnTimerFiredListener does the domain side.
+            See openspec/changes/termijnbewaking-op-engine-timers.
+        -->
         <job>OCA\Dossiq\BackgroundJob\InboundEmailJob</job>
         <job>OCA\Dossiq\BackgroundJob\EmailPdfRetryJob</job>
         <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
@@ -215,6 +226,30 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <!--
+                AHEAD OF THE IMPORT, BECAUSE THE IMPORT CANNOT WORK AROUND A
+                FORKED SLUG. `DemoDataService` used to hand the whole mock
+                descriptor to OpenRegister under the configuration id
+                `dossiq.demo`, and a schema is matched by the PAIR
+                (application, slug): every slug missed, and the not-found
+                branch is the CREATE branch. One click built 139 duplicate
+                schemas with 393 demo objects bound to them, invisible to an
+                app that reads its schemas under `dossiq`, and overwrote the
+                register's own title with "Dossiq (demo)".
+
+                The import is fixed at source, so this cannot happen again;
+                this step is for the instances where it already did. It only
+                removes a schema it can prove is the fork (see the class
+                docblock for the three conditions), names everything it
+                spares, and routes deletion through OpenRegister's audited
+                cascade.
+
+                POST-MIGRATION ONLY, for the same reason as RetireOriRegister:
+                a fresh install never ran the defective import. The fork can
+                only exist on an instance where dossiq was already enabled and
+                somebody clicked "install demo data".
+            -->
+            <step>OCA\Dossiq\Repair\RepairDemoDataSchemaFork</step>
+            <!--
                 MUST stay first among the SCHEMA steps. OpenRegister's import matches a schema to an
                 existing row by SLUG, so a renamed slug in the register JSON
                 renames nothing: the import finds no match, creates a SECOND
@@ -225,10 +260,23 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 Ahead of the import trigger, InitializeSettings.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
+            <!--
+                Before InitializeSettings, and separate from RenameDutchSchemaSlugs:
+                this ends a CROSS-APP collision rather than translating a word.
+                `supplierInvoice` was claimed by this app and by shillinq, which owns
+                the accounts-payable invoice.
+            -->
+            <step>OCA\Dossiq\Repair\RenameCollidingSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <!--
+                The shipped register data assigns flow steps to Nextcloud
+                groups (task-behandelaar -> "behandelaars"). Provision them
+                before anything imports or runs that data: the completion
+                gate fails closed on a group that does not exist.
+            -->
+            <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
             <!--
@@ -255,21 +303,50 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
-            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
-            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
-                Holds each local parafeerroute as an ApprovalRoute in the
-                decision app and notes the id back on the local row. Idempotent
-                twice over: it skips a route that already carries an id, and the
-                seam it dispatches to resolves on (sourceApp, externalReference)
-                before writing, so even a lost note costs one redundant dispatch
-                rather than a duplicate route. Skips cleanly when the decision
-                app is not installed — it is an optional runtime dependency and
-                an install without it keeps working on its local routes.
+                VthSeedDataRepairStep SEEDS THE CASE TYPES SeedVthWorkflowTemplates
+                RESOLVES, SO IT HAS TO GO FIRST. It shipped the other way round,
+                and on a fresh install the lookup could not succeed even once:
+                five of the six templates name a caseType slug
+                (omgevingsvergunning-bouwactiviteit, toezichtzaak-bouw,
+                handhavingszaak twice, klacht-toezicht) that does not exist yet
+                when the template step runs. The install reported it as
+                "0 seeded, 5 skipped ... not found for template ... (run
+                base-register-seed-data first)" and carried on green, so the VTH
+                catalogue was simply absent on every new instance.
+
+                The tell was in the message the step prints about itself: a step
+                that tells you to run something else first is a step that is
+                registered in the wrong place.
             -->
-            <step>OCA\Dossiq\Repair\MigrateParafeerroutesToDecidiq</step>
+            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <!--
+                AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
+                BEFORE THEM ALL. This step projects the implicit lifecycle of a
+                case type that has no workflow yet into a published "basis"
+                template, so what it can project is decided entirely by which
+                case types exist when it runs. It sat between
+                SeedBezwaarBeroepData and SeedBesluitvormingTemplates, ahead of
+                the besluitvorming, VTH and case-flow seeds, and reported its
+                own emptiness as success.
+
+                Measured on a clean rig on 2026-09-04: 6 templates after a fresh
+                install, 15 after the first `occ maintenance:repair`, stable at
+                15 after the second. Nine templates that belong on a new
+                instance arrived one pass late, and only because an
+                administrator happened to run repair.
+
+                It is registered in <install> for the same reason. The old
+                exemption called it a one-way migration of existing rows, which
+                it is not: it creates a baseline for every case type the seeds
+                above just created, and a fresh install is exactly where they
+                are all new.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
+            <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
                 Raises each local bezwaaradviescommissie as a GovernanceBody in
                 the decision app and notes the id back on the local row.
@@ -305,6 +382,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchDirectionValues</step>
             <step>OCA\Dossiq\Repair\MigrateArchivalToOpenRegister</step>
+            <!--
+                A ketenpartner is an organisation, and OpenRegister owns
+                Organisation. This moves the rows BEFORE the Partners settings
+                page that used to write them is gone, which is why it is a
+                repair step and not the occ command it also ships as: an
+                administrator who never ran the command would be left with rows
+                behind a surface that no longer exists. Idempotent by the
+                partner's own uuid, so re-running an upgrade adds nothing.
+            -->
+            <step>OCA\Dossiq\Repair\MigratePartnersToOrganisations</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\BackfillInformatieobjectMetadata</step>
             <step>OCA\Dossiq\Repair\LinkInFlightContractDecisionsRepair</step>
@@ -331,8 +418,51 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 `vertrouwelijkheidaanduiding` values (openbaar … zeer_geheim) are
                 statutory. Translating them would break the mapping the adapter
                 exists to perform.
+
+                That paragraph was true of the INTENT and false of the map for
+                seventeen values, until dossiq#1841 removed them and
+                RealignStatutoryVocabulary below put the rows back.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchValues</step>
+            <!--
+                dossiq#1596, and it runs immediately AFTER the rename above
+                because that is the step whose output it repairs.
+
+                RenameDutchValues translated ONE member of the LHS actorType
+                axis (overheid -> government). It could not reach the matrix
+                cells, which live inside a JSON column rather than a column of
+                their own, so the vocabulary split down the middle: the
+                recommendation schema offered `government` while every cell
+                said `overheid`. A quarter of the national enforcement strategy
+                became unreachable, and it presented as "Geen LHS-cel gevonden"
+                — which reads like bad input rather than a broken axis.
+
+                The mapping is removed at source, so a fresh instance cannot
+                acquire this. This step is for the instances that already ran
+                it, and it is idempotent: a repaired row no longer matches.
+            -->
+            <step>OCA\Dossiq\Repair\RealignLhsActorTypeVocabulary</step>
+            <!--
+                dossiq#1841, and the same shape as the step above it: the rename
+                reached a vocabulary that was never its to translate, and this
+                puts the stored rows back.
+
+                Seventeen entries anglicised the ZGW Vertrouwelijkheidaanduiding
+                (`confidentiality` on case, caseType, document and documentType;
+                `vertrouwelijkheidaanduiding` on informatieobject and
+                informatieobjecttype), the StUF message status and the
+                zaaksysteem synchronisation status. Every replacement was a value
+                the row's own schema REFUSES, so a case handler editing any demo
+                case was rejected on a field they had not touched, and
+                InformatieobjectAccessGuard — which fails closed on a level it
+                cannot rank — treated every `public` document as the most secret
+                one the app holds.
+
+                Schema-scoped, unlike the rename: reversing by column would put
+                `sent` -> `verzonden` on schemas where `sent` is correct.
+                Idempotent — a repaired row no longer matches the filter.
+            -->
+            <step>OCA\Dossiq\Repair\RealignStatutoryVocabulary</step>
             <!--
                 Hermiq owns the EU AI Act Art. 14 oversight record now, and
                 dossiq's own oversight page is retired. This replays the
@@ -355,6 +485,22 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 already have `bezwaar` are skipped) and non-fatal.
             -->
             <step>OCA\Dossiq\Repair\BackfillAdviceRequestObjection</step>
+            <!--
+                One clock: arms an OpenRegister FlowTimer for every in-flight
+                TermijnInstance that does not carry one yet (engineTimerId),
+                suspending the timer for paused rows. Idempotent, skips
+                terminal rows, and never throws — an unreachable engine is a
+                warning plus a failed count, not a broken upgrade. Catch-up
+                rung fires after migration are absorbed by the
+                notificatiesVerstuurd dedup in TermijnTimerFiredListener.
+                POST-MIGRATION only: a fresh install has no instances to arm.
+            -->
+            <step>OCA\Dossiq\Repair\ArmTermijnEngineTimers</step>
+            <!--
+                LAST, AND A REPORT RATHER THAN AN ACTION — see the identical
+                entry in the <install> block below for why it cannot adopt.
+            -->
+            <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -368,12 +514,30 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
             Only baseline-CREATING steps are listed. Deliberately EXCLUDED, because
             each operates on data a fresh install does not have:
-              MigrateWorkflowDefinitions        one-way migration
               RenameDutchDeadlineColumns        rename over existing rows
               RenameDutchDirectionValues        rewrite over existing rows
+              RenameDutchColumns                rename over existing rows
+              RenameDutchValues                 rewrite over existing rows
+              RealignLhsActorTypeVocabulary     repairs rows an earlier rename touched
               MigrateArchivalToOpenRegister     one-way migration
+              MigratePartnersToOrganisations    moves existing ketenpartner rows
+              MigrateSubsidieRegelingToCaseType moves existing subsidieRegeling rows
+              MigrateAiOversightToHermiq        replays existing audit history
+              MigrateCommitteesToDecidiq        raises existing committees; none are seeded
+              ArmTermijnEngineTimers            arms existing TermijnInstances; none exist yet
+              RetireOriRegister                 retires a register a fresh install never had
+              FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
+              BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
+              RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
+
+            THE LIST ABOVE IS NOT PROSE. RepairStepRegistrationTest parses this file,
+            sweeps every post-migration step, and fails on any step that is neither
+            declared in <install> below nor named in its exemption table with a
+            reason. ProvisionAssignedGroups shipped registered in post-migration only
+            and was invisible to a fresh install for exactly as long as that sweep
+            did not exist.
         -->
         <install>
             <!--
@@ -425,28 +589,77 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
             <!-- Schema half of the same rename; see the post-migration block. -->
             <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
+            <!--
+                SAME ARGUMENT AS THE THREE STEPS ABOVE, AND IT WAS MISSING.
+                Enabling `dossiq` is a fresh install as far as Nextcloud is
+                concerned, so this is the block that runs on an instance that
+                already holds `procest` schemas under their old Dutch slugs.
+                Declared post-migration only, the rename never happened on that
+                path and the import forked a second schema set. It must stay
+                ahead of InitializeSettings for the reason given there.
+            -->
+            <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
+            <!--
+                Same as the post-migration block: enabling the app is a fresh
+                install as far as Nextcloud is concerned, so an instance that
+                already holds a `supplierInvoice` schema reaches the import
+                through here. It must stay ahead of InitializeSettings.
+            -->
+            <step>OCA\Dossiq\Repair\RenameCollidingSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <!--
+                BASELINE-CREATING, AND ONLY A FRESH INSTALL NEEDS IT MOST.
+                The shipped case flow assigns its behandelaar step to the
+                Nextcloud group `behandelaars`, and membership of a group that
+                does not exist is false for everyone — so the completion signal
+                is refused fail-closed and the shipped journey cannot be walked
+                at all. Declared post-migration only (dossiq#1729), it never ran
+                on the one path that had no group to begin with. Ahead of every
+                seed below, which is where that data lands.
+            -->
+            <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <!-- SEEDS THE CASE TYPES THE TEMPLATE STEP RESOLVES; see the
+                 post-migration block for what the wrong order cost. -->
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <!-- LAST OF THE SEEDS, because it projects a basis workflow onto
+                 every case type the steps above just created. See the
+                 post-migration block for what its old position cost. -->
+            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
+            <!--
+                LAST, AND A REPORT RATHER THAN AN ACTION. The two flows dossiq
+                ships are imported by OpenRegister while the register above is,
+                and they arrive `owner = NULL, enabled = false` by that engine's
+                design — so nothing runs, and the install says nothing about it.
+                This step cannot adopt them (adoption writes the CALLING user's
+                uid and an upgrade runs as nobody); it names what is outstanding
+                and the command that completes it. It never throws.
+            -->
+            <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
         </install>
     </repair-steps>
 
     <commands>
+        <command>OCA\Dossiq\Command\AdoptShippedFlowsCommand</command>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateLhsToDecisionTablesCommand</command>
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
+        <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
+        <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
+        <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
     </commands>
 
     <settings>

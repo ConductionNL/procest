@@ -20,9 +20,11 @@
  * l10n/nl.json with a non-empty value (and vice versa). Without this, a new
  * English source string can ship with no Dutch translation and a Dutch-locale
  * user silently sees the raw English key as fallback text — the gap that
- * `nl-locale-coverage-gap-and-dutch-keys` closed. It also WARNS on any new
- * translation key whose text reads as Dutch (Dutch-as-key anti-pattern), since
- * translation keys MUST be English source per project convention.
+ * `nl-locale-coverage-gap-and-dutch-keys` closed. It also FAILS on the
+ * Dutch-as-key anti-pattern: a USED key whose en.json value is identical to its
+ * nl.json value renders Dutch to an English reader, unless the word is listed in
+ * tests/l10n/language-neutral-keys.json as genuinely the same in both languages.
+ * This docblock previously claimed to WARN on that while no such code existed.
  *
  * Modes:
  *   (default)  check only — exit non-zero if any used key is missing OR the
@@ -135,6 +137,11 @@ function unescape (s) {
 		.replace(/\\'/g, "'")
 		.replace(/\\"/g, '"')
 		.replace(/\\`/g, '`')
+		// \uXXXX must decode, or the key recorded here is not the key t() looks up at
+		// runtime. `t('dossiq', '{from} \u2014 (no end)')` was extracted as the literal
+		// backslash-u text, so the catalogue held a key nothing ever requested and all
+		// 35 translations of it were dead on arrival.
+		.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
 		.replace(/\\\\/g, '\\')
 }
 
@@ -142,7 +149,7 @@ function unescape (s) {
 const used = new Map()
 
 function record (key, file, idx, content) {
-	if (key == null) {
+	if ((key === null || key === undefined)) {
 		return
 	}
 	const k = unescape(key)
@@ -185,7 +192,7 @@ for (const file of files) {
 // (spdx, change, adr), never rendered, and translating it would be nonsense.
 // ---------------------------------------------------------------------------
 const MANIFEST_TEXT_FIELDS = new Set([
-	'title', 'body', 'task', 'label', 'description',
+	'title', 'body', 'caseTask', 'label', 'description',
 	'emptyText', 'placeholder', 'subtitle', 'helpText',
 ])
 
@@ -244,6 +251,47 @@ for (const file of manifestFiles) {
 	recordManifestStrings(parsed, file, '')
 }
 
+// ---------------------------------------------------------------------------
+// Dutch-as-key guard (REQ-I18N-04).
+//
+// A translation key is the ENGLISH SOURCE string. When a Dutch string is used as
+// the key, l10n/en.json maps it to itself and an English UI renders Dutch. The
+// docblock above claimed this was warned about since `nl-locale-coverage-gap-and-
+// dutch-keys`; it never was, and 23 live keys shipped that way: `Commissie` and
+// `Bezwaar` as column headers, `Kaartlaag` and `Subsidie` as page titles.
+//
+// The test is mechanical and needs no language detection. If en.json and nl.json
+// hold the SAME value for a used key, the English catalogue offers a reader
+// nothing the Dutch one does not. Either the word is the same in both languages,
+// or the key is Dutch and untranslated. The first case is finite and listed in
+// language-neutral-keys.json; everything else is the anti-pattern.
+//
+// The fix is NOT to change the key. Changing it orphans every other locale's
+// translation of it. Give the Dutch key an English VALUE in l10n/en.json and
+// leave the Dutch value in l10n/nl.json, the way 189 entries already do.
+// ---------------------------------------------------------------------------
+const neutralFile = path.join(ROOT, 'tests', 'l10n', 'language-neutral-keys.json')
+const dutchNlFile = path.join(path.dirname(enFile), 'nl.json')
+const dutchAsKey = []
+let neutralChecked = false
+if (fs.existsSync(dutchNlFile) && fs.existsSync(neutralFile)) {
+	neutralChecked = true
+	const nlAll = readJson(dutchNlFile).translations || {}
+	const neutral = new Set(readJson(neutralFile).keys || [])
+	for (const key of used.keys()) {
+		if (neutral.has(key)) {
+			continue
+		}
+		if (Object.hasOwn(translations, key)
+			&& Object.hasOwn(nlAll, key)
+			&& translations[key] === nlAll[key]) {
+			dutchAsKey.push(key)
+		}
+	}
+} else if (!fs.existsSync(neutralFile)) {
+	console.warn(`l10n-check: WARN — ${path.relative(ROOT, neutralFile)} not found; skipping the Dutch-as-key guard`)
+}
+
 const missing = []
 for (const [key, locations] of used) {
 	if (!Object.hasOwn(translations, key)) {
@@ -271,7 +319,11 @@ if (fs.existsSync(nlFile)) {
 	for (const key of Object.keys(translations)) {
 		if (!Object.hasOwn(nlTranslations, key)) {
 			parityMissingInNl.push(key)
-		} else if (nlTranslations[key] === '' || nlTranslations[key] == null) {
+		} else if (
+			nlTranslations[key] === ''
+			|| nlTranslations[key] === null
+			|| nlTranslations[key] === undefined
+		) {
 			parityEmptyNl.push(key)
 		}
 	}
@@ -285,11 +337,15 @@ if (fs.existsSync(nlFile)) {
 }
 
 const parityFail = parityMissingInNl.length > 0 || parityMissingInEn.length > 0 || parityEmptyNl.length > 0
+const dutchFail = dutchAsKey.length > 0
 
-if (missing.length === 0 && !parityFail) {
+if (missing.length === 0 && !parityFail && !dutchFail) {
 	console.log('l10n-check: OK — every used translation key is present in l10n/en.json')
 	if (nlChecked) {
 		console.log('l10n-check: OK — en.json and nl.json key sets match (no missing Dutch translations)')
+	}
+	if (neutralChecked) {
+		console.log('l10n-check: OK — no used key renders Dutch to an English reader')
 	}
 	process.exit(0)
 }
@@ -311,7 +367,7 @@ if (WRITE && missing.length > 0) {
 		+ 'Review the diff and translate the nl.json side as needed.')
 	// Fall through to the parity report so --write still surfaces nl gaps,
 	// but never auto-exits 0 while the Dutch side is incomplete.
-	if (!parityFail) {
+	if (!parityFail && !dutchFail) {
 		process.exit(0)
 	}
 }
@@ -362,4 +418,18 @@ if (parityFail) {
 		+ 'string falls back to the raw English key.')
 }
 
-process.exit((missing.length > 0 && !WRITE) || parityFail ? 1 : 0)
+if (dutchFail) {
+	console.error(`\nl10n-check: FAIL — ${dutchAsKey.length} used translation key(s) render Dutch to an English reader.`)
+	console.error('l10n/en.json maps each of these to the very same text l10n/nl.json does, so an English UI shows the Dutch string:')
+	for (const key of dutchAsKey.sort((a, b) => a.localeCompare(b))) {
+		console.error(`  • ${JSON.stringify(key)}`)
+		for (const loc of [...used.get(key)].slice(0, 3)) {
+			console.error(`      ${loc}`)
+		}
+	}
+	console.error('\nGive each key an English VALUE in l10n/en.json and keep the Dutch value in l10n/nl.json.')
+	console.error('Do NOT rename the key: that orphans every other locale\'s translation of it.')
+	console.error(`If the word really is identical in both languages, add it to ${path.relative(ROOT, neutralFile)}.`)
+}
+
+process.exit((missing.length > 0 && !WRITE) || parityFail || dutchFail ? 1 : 0)

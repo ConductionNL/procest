@@ -68,10 +68,6 @@ $extra = [
     ['name' => 'assistant#availability', 'url' => '/api/assistant/availability', 'verb' => 'GET'],
     ['name' => 'assistant#converse',     'url' => '/api/assistant/converse',     'verb' => 'POST'],
 
-        // Parafering Actions (must precede any wildcard routes).
-    ['name' => 'parafeerActie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
-    ['name' => 'parafeerActie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
-
         // KCC Klantcontact (kcc-klantcontact-integratie).
         // Static/verb routes precede the {id} wildcard routes.
     ['name' => 'kccRouting#evaluate', 'url' => '/api/kcc/routing/evaluate', 'verb' => 'POST'],
@@ -105,8 +101,9 @@ $extra = [
     ['name' => 'subsidie#create', 'url' => '/api/subsidies', 'verb' => 'POST'],
     ['name' => 'subsidie#createTussenrapportage', 'url' => '/api/subsidies/uitvoeringen/{uitvoeringId}/tussenrapportages', 'verb' => 'POST'],
     ['name' => 'subsidie#approveTussenrapportage', 'url' => '/api/subsidies/tussenrapportages/{reportId}/beoordelen', 'verb' => 'POST'],
-        // The placeholder names bind BY NAME to the method parameters — see the
-        // note on the parafeer-route block below. These three were
+        // The placeholder names bind BY NAME to the method parameters, not by
+        // position, so a placeholder that does not match the method's parameter
+        // name resolves to null and the Dispatcher answers HTTP 400. These three were
         // {vaststellingId}/{beschikkingId} against $determinationId/$decisionId
         // and answered HTTP 400 on every call.
     ['name' => 'subsidie#finalizeVaststelling', 'url' => '/api/subsidies/vaststellingen/{determinationId}/vast', 'verb' => 'POST'],
@@ -258,46 +255,6 @@ $extra = [
         // openspec/changes/brk-woz-register-adapters/design.md Decision 2.
     ['name' => 'woz#value', 'url' => '/api/external/woz/value', 'verb' => 'GET'],
     ['name' => 'woz#object', 'url' => '/api/external/woz/value/{wozobjectnummer}', 'verb' => 'GET'],
-
-        // ── Parafeerroute (B&W parafering engine) ───────────────────────
-        // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
-        // /api/objects/<register>/<schema> endpoints — only engine routes remain.
-        // ⚠️ THE PLACEHOLDER NAME IS LOAD-BEARING. Nextcloud's Dispatcher binds a
-        // controller argument by PARAMETER NAME (`$this->request->getParam($param)`),
-        // not by position. These four were `{voorstelId}` while every target method
-        // signs `string $proposalId` — so the argument resolved to null, the string
-        // typehint threw a TypeError, and the Dispatcher answered HTTP 400. Measured
-        // against the running instance before the fix: start, complete-step and
-        // register-besluit all returned 400 with an empty body, on every call, for
-        // any input.
-        //
-        // The Dutch→English vocabulary sweep renamed the method parameters and left
-        // the URLs behind. Nothing caught it: the route exists, the method exists,
-        // and gate-6 (route-reachability) checks that a route's target method is
-        // present — which it is. Only the NAMES disagree.
-        // The four parafeer-route engine routes were RETIRED. They were a second
-        // implementation of a flow /api/parafeer-actie already runs, and they had
-        // never served a request: the placeholder bound no argument, so every call
-        // answered 400. `start` is covered by the `besluitvormingActivate`
-        // transition action, `complete-step` and `skip-step` by parafeeractie's
-        // own `parafered`/`accorded`/`skipped` vocabulary, and `add-step` has no
-        // live equivalent — that button went with them.
-
-        // Voorstel → besluit registration delegates to a decidesk report-adoption
-        // Decision (dossiq-delegate-remaining-decisions-to-decidesk, ADR-019).
-        // The parafeerroute above is untouched; only the besluit decision moves.
-        // Same placeholder-name defect as the four routes above — see that note.
-    ['name' => 'voorstelBesluit#registerBesluit', 'url' => '/api/voorstellen/{proposalId}/register-besluit',       'verb' => 'POST'],
-
-        // NOTE: ParaferingController + ParaferingService were superseded scaffolding
-        // that operated entirely in-memory (no persistence, client-supplied state).
-        // Deleted in wave-3 security fix. The live engine is ParafeerActieService /
-        // ParafeerRouteController. Audit-trail export route retained below.
-        // Parafering audit trail Archiefwet-aligned export (action, not CRUD).
-        // CRUD on paraferingAuditEntry objects is served by OpenRegister's
-        // auto-exposed /api/objects/<register>/<schema> endpoints — only the
-        // export action lives here.
-    ['name' => 'paraferingAuditExport#export', 'url' => '/api/voorstellen/{id}/audit-trail/export',              'verb' => 'GET'],
 
         // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
         // Inbound SOAP endpoints accept raw XML POST.
@@ -596,6 +553,7 @@ $extra = [
 
         // ── Milestone tracking ───────────────────────────────────────────
     ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
+    ['name' => 'milestone#caseProgress', 'url' => '/api/cases/{caseId}/milestones/progress', 'verb' => 'GET'],
     ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
     ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
@@ -715,6 +673,7 @@ $extra = [
     ['name' => 'substitution#revoke',          'url' => '/api/substitutions/{id}/revoke',     'verb' => 'POST'],
     ['name' => 'caseReassignment#reassignPreview', 'url' => '/api/reassignments/preview',      'verb' => 'POST'],
     ['name' => 'caseReassignment#reassignExecute', 'url' => '/api/reassignments/execute',      'verb' => 'POST'],
+    ['name' => 'caseReassignment#reassignSelection', 'url' => '/api/reassignments/selection',  'verb' => 'POST'],
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.
@@ -779,6 +738,15 @@ $extra = [
         // Deliberately no proxy and no redirect — a feed that silently answers
         // from a different app is worse than one that stops, because a
         // subscriber cannot tell it has moved.
+
+        // Case-configuration store (ADR-080). Consume-only: dossiq browses a
+        // remote OpenRegister registry through AppHost's GenericStoreService and
+        // installs locally. It never publishes, and it builds no registry URL of
+        // its own — discovery belongs to the engine.
+    ['name' => 'store#search',       'url' => '/api/store/items',                 'verb' => 'GET'],
+    ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
+    ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
+    ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
 
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to

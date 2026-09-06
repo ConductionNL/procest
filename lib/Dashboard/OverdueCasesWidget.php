@@ -37,6 +37,8 @@ use OCP\Util;
 
 /**
  * Dashboard widget showing overdue cases with deadline info.
+ *
+ * @spec openspec/specs/signalering-widgets/spec.md
  */
 class OverdueCasesWidget implements IWidget {
 	/**
@@ -56,6 +58,8 @@ class OverdueCasesWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget identifier
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getId(): string {
 		// FROZEN at the old app-id prefix — see CasesOverviewWidget::getId().
@@ -67,6 +71,8 @@ class OverdueCasesWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget title
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getTitle(): string {
 		return $this->l10n->t('Overdue Cases');
@@ -77,6 +83,8 @@ class OverdueCasesWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return int The widget order
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getOrder(): int {
 		return 11;
@@ -87,6 +95,8 @@ class OverdueCasesWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The icon CSS class
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getIconClass(): string {
 		return 'icon-dossiq-widget';
@@ -97,6 +107,8 @@ class OverdueCasesWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string|null The widget URL or null
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getUrl(): ?string {
 		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
@@ -109,6 +121,8 @@ class OverdueCasesWidget implements IWidget {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function load(): void {
 		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).

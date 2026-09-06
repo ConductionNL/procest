@@ -37,6 +37,8 @@ use Throwable;
  * Branding validation is owned by {@see TenantBrandingSanitiser}; this service
  * owns configuration storage — read, merge, persist — plus locale and feature
  * flags.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
  */
 class TenantConfigurationService {
 	/**
@@ -103,6 +105,8 @@ class TenantConfigurationService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array<string,mixed>|null
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
 	 */
 	public function getConfig(string $tenantId): ?array {
 		$objectService = $this->getObjectService();
@@ -161,6 +165,8 @@ class TenantConfigurationService {
 	 * @param bool $enabled True to add, false to remove.
 	 *
 	 * @return array<string,mixed>
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
 	 */
 	public function setFeatureFlag(string $tenantId, string $flag, bool $enabled): array {
 		$current = $this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];
@@ -228,6 +234,8 @@ class TenantConfigurationService {
 	 * @param string $css Raw CSS.
 	 *
 	 * @return string Sanitised CSS.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function sanitiseCustomCss(string $css): string {
 		return $this->sanitiser->sanitiseCustomCss(css: $css);
@@ -242,6 +250,8 @@ class TenantConfigurationService {
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function validateLogoUpload(string $mimeType, int $bytes): void {
 		$this->sanitiser->validateLogoUpload(mimeType: $mimeType, bytes: $bytes);
@@ -253,6 +263,8 @@ class TenantConfigurationService {
 	 * @param string $val 6-digit hex (with leading #).
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function isHexColor(string $val): bool {
 		return $this->sanitiser->isHexColor(val: $val);

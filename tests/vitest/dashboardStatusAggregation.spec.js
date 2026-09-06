@@ -16,7 +16,7 @@
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { aggregateByStatus } from '../../src/utils/dashboardHelpers.js'
 
 const STATUS_TYPES = [

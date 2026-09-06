@@ -17,7 +17,8 @@ Zaak `relevanteAndereZaken` field. Hierarchy (hoofdzaak/deelzaak) stays `deelzaa
 concern and is explicitly not duplicated as a peer relation.
 
 **Status note (2026-06-13):** Implemented. Backend (`CaseRelationService`, `CaseRelationController`,
-ZRC mapping in `ZrcController`) + UI (`RelatedCasesSection` sidebar tab, `AddCaseRelationModal`) +
+ZRC mapping in `ZrcController`) + UI (the generic `case-related` panel on CaseDetail; the bespoke
+`RelatedCasesSection` sidebar tab and `AddCaseRelationModal` were retired on 2026-09-03) +
 i18n shipped. Covered by PHPUnit (service guards + two-sided invariants + controller status mapping),
 vitest (presentation helpers), a Newman collection (`relevante-andere-zaken`, ZGW outbound/inbound/reject),
 and Playwright spec-coverage for the UI. The `relatedCases` field is a JSON-encoded **string** (not an
@@ -95,24 +96,41 @@ The system SHALL reject self-relations, duplicate `{caseId, aardRelatie}` pairs,
 - **WHEN** they attempt to link A to B
 - **THEN** the request MUST be denied
 
-### Requirement: Related cases MUST be rendered on the case detail with RBAC-safe masking
+### Requirement: Related cases MUST be rendered on the case detail
 
-The case detail SHALL show a "Gerelateerde zaken" section listing each relation with direction-aware type label, toelichting, and navigation; relations whose target the viewer cannot read SHALL render as a masked stub (case number only, no title, no navigation) without hiding the relation's existence.
+The case detail SHALL list each peer relation on its "Related cases" panel, with the target's title and status and navigation to it.
+
+AMENDED 2026-09-03. This requirement used to name a bespoke "Gerelateerde zaken"
+section and require RBAC-safe masking and an in-page add-relation flow. The
+case-detail rewrite replaced that surface with the generic `case-related` widget,
+and the bespoke one was left orphaned rather than removed: measured on the
+deployed build, the `Related cases` tab renders `widgetId: case-related`, while
+`RelatedCasesSection.vue` was still registered in `src/registry.js` and reachable
+from nothing. Its "Link case" control and `AddCaseRelationModal` went with it, so
+the add-relation flow had no entry point in the running app.
+
+Rather than restore a surface the rewrite deliberately replaced, that decision is
+now recorded: the generic widget IS the related-cases surface, and both orphaned
+components are deleted. What this costs is stated plainly rather than left
+implied. Two guarantees are RETIRED at the UI level, and neither is replaced:
+
+1. **Linking a related case from the UI.** The relation is still created through
+   `CaseRelationController`, which keeps its guards, its two-sided invariant and
+   its PHPUnit coverage, and the ZGW `relevanteAndereZaken` mapping is unchanged.
+   What is gone is the in-app affordance to make one.
+2. **RBAC-safe masking of an unreadable target.** The masking branch lived in
+   `RelatedCasesSection.hydrate()`. The generic widget does its own rendering, so
+   whether an unreadable target is masked there is a property of that widget and
+   is not asserted here.
+
+Reinstating either means giving the generic widget a link control and a masking
+rule, not resurrecting the deleted component.
 
 #### Scenario: Section lists relations with navigation
 
-- **GIVEN** a case with two readable related cases
-- **WHEN** a handler opens the case detail
-- **THEN** the Gerelateerde zaken section MUST list both with type label, case title, status, and a link navigating to each
+- **GIVEN** a case with a readable related case
+- **WHEN** a handler opens the case detail and selects the Related cases panel
+- **THEN** the panel MUST list the relation with the target's title and status
 
-#### Scenario: Add-relation flow
-
-- **WHEN** the handler clicks "Zaak koppelen", searches for a case, selects the relation type, and confirms
-- **THEN** the relation MUST be created and the section MUST update without a page reload
-
-#### Scenario: Unreadable target is masked
-
-- **GIVEN** a relation whose target case the viewer cannot read under OR RBAC
-- **WHEN** the section renders
-- **THEN** that entry MUST show only the case number and relation type, with no title and no navigation link
+@e2e exclude The add-relation flow and the masking branch are retired at the UI level, so the scenarios that covered them are gone with the component; the listing scenario above is covered by `tests/e2e/spec-coverage/related-case-linking.spec.ts`.
 

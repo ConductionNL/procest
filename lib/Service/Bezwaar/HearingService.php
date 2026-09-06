@@ -210,7 +210,7 @@ class HearingService {
 		);
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to schedule hearing: ' . $e->getMessage()
@@ -289,7 +289,7 @@ class HearingService {
 		);
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to record waiver: ' . $e->getMessage()
@@ -358,8 +358,13 @@ class HearingService {
 			key: 'hearing_session_schema'
 		);
 
-		$current = $objectService->find($sessionId, register: $register, schema: $schema);
-		if (is_array($current) === false) {
+		$current = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $sessionId
+		);
+		if ($current === null) {
 			throw new RuntimeException('Hearing session not found');
 		}
 
@@ -397,12 +402,13 @@ class HearingService {
 		];
 
 		try {
-			return $objectService->saveObject(
-				object: $update,
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $schema,
+				object: $update,
 				uuid: (string)$sessionId
-			);
+			) ?? array_merge($current, $update));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
@@ -441,8 +447,13 @@ class HearingService {
 			key: 'hearing_session_schema'
 		);
 
-		$current = $objectService->find($sessionId, register: $register, schema: $schema);
-		if (is_array($current) === false) {
+		$current = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $sessionId
+		);
+		if ($current === null) {
 			throw new RuntimeException('Hearing session not found');
 		}
 
@@ -489,12 +500,13 @@ class HearingService {
 		);
 
 		try {
-			return $objectService->saveObject(
-				object: $update,
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $schema,
+				object: $update,
 				uuid: (string)$sessionId
-			);
+			) ?? array_merge($current, $update));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to add minutes: ' . $e->getMessage()
@@ -606,8 +618,13 @@ class HearingService {
 		}
 
 		try {
-			$objection = $objectService->find($objectionId, register: $register, schema: $objectionSchema);
-			if (is_array($objection) === true) {
+			$objection = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $objectionSchema,
+				id: $objectionId
+			);
+			if ($objection !== null) {
 				$candidate = (string)($objection['case'] ?? '');
 				if ($candidate !== '') {
 					return $candidate;

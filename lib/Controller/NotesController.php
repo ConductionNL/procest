@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Controller for note-mention notification side-effects.
+ *
+ * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 class NotesController extends Controller {
 	/**

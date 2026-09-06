@@ -39,6 +39,8 @@ use RuntimeException;
  * OpenRegister access is delegated to EmailTemplateRepository; what stays here
  * is the template domain itself — versioning, seeding and placeholder
  * resolution.
+ *
+ * @spec openspec/changes/case-email-integration/tasks.md#T04
  */
 class EmailTemplateService {
 

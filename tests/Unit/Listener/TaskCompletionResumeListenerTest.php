@@ -4,19 +4,22 @@
  * A completed task resumes its run — and only when it should.
  *
  * WHAT THESE TESTS DO AND DO NOT PROVE. The authorization RULE lives in
- * OpenRegister (`FlowRunAssignee`) and is tested there, including a mutation
- * check. dossiq's suite resolves OpenRegister to stubs, so re-testing the rule
- * here would test a stub against itself — a second implementation validated by
- * a second fake, drifting from the real one while both suites stay green.
+ * OpenRegister, inside `FlowRunSignalService::signalAs()` (openregister#3332),
+ * and is tested there, including a mutation check. dossiq's suite resolves
+ * OpenRegister to stubs, so re-testing the guard here would test a stub
+ * against itself — a second implementation validated by a second fake,
+ * drifting from the real one while both suites stay green.
  *
- * So what is proven here is the half that IS dossiq's: that the listener asks
- * the rule at all, and that it OBEYS a refusal. The double below is told what
- * to answer, and the assertions are about what the listener then does.
+ * So what is proven here is the half that IS dossiq's: that the listener
+ * signals through the guarded seam with the right actor and node, and that it
+ * OBEYS a refusal — the typed `FlowSignalRefused` is caught and the run is
+ * left alone. The double below is told what to answer, and the assertions are
+ * about what the listener then does.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
  */
 
 declare(strict_types=1);
@@ -25,12 +28,10 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Db\FlowRun;
-use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\OpenRegister\Service\Flow\FlowRunAssignee;
-use OCA\OpenRegister\Service\Flow\FlowRunService;
-use OCP\IGroupManager;
+use OCA\OpenRegister\Exception\FlowSignalRefused;
+use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -39,22 +40,22 @@ use Psr\Log\LoggerInterface;
 class TaskCompletionResumeListenerTest extends TestCase {
 
 	/**
-	 * Records whether signal() was called, and with what.
+	 * Records every delivered signal: uuid, payload, actor, node.
 	 *
 	 * @var array<int, array<string, mixed>>
 	 */
 	private array $signals = [];
 
 	/**
-	 * The answer the injected assignee rule gives.
+	 * The refusal the seam double throws, when it refuses at all.
 	 *
-	 * @var boolean
+	 * @var FlowSignalRefused|null
 	 */
-	private bool $mayAnswer = true;
+	private ?FlowSignalRefused $refusal = null;
 
 	protected function setUp(): void {
 		$this->signals = [];
-		$this->mayAnswer = true;
+		$this->refusal = null;
 	}//end setUp()
 
 	/**
@@ -102,25 +103,26 @@ class TaskCompletionResumeListenerTest extends TestCase {
 	}//end event()
 
 	/**
-	 * The listener, wired to doubles that record what it does.
+	 * The listener, wired to a seam double that records what it delivers.
 	 *
 	 * @param string|null $uid The acting user.
 	 *
 	 * @return TaskCompletionResumeListener The listener.
 	 */
 	private function listener(?string $uid = 'alice'): TaskCompletionResumeListener {
-		$run = new FlowRun();
-		$run->setUuid('run-1');
-
-		$runs = $this->createMock(FlowRunMapper::class);
-		$runs->method('findByUuid')->willReturn($run);
-
-		$runner = new class($this->signals) extends FlowRunService {
-			public function __construct(private array &$sink) {
+		$signals = new class($this->signals, $this->refusal) extends FlowRunSignalService {
+			public function __construct(private array &$sink, private ?FlowSignalRefused &$refusal) {
 			}
 
-			public function signal(FlowRun $run, array $payload = []): ?FlowRun {
-				$this->sink[] = ['run' => $run->getUuid(), 'payload' => $payload];
+			public function signalAs(string $runUuid, array $payload, ?string $actorUid, ?string $nodeId = null): FlowRun {
+				if ($this->refusal !== null) {
+					throw $this->refusal;
+				}
+
+				$this->sink[] = ['run' => $runUuid, 'payload' => $payload, 'actor' => $actorUid, 'node' => $nodeId];
+
+				$run = new FlowRun();
+				$run->setUuid($runUuid);
 
 				return $run;
 			}
@@ -135,28 +137,22 @@ class TaskCompletionResumeListenerTest extends TestCase {
 			$session->method('getUser')->willReturn($user);
 		}
 
-		$assignees = new class($this->mayAnswer) extends FlowRunAssignee {
-			public function __construct(private bool &$answer) {
-			}
-
-			public function mayAnswer(FlowRun $run, ?string $uid): bool {
-				return $this->answer;
-			}
-		};
-
 		return new TaskCompletionResumeListener(
-			runs: $runs,
-			runner: $runner,
+			signals: $signals,
 			userSession: $session,
-			groups: $this->createMock(IGroupManager::class),
-			logger: $this->createMock(LoggerInterface::class),
-			assignees: $assignees
+			logger: $this->createMock(LoggerInterface::class)
 		);
 	}//end listener()
 
+	/**
+	 * The old state is `active`, not `available`: the task schema's CMMN
+	 * lifecycle (REQ-TASK-002) refuses a one-step available → completed
+	 * update, so the only completion event the store can emit comes from an
+	 * active task. The seeded states here mirror that.
+	 */
 	public function testCompletingAFlowTaskResumesItsRun(): void {
 		$this->listener()->handle(
-			$this->event($this->task(), $this->task(['status' => 'available']))
+			$this->event($this->task(), $this->task(['status' => 'active']))
 		);
 
 		$this->assertCount(1, $this->signals);
@@ -166,27 +162,48 @@ class TaskCompletionResumeListenerTest extends TestCase {
 	}//end testCompletingAFlowTaskResumesItsRun()
 
 	/**
-	 * 🔴 THE SECURITY TEST. A refusal from the rule withholds the resume.
-	 *
-	 * This path calls FlowRunService::signal() directly and therefore does NOT
-	 * inherit OpenRegister's HTTP resume guard. Without the check here, any user
-	 * who can write a task object could advance somebody else's decision.
+	 * The guard can only judge the actor and the node it is HANDED. Passing
+	 * the session user and the task's node is dossiq's whole remaining duty on
+	 * this path; a listener that passed null-for-actor would turn an assigned
+	 * step's refusal into an anonymous one.
 	 */
-	public function testARefusalFromTheAssigneeRuleWithholdsTheResume(): void {
-		$this->mayAnswer = false;
+	public function testTheSeamIsHandedTheActorAndTheAddressedNode(): void {
+		$this->listener(uid: 'alice')->handle(
+			$this->event($this->task(), $this->task(['status' => 'active']))
+		);
+
+		$this->assertCount(1, $this->signals);
+		$this->assertSame('alice', $this->signals[0]['actor']);
+		$this->assertSame('ask-indiener', $this->signals[0]['node']);
+		$this->assertSame('alice', $this->signals[0]['payload']['completedBy']);
+	}//end testTheSeamIsHandedTheActorAndTheAddressedNode()
+
+	/**
+	 * 🔴 THE SECURITY TEST. A refusal from the guarded seam withholds the
+	 * resume and raises nothing: the task stays completed, the run stays
+	 * parked, and the listener neither retries nor falls back to the
+	 * unguarded primitive.
+	 */
+	public function testARefusalFromTheSeamWithholdsTheResumeQuietly(): void {
+		$this->refusal = new FlowSignalRefused(
+			reason: FlowSignalRefused::NOT_ASSIGNEE,
+			message: 'not the assignee',
+			runUuid: 'run-1',
+			actorUid: 'mallory'
+		);
 
 		$this->listener(uid: 'mallory')->handle(
-			$this->event($this->task(), $this->task(['status' => 'available']))
+			$this->event($this->task(), $this->task(['status' => 'active']))
 		);
 
 		$this->assertSame([], $this->signals, 'The run must not advance for somebody who was not asked.');
-	}//end testARefusalFromTheAssigneeRuleWithholdsTheResume()
+	}//end testARefusalFromTheSeamWithholdsTheResumeQuietly()
 
 	public function testATaskWithNoRunResumesNothing(): void {
 		$this->listener()->handle(
 			$this->event(
 				$this->task(['flowRun' => '', 'flowNode' => '']),
-				$this->task(['flowRun' => '', 'flowNode' => '', 'status' => 'available'])
+				$this->task(['flowRun' => '', 'flowNode' => '', 'status' => 'active'])
 			)
 		);
 
@@ -201,7 +218,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 		$this->listener()->handle(
 			$this->event(
 				$this->task(['flowNode' => '']),
-				$this->task(['flowNode' => '', 'status' => 'available'])
+				$this->task(['flowNode' => '', 'status' => 'active'])
 			)
 		);
 
@@ -252,37 +269,19 @@ class TaskCompletionResumeListenerTest extends TestCase {
 	}//end testAnUpdateWithNoPreviousStateResumesNothing()
 
 	/**
-	 * A vanished run is not an error for the person completing the task.
+	 * A vanished run is not an error for the person completing the task: the
+	 * seam refuses with RUN_NOT_FOUND, and the listener records it quietly
+	 * instead of raising.
 	 */
 	public function testATaskWhoseRunHasGoneStillCompletesQuietly(): void {
-		$runs = $this->createMock(FlowRunMapper::class);
-		$runs->method('findByUuid')->willThrowException(new \RuntimeException('gone'));
-
-		$runner = new class($this->signals) extends FlowRunService {
-			public function __construct(private array &$sink) {
-			}
-
-			public function signal(FlowRun $run, array $payload = []): ?FlowRun {
-				$this->sink[] = ['run' => $run->getUuid(), 'payload' => $payload];
-
-				return $run;
-			}
-		};
-
-		$user = $this->createMock(IUser::class);
-		$user->method('getUID')->willReturn('alice');
-		$session = $this->createMock(IUserSession::class);
-		$session->method('getUser')->willReturn($user);
-
-		$listener = new TaskCompletionResumeListener(
-			runs: $runs,
-			runner: $runner,
-			userSession: $session,
-			groups: $this->createMock(IGroupManager::class),
-			logger: $this->createMock(LoggerInterface::class)
+		$this->refusal = new FlowSignalRefused(
+			reason: FlowSignalRefused::RUN_NOT_FOUND,
+			message: 'no such run',
+			runUuid: 'run-1',
+			actorUid: 'alice'
 		);
 
-		$listener->handle($this->event($this->task(), $this->task(['status' => 'available'])));
+		$this->listener()->handle($this->event($this->task(), $this->task(['status' => 'active'])));
 
 		$this->assertSame([], $this->signals);
 	}//end testATaskWhoseRunHasGoneStillCompletesQuietly()

@@ -50,8 +50,8 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		},
 
 		/**
-		 * @param resourceKey
-		 * @param config
+		 * @param {string} resourceKey The resource key.
+		 * @param {object} config The config.
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async saveMapping(resourceKey, config) {
@@ -91,7 +91,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		},
 
 		/**
-		 * @param resourceKey
+		 * @param {string} resourceKey The resource key.
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async resetMapping(resourceKey) {

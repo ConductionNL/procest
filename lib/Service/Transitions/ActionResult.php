@@ -38,11 +38,17 @@ final class ActionResult {
 	 * @param bool $succeeded Whether the action succeeded
 	 * @param string|null $error Static error message (no exception detail)
 	 * @param array<string, mixed> $data Optional structured data from the action
+	 * @param array<string, mixed> $caseChanges The case fields this action wrote to
+	 *                                          storage, so the caller can stamp them
+	 *                                          onto its outgoing case snapshot.
+	 *                                          Without this a downstream step holds
+	 *                                          a snapshot that predates the write.
 	 */
 	public function __construct(
 		public readonly bool $succeeded,
 		public readonly ?string $error = null,
 		public readonly array $data = [],
+		public readonly array $caseChanges = [],
 	) {
 	}//end __construct()
 }//end class

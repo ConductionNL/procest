@@ -30,6 +30,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
 use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
+use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -99,10 +100,6 @@ class SettingsService {
 		'hearing_session_schema',
 		'advisory_report_schema',
 		'appeal_decision_schema',
-		'voorstel_schema',
-		'parafeerroute_schema',
-		'parafeeractie_schema',
-		'parafering_audit_entry_schema',
 		'default_case_type',
 		'inspectie_checklist_schema',
 		'inspectie_rapport_schema',
@@ -382,6 +379,27 @@ class SettingsService {
 	private SchemaAnnotationReconciler $schemaAnnotations;
 
 	/**
+	 * The app-config key holding the Besluit schema id.
+	 *
+	 * @var string
+	 */
+	private const DECISION_SCHEMA_KEY = 'decision_schema';
+
+	/**
+	 * The app that owns the `decision` slug fleet-wide.
+	 *
+	 * @var string
+	 */
+	private const DECIDIQ_APP_ID = 'decidiq';
+
+	/**
+	 * decidiq's slug for it.
+	 *
+	 * @var string
+	 */
+	private const DECISION_SLUG = 'decision';
+
+	/**
 	 * Constructor for the SettingsService.
 	 *
 	 * The three collaborators are constructed here rather than injected so the
@@ -404,15 +422,27 @@ class SettingsService {
 		private LoggerInterface $logger,
 	) {
 		$this->fragments = new RegisterFragmentMerger();
-		$this->schemaKeys = new SchemaKeyReconciler(
+
+		// One resolver, shared by both reconcilers. They must agree on which
+		// schema a slug means: when they disagreed, the config keys pointed at
+		// one `task` schema while the calculations were merged onto another.
+		$slugResolver = new SchemaSlugResolver(
 			appConfig: $appConfig,
 			container: $container,
 			logger: $logger
 		);
+
+		$this->schemaKeys = new SchemaKeyReconciler(
+			appConfig: $appConfig,
+			container: $container,
+			logger: $logger,
+			slugResolver: $slugResolver
+		);
 		$this->schemaAnnotations = new SchemaAnnotationReconciler(
 			container: $container,
 			fragments: $this->fragments,
-			logger: $logger
+			logger: $logger,
+			slugResolver: $slugResolver
 		);
 	}//end __construct()
 
@@ -628,6 +658,19 @@ class SettingsService {
 			$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
 			$this->reconcileSchemaConfig();
 
+			// 🔴 THE IMPORT DOES NOT CARRY THE DECLARATIVE ANNOTATION BLOCKS, SO
+			// MERGE THEM HERE. Importing the register creates the schemas, but the
+			// `x-openregister-*` blocks declared alongside them in
+			// dossiq_register.json do not survive onto the live schema. Without
+			// this call a FRESH instance never gets them: `isTerminalStatus` never
+			// materialises, so every completed task keeps reading false and the
+			// widgets filtering on it keep showing finished work, and
+			// `daysUntilDue` does not exist to extend, so due-date columns render
+			// blank. Both failures are silent. The e2e suite caught it on a clean
+			// CI install after passing on a dev box where the reconcile had been
+			// run by hand. Idempotent, so it is safe on every import.
+			$this->reconcileSchemaDeclarativeConfig();
+
 			$this->logger->info(
 				'Dossiq: Configuration imported and reconciled',
 				['version' => $configVersion, 'configured' => $configuredCount]
@@ -787,8 +830,73 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getConfigValue(string $key, string $default = ''): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+
+		// LAST, and only when nothing local answered.
+		//
+		// A schema slug is global per organisation, and two apps declared a
+		// `decision`: decidiq's is the governance decision (motion, voting,
+		// adoption, repeals) and this app's was the VNG Besluit behind the BRC.
+		// `SchemaMapper::find()` matches `LOWER(slug)`, so whichever row it
+		// reached first answered for both. decidiq's Decision now carries the
+		// four BRC fields it lacked (decidiq#1161), so it can hold the record,
+		// and the BrcController stays here — the standard belongs where it is
+		// served from — reading decidiq's schema instead of a second one.
+		//
+		// Resolving LAST is what makes this safe to ship before any migration.
+		// An instance that still has its own `decision_schema` configured keeps
+		// using it, because its besluiten are in that schema; a fresh install
+		// has no such key and lands on decidiq's. Preferring decidiq
+		// unconditionally would have pointed every existing instance at an empty
+		// schema, and the BRC would have answered 404 for every besluit it had.
+		if ($value === '' && $key === self::DECISION_SCHEMA_KEY) {
+			return $this->decidiqDecisionSchemaId();
+		}
+
+		return $value;
 	}//end getConfigValue()
+
+	/**
+	 * The id of decidiq's `decision` schema, or '' when it cannot be resolved.
+	 *
+	 * Looked up by the `(application, slug)` PAIR rather than by slug alone.
+	 * Slug alone is exactly the ambiguity this exists to end: it would match
+	 * this app's own row as readily as decidiq's, and which one it returned
+	 * would depend on insertion order.
+	 *
+	 * Fails to '' rather than throwing. decidiq is an optional peer, and a
+	 * caller that gets '' behaves as it always did when the key was unset.
+	 *
+	 * @return string The schema id, or '' when decidiq or its schema is absent.
+	 *
+	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
+	 */
+	private function decidiqDecisionSchemaId(): string {
+		if ($this->appManager->isInstalled(self::DECIDIQ_APP_ID) === false) {
+			return '';
+		}
+
+		try {
+			$schemaMapper = $this->container->get('OCA\\OpenRegister\\Db\\SchemaMapper');
+			if (method_exists($schemaMapper, 'findByApplicationAndSlug') === false) {
+				return '';
+			}
+
+			$schema = $schemaMapper->findByApplicationAndSlug(self::DECISION_SLUG, self::DECIDIQ_APP_ID);
+		} catch (\Throwable $e) {
+			$this->logger->debug(
+				'Dossiq: decidiq\'s decision schema is unavailable',
+				['error' => $e->getMessage()]
+			);
+			return '';
+		}
+
+		if ($schema === null) {
+			return '';
+		}
+
+		return (string)$schema->getId();
+	}//end decidiqDecisionSchemaId()
 
 	/**
 	 * Get a KCC-werkplek behaviour setting, falling back to its documented default.

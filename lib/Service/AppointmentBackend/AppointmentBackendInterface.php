@@ -38,6 +38,8 @@ interface AppointmentBackendInterface {
 	 * @param string $date The date (YYYY-MM-DD)
 	 *
 	 * @return array List of available timeslots [{time, duration, available}]
+	 *
+	 * @spec openspec/specs/appointment-booking/spec.md
 	 */
 	public function getTimeslots(string $productId, string $locationId, string $date): array;
 

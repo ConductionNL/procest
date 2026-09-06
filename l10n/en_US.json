@@ -548,7 +548,7 @@
         "{days} days overdue": "{days} days overdue",
         "{days} days remaining": "{days} days remaining",
         "{field} is required": "{field} is required",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (no end)",
+        "{from} – (no end)": "{from} – (no end)",
         "{hours} hours ago": "{hours} hours ago",
         "{min} min ago": "{min} min ago",
         "{n} days": "{n} days",
@@ -661,7 +661,7 @@
         "Identificatievragen": "Identificatievragen",
         "Identification method": "Identification method",
         "Identification score threshold (0.6 - 1.0)": "Identification score threshold (0.6 - 1.0)",
-        "KCC instellingen opgeslagen": "KCC instellingen opgeslagen",
+        "KCC instellingen opgeslagen": "KCC settings saved",
         "KCC-werkplek Integration": "KCC-werkplek Integration",
         "Max contactmomenten in history": "Max contactmomenten in history",
         "Max open zaken in voorblad": "Max open zaken in voorblad",
@@ -678,7 +678,29 @@
         "_%n document selected_::_%n documents selected_": [
             "%n document selected",
             "%n documents selected"
-        ]
+        ],
+        "Advies": "Advice",
+        "Adviesaanvragen": "Advice requests",
+        "BAC-advies": "Committee advice",
+        "BSN (burgerservicenummer)": "BSN (citizen service number)",
+        "Beroep": "Appeal",
+        "Beslissing op bezwaar": "Decision on objection",
+        "Beslissingen": "Decisions",
+        "Besluitvorming": "Decision-making",
+        "Bevoegdheidstype": "Authority type",
+        "Bezwaar": "Objection",
+        "Bezwaaradviescommissie": "Objection advisory committee",
+        "Bezwaaradviescommissies": "Objection advisory committees",
+        "Commissie": "Committee",
+        "Doormandaat": "Sub-mandate",
+        "Kaartlaag": "Map layer",
+        "Kaartlagen": "Map layers",
+        "Omgevingsvergunning — Detail": "Environmental permit",
+        "Subsidie": "Grant",
+        "Mandaat niveau": "Mandate level",
+        "Aangezocht bevoegd gezag (OIN or name)": "Requested competent authority (OIN or name)",
+        "Doel bevoegd gezag (OIN or name)": "Target competent authority (OIN or name)",
+        "Vóór deadline (pre-breach)": "Before deadline (pre-breach)"
     },
     "plurals": ""
 }

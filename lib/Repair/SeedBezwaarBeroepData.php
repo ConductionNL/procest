@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Repair step that seeds bezwaar and beroep case types into OpenRegister.
+ *
+ * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 class SeedBezwaarBeroepData implements IRepairStep {
 	/**
@@ -57,6 +59,8 @@ class SeedBezwaarBeroepData implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
 	 */
 	public function getName(): string {
 		return 'Seed Bezwaar, Beroep and Subsidie case types for Dossiq';

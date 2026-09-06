@@ -44,6 +44,8 @@ use Throwable;
  * Read-only action controller for the AI audit trail export.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
  */
 class AiAuditExportController extends Controller {
 	/**

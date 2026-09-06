@@ -35,9 +35,9 @@
  * the day it lands rather than whenever someone writes an e2e test for it.
  */
 
-import { describe, expect, it } from 'vitest'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
 
 const MODAL_DIR = join(__dirname, '..', '..', 'src', 'modals')
 

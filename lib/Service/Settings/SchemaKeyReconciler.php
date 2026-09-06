@@ -55,6 +55,7 @@ class SchemaKeyReconciler {
 	 * @param IAppConfig $appConfig The app configuration service.
 	 * @param ContainerInterface $container The DI container.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param SchemaSlugResolver $slugResolver Resolves a slug inside our own register.
 	 *
 	 * @return void
 	 */
@@ -62,6 +63,7 @@ class SchemaKeyReconciler {
 		private IAppConfig $appConfig,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
+		private SchemaSlugResolver $slugResolver,
 	) {
 	}//end __construct()
 
@@ -69,10 +71,17 @@ class SchemaKeyReconciler {
 	 * Reconcile every `*_schema` appconfig key directly from OpenRegister.
 	 *
 	 * For each schema slug Dossiq knows about, resolves the LIVE schema ID via
-	 * OpenRegister's SchemaMapper (slug-aware `find()`) and writes the matching
-	 * appconfig key. Fully idempotent — a key that already holds the correct ID
-	 * is left untouched — so it is safe to call on every install/upgrade and
-	 * after every import.
+	 * OpenRegister's SchemaMapper and writes the matching appconfig key. Fully
+	 * idempotent: a key that already holds the correct ID is left untouched, so
+	 * it is safe to call on every install/upgrade and after every import.
+	 *
+	 * 🔴 A SCHEMA SLUG IS NOT UNIQUE ACROSS OPENREGISTER, SO RESOLVE IT INSIDE
+	 * OUR OWN REGISTER FIRST. Three schemas carried the slug `task` on a normal
+	 * dev instance; the unscoped `find()` returned the one belonging to another
+	 * app's register, and `task_schema` pointed there for all seven consumers
+	 * that create or read case tasks. Nothing errored. Tasks were written to a
+	 * foreign register and the Tasks page stayed empty, which reads as "no data"
+	 * rather than "wrong schema". {@see resolveSchemaId()} for the fallback rule.
 	 *
 	 * @return int The number of schema config keys (re)written.
 	 *
@@ -201,17 +210,7 @@ class SchemaKeyReconciler {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function reconcileSingleSchemaKey(object $schemaMapper, string $slug, string $configKey): int {
-		try {
-			// Slug-aware lookup with RBAC + multi-tenancy disabled: the repair
-			// step runs in a system context that has no active organisation,
-			// and the schema set is app-owned config, not tenant data.
-			// Signature is find($id, $_extend, $_rbac, $_multitenancy).
-			$schema = $schemaMapper->find($slug, [], false, false);
-			$schemaId = (string)$schema->getId();
-		} catch (\Throwable $e) {
-			// Slug not present in this OpenRegister instance — skip it.
-			return 0;
-		}
+		$schemaId = $this->resolveSchemaId(schemaMapper: $schemaMapper, slug: $slug);
 
 		if ($schemaId === '') {
 			return 0;
@@ -247,6 +246,28 @@ class SchemaKeyReconciler {
 			);
 		}
 	}//end writeSchemaKey()
+
+	/**
+	 * Resolve one schema slug to a live schema id.
+	 *
+	 * Delegates to {@see SchemaSlugResolver}, which resolves inside Dossiq's own
+	 * register first. The rule lives there because the annotation reconciler
+	 * needs exactly the same answer, and two copies of it drifted apart once
+	 * already.
+	 *
+	 * @param object $schemaMapper The OpenRegister SchemaMapper.
+	 * @param string $slug The schema slug.
+	 *
+	 * @return string The live schema id, or '' when the slug does not resolve.
+	 */
+	private function resolveSchemaId(object $schemaMapper, string $slug): string {
+		$schema = $this->slugResolver->resolve(schemaMapper: $schemaMapper, slug: $slug);
+		if ($schema === null) {
+			return '';
+		}
+
+		return (string)$schema->getId();
+	}//end resolveSchemaId()
 
 	/**
 	 * Resolve OpenRegister's SchemaMapper, or null when it is unavailable.

@@ -37,6 +37,8 @@ use RuntimeException;
 
 /**
  * Thin OpenRegister ObjectService wrapper for StUF schemas.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
 class StufRegisterAccess {
 	public const SCHEMA_ENDPOINT = 'stufEndpoint';
@@ -86,6 +88,50 @@ class StufRegisterAccess {
 		$saved = $service->saveObject($data, [], $registerId, $schema, null);
 		return $this->normalise(value: $saved);
 	}//end saveObject()
+
+	/**
+	 * Find one object by its UUID; returns null when it does not exist.
+	 *
+	 * The dedicated get-by-id path. A `['id' => $uuid]` entry in the
+	 * `findOne()`/`findAll()` filter map does NOT resolve: OpenRegister
+	 * treats top-level filter keys as schema properties, none of the StUF
+	 * schemas declare an `id` property, and the search silently returns
+	 * zero rows. `ObjectService::find()` resolves ids and UUIDs directly.
+	 *
+	 * @param string $schema The schema slug (one of the SCHEMA_* constants).
+	 * @param string $id The object UUID.
+	 *
+	 * @return array|null The object as plain array, or null.
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md
+	 */
+	public function findById(string $schema, string $id): ?array {
+		try {
+			$service = $this->getObjectService();
+			if ($service === null || $id === '') {
+				return null;
+			}
+
+			$object = $service->find(id: $id, register: $this->getRegisterId(), schema: $schema);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				message: 'StUF register findById failed: {err}',
+				context: ['err' => $e->getMessage(), 'schema' => $schema]
+			);
+			return null;
+		}
+
+		if ($object === null) {
+			return null;
+		}
+
+		$row = $this->normalise(value: $object);
+		if ($row === []) {
+			return null;
+		}
+
+		return $row;
+	}//end findById()
 
 	/**
 	 * Find one object by filter; returns null when there is no match.

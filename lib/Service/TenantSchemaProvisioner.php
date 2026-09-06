@@ -41,6 +41,8 @@ use Throwable;
  * those stay in `public`). Shared tables are the SaaS-control plane:
  * `tenant`, `tenantConfiguration`, `tenantQuota`, `tenantUser`,
  * `tenantMandate`, `tenantBillingEvent`, `tenantOnboardingTask`.
+ *
+ * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
  */
 class TenantSchemaProvisioner {
 	/**
@@ -115,6 +117,8 @@ class TenantSchemaProvisioner {
 	 *
 	 * @throws InvalidArgumentException When the name is invalid.
 	 * @throws RuntimeException When the DDL fails.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-03-schema-provisioning/tasks.md
 	 */
 	public function createSchema(string $name): void {
 		$this->assertSafeIdentifier(name: $name);
@@ -189,6 +193,8 @@ class TenantSchemaProvisioner {
 	 * @return void
 	 *
 	 * @throws RuntimeException On DDL failure.
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function dropSchema(string $name): void {
 		$this->assertSafeIdentifier(name: $name);
@@ -235,6 +241,8 @@ class TenantSchemaProvisioner {
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When invalid.
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function assertSafeIdentifier(string $name): void {
 		if ($name === '' || strlen($name) > self::PG_IDENTIFIER_MAX_LENGTH) {

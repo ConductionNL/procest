@@ -5,8 +5,19 @@
  *
  * Single entry point for the Landelijke Handhavingsstrategie (LHS) lookup:
  *   - `recommend(ernst, gedrag, actorType, lhsVersion?)` returns the prescribed
- *     intervention by reading a cell from the active (or explicitly versioned)
- *     `lhsMatrix` and persists an `lhsRecommendation` row.
+ *     intervention and persists an `lhsRecommendation` row.
+ *
+ *     THE LOOKUP IS A DECISION TABLE, evaluated by OpenRegister. The matrix is
+ *     a three-axis grid yielding one value, which is exactly that shape, and
+ *     the engine already carries one evaluator for it. The matrix is read
+ *     directly only where no projection exists on this instance, because
+ *     projecting one needs an owner for the table it writes and so cannot
+ *     happen unattended on upgrade.
+ *
+ *     Asking the table first is not a preference. A declared table NAMES its
+ *     inputs and refuses what it cannot resolve; the hand-indexed dictionary
+ *     answered a vocabulary defect exactly as it answers bad input, which is
+ *     how a quarter of the strategy stayed unreachable (dossiq#1596).
  *   - `override(recommendation, intervention, justification, userRole)` applies
  *     an inspector override. Override-up (harsher than recommended) is gated to
  *     the manager role per REQ-LHS-5/6.
@@ -74,10 +85,12 @@ class LhsRecommendationService {
 	 *
 	 * @param IUserSession $userSession Authenticated user session
 	 * @param LhsRecommendationStore $store The OpenRegister reads and writes
+	 * @param LhsDecisionTableLookup $tableLookup Evaluates the projected decision table
 	 */
 	public function __construct(
 		private readonly IUserSession $userSession,
 		private readonly LhsRecommendationStore $store,
+		private readonly LhsDecisionTableLookup $tableLookup,
 	) {
 	}//end __construct()
 
@@ -118,16 +131,33 @@ class LhsRecommendationService {
 		}
 
 		$matrix = $this->store->loadMatrix(version: $lhsVersion);
-		$cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
-		$key = $severity . ':' . $behaviour . ':' . $actorType;
 
-		if (isset($cellIndex[$key]) === false) {
-			throw new RuntimeException(
-				'Geen LHS-cel gevonden voor combinatie ' . $key
+		// THE DECISION TABLE IS THE LOOKUP. The matrix is a three-axis grid
+		// yielding one value, which is a decision table, and OpenRegister
+		// carries one evaluator for those. Asking it first is the whole point
+		// of the projection: a declared table NAMES its inputs, so it refuses
+		// what it cannot resolve instead of missing silently the way a
+		// hand-indexed dictionary does (dossiq#1596).
+		$intervention = $this->tableLookup->intervention(
+			matrixId: (string)($matrix['id'] ?? ''),
+			severity: $severity,
+			behaviour: $behaviour,
+			actorType: $actorType,
+		);
+
+		if ($intervention === null) {
+			// FALLBACK, and it is not dead code. Projecting a matrix needs an
+			// owner for the table it writes, so it is an occ command a person
+			// runs and not something an upgrade can do unattended. An instance
+			// that has not run it yet still has to be able to enforce.
+			$intervention = $this->interventionFromMatrix(
+				matrix: $matrix,
+				severity: $severity,
+				behaviour: $behaviour,
+				actorType: $actorType,
 			);
 		}
 
-		$cell = $cellIndex[$key];
 		$recommendation = [
 			'case' => $caseId,
 			'inspection' => $inspection,
@@ -135,8 +165,8 @@ class LhsRecommendationService {
 			'behaviour' => $behaviour,
 			'actorType' => $actorType,
 			'matrixVersion' => (int)($matrix['version'] ?? 1),
-			'recommendedIntervention' => (string)($cell['intervention'] ?? ''),
-			'finalIntervention' => (string)($cell['intervention'] ?? ''),
+			'recommendedIntervention' => $intervention,
+			'finalIntervention' => $intervention,
 			'override' => false,
 			'recommendedBy' => $user->getUID(),
 		];
@@ -249,6 +279,48 @@ class LhsRecommendationService {
 
 
 
+
+	/**
+	 * Read the intervention straight off the matrix.
+	 *
+	 * THE COMPATIBILITY PATH, used only when this instance has no projected,
+	 * enabled decision table. Projecting one needs an owner for the table it
+	 * writes, so it is an occ command a person runs; an instance that has not
+	 * run it must still be able to enforce.
+	 *
+	 * It keeps the dictionary's weakness on purpose rather than papering over
+	 * it: a miss throws, and a miss looks exactly like bad input. That is what
+	 * made the actorType vocabulary split invisible for as long as it was
+	 * (dossiq#1596), and it is the reason the table is asked first.
+	 *
+	 * @param array<string, mixed> $matrix The stored matrix row.
+	 * @param string $severity Severity axis value.
+	 * @param string $behaviour Behaviour axis value.
+	 * @param string $actorType Actor-type axis value.
+	 *
+	 * @return string The prescribed intervention.
+	 *
+	 * @throws RuntimeException When no cell matches the triple.
+	 *
+	 * @spec openspec/specs/enforcement-lhs/spec.md
+	 */
+	private function interventionFromMatrix(
+		array $matrix,
+		string $severity,
+		string $behaviour,
+		string $actorType,
+	): string {
+		$cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
+		$key = $severity . ':' . $behaviour . ':' . $actorType;
+
+		if (isset($cellIndex[$key]) === false) {
+			throw new RuntimeException(
+				'Geen LHS-cel gevonden voor combinatie ' . $key
+			);
+		}
+
+		return (string)($cellIndex[$key]['intervention'] ?? '');
+	}//end interventionFromMatrix()
 
 	/**
 	 * Build an in-memory dictionary of cells keyed `severity:behaviour:actorType`.

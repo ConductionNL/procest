@@ -26,9 +26,6 @@
  *
  * @param {string} status The case status.
  * @return {string} CSS variable reference.
- */
-/**
- * @param status
  * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
  */
 export function statusColor(status) {
@@ -51,9 +48,6 @@ export function statusColor(status) {
  *
  * @param {string} status The case status.
  * @return {string} Icon glyph name.
- */
-/**
- * @param status
  * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
  */
 export function statusIcon(status) {
@@ -133,9 +127,6 @@ function extractCoords(geometry) {
  *
  * @param {object} caseObj Case object from OpenRegister.
  * @return {object|null}   Marker descriptor or `null` if no geometry.
- */
-/**
- * @param caseObj
  * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
  */
 export function caseMarkerFormatter(caseObj) {

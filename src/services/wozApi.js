@@ -37,6 +37,7 @@ const BASE_URL = generateUrl('/apps/dossiq/api/external/woz')
  * @param {string} [options.huisnummertoevoeging] House number addition.
  * @return {Promise<{lookupStatus: string, wozObject: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozValue(postcode, huisnummer, options = {}) {
@@ -59,6 +60,7 @@ export async function lookupWozValue(postcode, huisnummer, options = {}) {
  * @param {string} nummeraanduidingId BAG nummeraanduiding identificatie.
  * @return {Promise<{lookupStatus: string, wozObject: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozValueByNummeraanduiding(nummeraanduidingId) {
@@ -74,6 +76,7 @@ export async function lookupWozValueByNummeraanduiding(nummeraanduidingId) {
  * @param {string} wozobjectnummer WOZ object number.
  * @return {Promise<{lookupStatus: string, wozObject: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozObject(wozobjectnummer) {

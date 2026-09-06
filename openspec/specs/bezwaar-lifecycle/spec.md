@@ -12,22 +12,23 @@ Defines the end-to-end bezwaar (objection) lifecycle: the pre-seeded Bezwaar cas
 
 ## Requirements
 
-**Bezwaren Page Render (UI surface)**
+**Bezwaren list surface (UI surface)**
 
-### Requirement: Bezwaren index page render
+### Requirement: Bezwaren list surface
 
-The Bezwaren (objections) index page (`CnIndexPage`, route `/bezwaren`) SHALL mount
-and render its stable list shell on navigation — the Cards/Table view toggle, an
-"Add" create button, a per-row "Actions" control, and an empty-state message when
-no objection cases are visible — independently of whether the OpenRegister
-collection returns rows.
+Objections SHALL be listed on the Cases page, narrowed to the Bezwaar case type.
+`/bezwaren/:id` SHALL stay registered so every objection detail link keeps
+resolving.
 
-#### Scenario: Bezwaren index page renders list shell
-- **GIVEN** an authenticated user on the Dossiq app
-- **WHEN** they navigate to the Bezwaren page
-- **THEN** the Cards/Table view-mode toggle MUST be visible
-- **AND** an "Add" create button MUST be visible
-- **AND** the page MUST NOT show an Internal Server Error
+REPLACED 2026-09-02. The standalone `/bezwaren` index page is retired, not hidden.
+It was an index over register `dossiq` and schema `case` whose only narrowing was
+`filter: { caseType: <bezwaar> }`. Cases carries the same register and the same
+schema, and narrows the same field through its `folderSidebar`
+(`filterField: caseType`). Picking the Bezwaar folder returns the rows the retired
+page returned, so this is the same query on the same data rather than an
+approximation.
+
+@e2e exclude The list shell is covered by `case-management/spec.md#cases-index-page-renders-list-shell`, which drives the same `CnIndexPage` over the same register and schema.
 
 **ADDED Requirements**
 

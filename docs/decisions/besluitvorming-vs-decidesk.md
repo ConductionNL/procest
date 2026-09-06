@@ -1,7 +1,39 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-# Decision: Besluitvorming — keep in dossiq, integrate with decidesk (do not consolidate)
+# Decision: besluitvorming, keep in dossiq, integrate with decidesk (do not consolidate)
 
-Status: **Recommendation** (2026-06-22) — backlog item #7.
+Status: **SUPERSEDED** (2026-09-03) by `openspec/changes/proposals-are-cases`.
+Originally a **Recommendation** (2026-06-22), backlog item #7.
+
+## Why this is superseded, and what to read instead
+
+This page recommended keeping besluitvorming in dossiq and NOT folding it into
+decidesk. That recommendation is why the voorstel surface stayed, and it stopped
+being true well before anyone came back to it.
+
+Five later changes moved the other way: `dossiq-decisions-to-decidiq`,
+`migrate-committees-to-decidiq`, `consume-decidesk-besluitvorming-leaf`,
+`parafering-to-decidiq` and `parafering-runtime-to-decidiq`. Nobody revoked this
+page, so it kept telling readers the opposite of what the fleet was doing.
+
+The recommendation rested on one distinction: that a voorstel is the internal
+approval stage preceding a formal decision, and so a different lifecycle stage
+rather than a duplicate. The distinction is real. What it does not support is
+modelling the voorstel as its own record. A voorstel is a case whose case type
+requires a decision, and dossiq already carried that: `caseType.decisionTypes`,
+`caseType.workflowDefinition` and `case.decisions`.
+
+So the boundary this page defends is kept, and drawn one level up. Dossiq owns
+cases. Decidiq owns decisions and the sign-off chain that precedes one. The
+`proposal`, `parafeerroute`, `parafeeractie` and `paraferingAuditEntry` schemas
+are retired.
+
+Read `docs/Features/besluitvorming-workflow.md` for how besluitvorming works now.
+
+The original text follows, unchanged, because the reasoning is worth keeping even
+where the conclusion did not hold.
+
+---
+
 
 ## Question
 Dossiq has a "Besluitvorming" nav group (Voorstellen = proposals, Advice =

@@ -38,6 +38,8 @@ use OCP\Util;
 
 /**
  * Dashboard widget showing deadline alerts for cases.
+ *
+ * @spec openspec/specs/signalering-widgets/spec.md
  */
 class DeadlineAlertsWidget implements IWidget {
 	/**
@@ -57,6 +59,8 @@ class DeadlineAlertsWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget identifier
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getId(): string {
 		// FROZEN at the old app-id prefix — see CasesOverviewWidget::getId().
@@ -68,6 +72,8 @@ class DeadlineAlertsWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget title
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getTitle(): string {
 		return $this->l10n->t('Deadline Alerts');
@@ -78,6 +84,8 @@ class DeadlineAlertsWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return int The widget order
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getOrder(): int {
 		return 11;
@@ -88,6 +96,8 @@ class DeadlineAlertsWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The icon CSS class
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getIconClass(): string {
 		return 'icon-dossiq-widget';
@@ -98,6 +108,8 @@ class DeadlineAlertsWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string|null The widget URL or null
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getUrl(): ?string {
 		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
@@ -110,6 +122,8 @@ class DeadlineAlertsWidget implements IWidget {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 *
+	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function load(): void {
 		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).

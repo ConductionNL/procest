@@ -62,13 +62,13 @@ export const useProcessMiningStore = defineStore('processMining', {
 
 	getters: {
 		/**
-		 * @param state
+		 * @param {object} state The Pinia store state.
 		 * @return {Array<object>} Per-case-type report blocks, never null.
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		caseTypesList: (state) => state.report?.caseTypes || [],
 		/**
-		 * @param state
+		 * @param {object} state The Pinia store state.
 		 * @return {Array<object>} Weekly throughput points, never null.
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */

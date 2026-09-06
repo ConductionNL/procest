@@ -38,6 +38,8 @@ use RuntimeException;
 
 /**
  * Payment-signal preparation + callback processing for dwangsom payouts.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
  */
 class DwangsomUitbetalingService {
 	use SearchesObjects;
@@ -156,12 +158,12 @@ class DwangsomUitbetalingService {
 		string $calculationId,
 	): int {
 		try {
-			$calculation = $objectService->find($calculationId, register: $register, schema: $schema);
+			$calculation = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $calculationId);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
 		}
 
-		if (is_array($calculation) === false) {
+		if ($calculation === null) {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
@@ -192,12 +194,13 @@ class DwangsomUitbetalingService {
 		array $row,
 	): array {
 		try {
-			$saved = $objectService->saveObject($register, $schema, $row);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return $row;
+			$saved = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $row
+			);
+			return ($saved ?? $row);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomUitbetaling persist failed: ' . $e->getMessage());
 		}

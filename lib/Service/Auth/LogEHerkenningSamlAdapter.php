@@ -41,6 +41,8 @@ use RuntimeException;
 
 /**
  * Default eHerkenning adapter — logs + refuses.
+ *
+ * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
  */
 final class LogEHerkenningSamlAdapter implements EHerkenningSamlAdapterInterface {
 	/**
@@ -101,6 +103,8 @@ final class LogEHerkenningSamlAdapter implements EHerkenningSamlAdapterInterface
 	 * Whether the live broker is enabled.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
 	 */
 	public function isActive(): bool {
 		$raw = $this->config->getValueString(self::APP_ID, self::FLAG_KEY, '0');

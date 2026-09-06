@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseReassignmentController;
 use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Service\SelectionReassignmentService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -71,6 +72,11 @@ class CaseReassignmentControllerContractTest extends TestCase {
 	 * @var CaseReassignmentService|MockObject
 	 */
 	private CaseReassignmentService $reassignmentService;
+
+	/**
+	 * @var SelectionReassignmentService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $selectionService;
 
 	/**
 	 * The user session mock — source of the caller and of `actorId`.
@@ -114,10 +120,12 @@ class CaseReassignmentControllerContractTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$this->selectionService = $this->createMock(SelectionReassignmentService::class);
 		$this->controller = new CaseReassignmentController(
 			appName: 'dossiq',
 			request: $this->request,
 			reassignmentService: $this->reassignmentService,
+			selectionService: $this->selectionService,
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			logger: $this->logger,
@@ -318,4 +326,99 @@ class CaseReassignmentControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertSame(['error' => 'register unavailable'], $response->getData());
 	}//end testReassignExecuteAnswers500AndLogsAnUnexpectedFailure()
+	/**
+	 * The selection endpoint forwards the ticked ids and the session actor.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 */
+	public function testReassignSelectionForwardsTheSelectionAndTheActor(): void {
+		$this->signIn(uid: 'coordinator-1');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withRequestParams(['caseIds' => ['c1', 'c2'], 'toUser' => 'handler-2']);
+
+		$seen = [];
+		$this->selectionService->expects($this->once())
+			->method('executeForCases')
+			->willReturnCallback(
+				static function (array $caseIds, string $toUser, string $actorId = '') use (&$seen): array {
+					$seen = ['caseIds' => $caseIds, 'toUser' => $toUser, 'actorId' => $actorId];
+
+					return ['batchId' => 'rb-1', 'requested' => 2, 'succeeded' => 2, 'results' => []];
+				}
+			);
+
+		$response = $this->controller->reassignSelection();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			['caseIds' => ['c1', 'c2'], 'toUser' => 'handler-2', 'actorId' => 'coordinator-1'],
+			$seen
+		);
+
+	}//end testReassignSelectionForwardsTheSelectionAndTheActor()
+
+	/**
+	 * A non-array `caseIds` is a 400, not a crash.
+	 *
+	 * The parameter arrives off the wire, so a caller can send a string.
+	 *
+	 * @return void
+	 */
+	public function testReassignSelectionAnswers400WhenCaseIdsIsNotAnArray(): void {
+		$this->signIn(uid: 'coordinator-1');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withRequestParams(['caseIds' => 'c1', 'toUser' => 'handler-2']);
+
+		$this->selectionService->expects($this->never())->method('executeForCases');
+
+		$response = $this->controller->reassignSelection();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+
+	}//end testReassignSelectionAnswers400WhenCaseIdsIsNotAnArray()
+
+	/**
+	 * An empty selection is refused by the service and surfaces as a 400.
+	 *
+	 * @return void
+	 */
+	public function testReassignSelectionAnswers400WhenTheServiceRejectsIt(): void {
+		$this->signIn(uid: 'coordinator-1');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withRequestParams(['caseIds' => [], 'toUser' => '']);
+
+		$this->selectionService->method('executeForCases')
+			->willThrowException(new \InvalidArgumentException('toUser is required'));
+
+		$response = $this->controller->reassignSelection();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'toUser is required'], $response->getData());
+
+	}//end testReassignSelectionAnswers400WhenTheServiceRejectsIt()
+
+	/**
+	 * An unexpected failure is a 500 and is logged.
+	 *
+	 * A selection that half moved must not be reported as a clean 200.
+	 *
+	 * @return void
+	 */
+	public function testReassignSelectionAnswers500AndLogsAnUnexpectedFailure(): void {
+		$this->signIn(uid: 'coordinator-1');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withRequestParams(['caseIds' => ['c1'], 'toUser' => 'handler-2']);
+
+		$this->selectionService->method('executeForCases')
+			->willThrowException(new \RuntimeException('register unavailable'));
+		$this->logger->expects($this->once())->method('error');
+
+		$response = $this->controller->reassignSelection();
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+
+	}//end testReassignSelectionAnswers500AndLogsAnUnexpectedFailure()
+
 }//end class

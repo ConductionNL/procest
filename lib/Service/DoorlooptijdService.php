@@ -42,6 +42,8 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
  * Computes throughput-time metrics for the case dashboard.
+ *
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
  */
 class DoorlooptijdService {
 

@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * On-demand background job that retries a single StufMessage.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
  */
 class StufRetryJob extends Job {
 	/**

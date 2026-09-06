@@ -84,6 +84,7 @@ export const pmWidgetMixin = {
 	methods: {
 		/**
 		 * Ask the shared store for the current query; it deduplicates.
+		 *
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		pmLoad() {

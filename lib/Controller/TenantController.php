@@ -49,6 +49,8 @@ use Throwable;
  * pages call the OpenRegister object endpoints directly. Only the three domain
  * methods below remain: they wrap provisioning workflow, resource-usage
  * aggregation, and current-tenant resolution.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class TenantController extends Controller {
 	/**

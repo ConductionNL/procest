@@ -27,6 +27,14 @@ import { initializeStores } from '../../store/store.js'
 import { getTaskDueReminders } from '../../utils/dashboardHelpers.js'
 import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
+/**
+ * How many rows the widget shows. Large enough that overdue tasks, which are
+ * listed first, cannot crowd out every task that is merely due soon.
+ *
+ * @type {number}
+ */
+const MAX_REMINDERS = 10
+
 export default {
 	name: 'TaskRemindersWidget',
 	components: {
@@ -34,6 +42,12 @@ export default {
 	},
 
 	props: {
+		// Declared on purpose. The mount script passes `title: widget.title`, and
+		// the Nextcloud dashboard host renders the heading; rendering it here too
+		// is the dashboard-in-dashboard antipattern (hydra#316). Dropping the
+		// declaration would not remove the prop, it would make it a fallthrough
+		// attribute and put a title="" tooltip on the root element.
+		// eslint-disable-next-line vue/no-unused-properties
 		title: {
 			type: String,
 			default: '',
@@ -86,7 +100,9 @@ export default {
 							}),
 				targetUrl: generateUrl(`/apps/dossiq/tasks/${item.id}`),
 			}))
-			return [...overdueItems, ...dueSoonItems].slice(0, 5)
+			// Same cap rule as DeadlineAlertsWidget: overdue tasks are listed
+			// first, so too small a cap hides every task that is merely due soon.
+			return [...overdueItems, ...dueSoonItems].slice(0, MAX_REMINDERS)
 		},
 	},
 
@@ -131,8 +147,11 @@ export default {
 			this.loading = true
 			try {
 				const currentUser = getCurrentUser()?.uid || ''
-				const tasks = await this.objectStore.fetchCollection('task', {
-					'_filters[assignee]': currentUser,
+				// Bare field names, not `_filters[x]`: that form is inert and this
+				// widget was reading every user's tasks. See MyTasksWidget.
+				const tasks = await this.objectStore.fetchCollection('caseTask', {
+					assignee: currentUser,
+					isTerminalStatus: false,
 					_limit: 100,
 				})
 				const activeTasks = (tasks || []).filter(

@@ -4,6 +4,7 @@
  * Besluitvorming API service.
  *
  * Wraps the dossiq /api/besluitvorming endpoints. All HTTP traffic uses
+ *
  * @nextcloud/axios for CSRF + auth interop. Never use raw fetch().
  *
  * WHAT LEFT AND WHY. `addToAgenda`, `confirmAgenda` and `generateAgenda` went

@@ -36,6 +36,8 @@ use RuntimeException;
 
 /**
  * Mandate escalation lifecycle.
+ *
+ * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
  */
 class MandaatEscalatieService {
 	use SearchesObjects;
@@ -306,7 +308,7 @@ class MandaatEscalatieService {
 		foreach ($rows as $row) {
 			$row['targetUserId'] = $newUserId;
 			try {
-				$objectService->saveObject($register, $schema, $row);
+				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row);
 				$count++;
 			} catch (\Throwable $e) {
 				$this->logger->warning('Mandaat reroute failed', ['id' => $row['id'] ?? '', 'error' => $e->getMessage()]);
@@ -332,12 +334,12 @@ class MandaatEscalatieService {
 		}
 
 		try {
-			$row = $objectService->find($escalationId, register: $register, schema: $schema);
-			if (is_array($row) === true) {
-				return $row;
-			}
-
-			return null;
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $escalationId
+			);
 		} catch (\Throwable $e) {
 			return null;
 		}
@@ -360,12 +362,13 @@ class MandaatEscalatieService {
 		}
 
 		try {
-			$saved = $objectService->saveObject($register, $schema, $object);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return $object;
+			$saved = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $object
+			);
+			return ($saved ?? $object);
 		} catch (\Throwable $e) {
 			$this->logger->error('Mandaat persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
 			return $object;

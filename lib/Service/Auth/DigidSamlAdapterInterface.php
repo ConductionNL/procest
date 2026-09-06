@@ -64,6 +64,8 @@ interface DigidSamlAdapterInterface {
 	 * @return BrokerAssertionResult Decoded assertion containing the citizen BSN.
 	 *
 	 * @throws RuntimeException When the broker is not configured, the signature is invalid, or no BSN claim is present.
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
 	 */
 	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult;
 
@@ -71,6 +73,8 @@ interface DigidSamlAdapterInterface {
 	 * Whether the live DigiD broker is enabled by the operator.
 	 *
 	 * @return bool True when `digid.feature_flag` is `1`.
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
 	 */
 	public function isActive(): bool;
 }//end interface

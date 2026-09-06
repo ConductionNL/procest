@@ -24,6 +24,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -114,14 +116,16 @@ class BezwaarCreationHookTest extends TestCase {
 			public ?array $savedObjection = null;
 
 			/**
-			 * @return array<string, mixed>
+			 * Entity-shaped find, mirroring the real ObjectService contract.
+			 *
+			 * @return FakeStoredObject
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): array {
+			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
 				if ($id === 'decision-1') {
-					return ['case' => 'primair-1'];
+					return new FakeStoredObject(['case' => 'primair-1']);
 				}
 
-				return ['relatedCases' => ['other-9']];
+				return new FakeStoredObject(['relatedCases' => ['other-9']]);
 			}
 
 			/**
@@ -133,18 +137,18 @@ class BezwaarCreationHookTest extends TestCase {
 			 * @param string|null $schema Schema id.
 			 * @param string|null $uuid Optional object uuid.
 			 *
-			 * @return array<string, mixed>
+			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
-				if ($schema === '10') {
+			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+				if ((string)$schema === '10') {
 					$this->savedCase = $object;
 				}
 
-				if ($schema === '30') {
+				if ((string)$schema === '30') {
 					$this->savedObjection = $object;
 				}
 
-				return $object;
+				return new FakeStoredObject($object);
 			}//end saveObject()
 		};
 
@@ -179,10 +183,12 @@ class BezwaarCreationHookTest extends TestCase {
 			public int $caseWrites = 0;
 
 			/**
-			 * @return array<string, mixed>
+			 * Entity-shaped find, mirroring the real ObjectService contract.
+			 *
+			 * @return FakeStoredObject
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): array {
-				return ['case' => ''];
+			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+				return new FakeStoredObject(['case' => '']);
 			}
 
 			/**
@@ -194,14 +200,14 @@ class BezwaarCreationHookTest extends TestCase {
 			 * @param string|null $schema Schema id.
 			 * @param string|null $uuid Optional object uuid.
 			 *
-			 * @return array<string, mixed>
+			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
-				if ($schema === '10') {
+			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+				if ((string)$schema === '10') {
 					$this->caseWrites++;
 				}
 
-				return $object;
+				return new FakeStoredObject($object);
 			}//end saveObject()
 		};
 
@@ -221,8 +227,14 @@ class BezwaarCreationHookTest extends TestCase {
 	public function testThrowsWhenDecisionNotFound(): void {
 		$objectService = new class {
 
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
-				return null;
+			/**
+			 * A miss THROWS DoesNotExistException, exactly like the live
+			 * ObjectService — a null return is a shape live never produces.
+			 *
+			 * @throws DoesNotExistException Always.
+			 */
+			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+				throw new DoesNotExistException('Object ' . $id . ' does not exist');
 			}
 
 			/**
@@ -234,10 +246,10 @@ class BezwaarCreationHookTest extends TestCase {
 			 * @param string|null $schema Schema id.
 			 * @param string|null $uuid Optional object uuid.
 			 *
-			 * @return array<string, mixed>
+			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
-				return $object;
+			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+				return new FakeStoredObject($object);
 			}//end saveObject()
 		};
 

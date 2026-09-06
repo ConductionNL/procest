@@ -33,16 +33,18 @@
  * add-addresses-register change has not shipped to the environment.
  */
 
-import { test, expect, request } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+import { expect, request, test } from '@playwright/test'
+import { BASE_URL } from '../base-url.ts'
 import {
+	ADDRESS_RUN_PREFIX,
 	addressesRegisterAvailable,
+	cleanupAddressFixtures,
 	getRequestToken,
 	seedAddressFixtures,
-	cleanupAddressFixtures,
-	ADDRESS_RUN_PREFIX,
-} from '../helpers/addressFixtures'
-import { BASE_URL } from '../base-url'
-import { STORAGE_STATE } from '../helpers/auth'
+} from '../helpers/addressFixtures.ts'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 
 const OC_PREFIX = '/apps/openconnector/api/pdok'
 
@@ -56,10 +58,7 @@ const FULFILLED_BY = 'x-dossiq-e2e-fulfilled'
  * @param timeout How long to wait for the worker to reach `activated`.
  * @return the worker's scope URL.
  */
-async function activeWorkerScope(
-	page: import('@playwright/test').Page,
-	timeout = 20_000,
-): Promise<string> {
+async function activeWorkerScope(page: Page, timeout = 20_000): Promise<string> {
 	const deadline = Date.now() + timeout
 	while (Date.now() < deadline) {
 		const scope = await page.evaluate(async () => {
@@ -94,7 +93,7 @@ async function activeWorkerScope(
  *
  * @param page The page under test.
  */
-async function openDossiq(page: import('@playwright/test').Page): Promise<void> {
+async function openDossiq(page: Page): Promise<void> {
 	await page.goto('/index.php/apps/dossiq/dashboard')
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 

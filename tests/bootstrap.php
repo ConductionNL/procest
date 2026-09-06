@@ -249,11 +249,106 @@ if ($ncBaseLoaded === false) {
 // to require that file first).
 require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 
+// Shared engine fake for the termijn timer mapping tests. Mirrors the REAL
+// FlowTimerService signatures; references the FlowTimer stub lazily, so the
+// load order relative to the stub block below does not matter.
+require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
+
+// Schema-aware stand-in for StufRegisterAccess. Reproduces the two live object
+// store behaviours a hand-written mock hides — a save drops what the schema
+// does not declare, and a filter on an undeclared property matches zero rows —
+// so the StUF tests cannot agree with a caller that has drifted off contract.
+require_once __DIR__ . '/Unit/Fixtures/SchemaAwareStufRegister.php';
+
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
 // (PublicationService, MandaatValidationService) cannot be mocked without these.
 // Guarded by interface_exists() so they no-op under a real Nextcloud runtime.
 require_once __DIR__ . '/Stubs/HttpClientStubs.php';
+
+// ── The REAL flow engine, whenever OpenRegister sits next to this app ─────
+//
+// Everything below this line STUBS OpenRegister so the suite runs on a machine
+// without it. A stub is honest about a node's own arithmetic and useless about
+// the one property heartbeat recovery depends on: what the ENGINE does to a
+// parked node's resume slot between passes, and what it hands back to the node
+// when it re-enters it on a timer. openregister#3362 measured that class — 30
+// of 32 added statements uncovered, because every recovery test mocked the
+// seam it was meant to exercise.
+//
+// So when OpenRegister's source sits beside this app, register it and let every
+// guard below resolve the REAL class. That layout is not hypothetical: the
+// shared PHPUnit job clones openregister to `server/apps/openregister`, beside
+// `server/apps/dossiq`, before it runs this bootstrap.
+//
+// ALL OR NOTHING, deliberately. A run holding the real FlowRunService and a
+// stub FlowSuspension would be a third engine agreeing with neither, and its
+// green would mean less than either.
+//
+// ⚠️ IT MUST GO IN FRONT OF tests/Stubs, AND ADDING A PSR-4 PATH CANNOT DO
+// THAT. composer.json's autoload-dev maps `OCA\OpenRegister\` at tests/Stubs
+// and the generated CLASSMAP names every stub file outright — a classmap hit
+// is answered before PSR-4 is consulted at all, so both `addPsr4` and
+// `setPsr4` leave the stub winning. Only a loader registered AHEAD of
+// Composer's own decides first, which is what `register(true)` does. It knows
+// exactly one prefix and returns nothing for anything else, so every other
+// class still resolves exactly as before, and a class the real app does not
+// have still falls through to its stub.
+// ⚠️ ITS OWN DEPENDENCIES COUNT AS PART OF "PRESENT". The flow engine builds
+// on symfony/workflow, which lives in OpenRegister's vendor and nowhere in
+// this app's. Registering the source without them would produce classes that
+// load and then fail mid-run — the worst of the three states, because it looks
+// like the real engine and behaves like nothing. So an uninstalled sibling
+// counts as absent and the stubs stay.
+//
+// The dependency loader is APPENDED, and OCP / NCU / OCA are filtered out of
+// it. Composer's own generated autoloader PREPENDS itself, which is precisely
+// how a sibling app's older `nextcloud/ocp` has shadowed the running one
+// before (see the multi-pass OCP preload above, which exists for that). Taking
+// only the third-party half, behind this app's own resolution, cannot do that.
+$dossiqOpenRegisterLib = realpath(__DIR__ . '/../../openregister/lib');
+$dossiqOpenRegisterVendor = realpath(__DIR__ . '/../../openregister/vendor/composer');
+if (getenv('DOSSIQ_REAL_FLOW_ENGINE') === '1'
+	&& $dossiqOpenRegisterLib !== false
+	&& $dossiqOpenRegisterVendor !== false
+	&& is_dir($dossiqOpenRegisterLib) === true
+) {
+	$dossiqEngineDeps = new \Composer\Autoload\ClassLoader();
+	$dossiqNotNextcloud = static function (string $name): bool {
+		foreach (['OCP\\', 'NCU\\', 'OCA\\', 'OC\\'] as $reserved) {
+			if (strncmp($name, $reserved, strlen($reserved)) === 0) {
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	$dossiqEnginePsr4 = @include $dossiqOpenRegisterVendor . '/autoload_psr4.php';
+	if (is_array($dossiqEnginePsr4) === true) {
+		foreach ($dossiqEnginePsr4 as $dossiqPrefix => $dossiqPaths) {
+			if ($dossiqNotNextcloud($dossiqPrefix) === true) {
+				$dossiqEngineDeps->addPsr4($dossiqPrefix, $dossiqPaths);
+			}
+		}
+	}
+
+	$dossiqEngineMap = @include $dossiqOpenRegisterVendor . '/autoload_classmap.php';
+	if (is_array($dossiqEngineMap) === true) {
+		$dossiqEngineDeps->addClassMap(array_filter($dossiqEngineMap, $dossiqNotNextcloud, ARRAY_FILTER_USE_KEY));
+	}
+
+	$dossiqEngineDeps->register(false);
+
+	// The app's own source goes IN FRONT of everything, including the stubs.
+	$dossiqEngineLoader = new \Composer\Autoload\ClassLoader();
+	$dossiqEngineLoader->addPsr4('OCA\\OpenRegister\\', $dossiqOpenRegisterLib . '/');
+	$dossiqEngineLoader->register(true);
+
+	unset($dossiqEngineDeps, $dossiqEngineLoader, $dossiqEnginePsr4, $dossiqEngineMap, $dossiqNotNextcloud, $dossiqPrefix, $dossiqPaths);
+}
+
+unset($dossiqOpenRegisterLib, $dossiqOpenRegisterVendor);
 
 // IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
 // ai-chat-companion-orchestrator) is absent. DossiqToolProvider implements
@@ -278,6 +373,30 @@ foreach (['Decidiq', 'Decidesk'] as $stubNamespace) {
 		if (class_exists('\\OCA\\' . $stubNamespace . '\\Event\\' . $stubEvent) === false) {
 			include_once __DIR__ . '/Stubs/' . $stubNamespace . '/Event/' . $stubEvent . '.php';
 		}
+	}
+}
+
+// The READ half of the same contract (decidiq#1118), which
+// ContractDecisionDelegationService::readDecisionState() dispatches so a
+// waiting flow node can ask what became of a decision it raised.
+//
+// NOT in the loop above, because it has exactly ONE spelling. It was added
+// after the OCA\Decidesk -> OCA\Decidiq rename, so `OCA\Decidesk\Event\
+// DecisionStateRequestedEvent` has never existed and stubbing it would teach
+// static analysis that a class nobody ships is resolvable.
+if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/DecisionStateRequestedEvent.php';
+}
+
+// Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
+// PublicationService dispatches DeliveryRequestedEvent and
+// DeliveryConcludedListener consumes DeliveryConcludedEvent; both resolve the
+// classes by name so dossiq stays installable without integriq. The stubs
+// mirror integriq's real constructor signatures verbatim and no-op when the
+// real classes are present.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
 }
 
@@ -322,6 +441,14 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunService') === false
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunService.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Exception\\FlowSignalRefused') === false) {
+	include_once __DIR__ . '/Stubs/Exception/FlowSignalRefused.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunSignalService') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunSignalService.php';
+}
+
 if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee') === false) {
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunAssignee.php';
 }
@@ -346,6 +473,12 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowResumeState') === fals
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowResumeState.php';
 }
 
+// The engine's value templating, which DossiqAskPersonNode uses to render a
+// declared `{{ case.assignee }}` against the case before stamping a task.
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowValueTemplate') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowValueTemplate.php';
+}
+
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
 // loaded when the openregister runtime is absent so
 // LocationBagValidationListenerTest can exercise handle() against real
@@ -364,12 +497,25 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
 // handle() — including the probe's call shape, which is what silently broke.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectUpdatedEventStub.php';
+	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
+}
+
+// termijnbewaking-op-engine-timers: the business-timer surface the termijn
+// mapping arms and the fired-listener consumes. The event stub mirrors the
+// REAL engine constructor signature — a stub that agrees with the caller
+// cannot fail — and needs the FlowTimer stub declared first.
+if (class_exists('\\OCA\\OpenRegister\\Db\\FlowTimer') === false) {
+	include_once __DIR__ . '/Stubs/Db/FlowTimer.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/FlowTimerFiredEventStub.php';
 }
 
 // OpenRegister AppHost stubs (ADR-040) — loaded when the openregister runtime
@@ -383,6 +529,19 @@ if (class_exists('\\OCA\\OpenRegister\\AppHost\\Bootstrap') === false) {
 
 if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardController') === false) {
 	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericDashboardController.php';
+}
+
+// Store plane (ADR-080): OpenRegister owns discovery, dossiq owns install.
+// StoreController injects both types, so both have to resolve when the
+// openregister runtime is absent. The stubs answer "not_configured" and
+// nothing else — a stub that invented cards would let StoreControllerTest
+// pass against behaviour no engine actually provides.
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Service\\StoreDescriptor') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Service/StoreDescriptor.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Service\\GenericStoreService') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Service/GenericStoreService.php';
 }
 
 if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {

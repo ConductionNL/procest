@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Daily timed job that detects milestone bottlenecks and notifies case workers.
+ *
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 class BottleneckDetectionJob extends TimedJob {
 	/**

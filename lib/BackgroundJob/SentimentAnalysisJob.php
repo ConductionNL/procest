@@ -169,10 +169,11 @@ class SentimentAnalysisJob extends TimedJob {
 
 		$analysis = $this->sentimentService->analyzeSentiment($transcript, $triggerWords);
 
-		$objectService->saveObject(
-			$register,
-			$sentimentSchema,
-			[
+		$this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $sentimentSchema,
+			object: [
 				'interactionId' => $contactId,
 				'sentimentScore' => $analysis['score'],
 				'sentimentLabel' => $analysis['label'],

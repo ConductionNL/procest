@@ -30,6 +30,8 @@ use OCP\Settings\IIconSection;
 
 /**
  * Defines the Dossiq section in the Nextcloud admin settings.
+ *
+ * @spec openspec/specs/admin-settings/spec.md
  */
 class SettingsSection implements IIconSection {
 	/**
@@ -50,6 +52,8 @@ class SettingsSection implements IIconSection {
 	 * Get the section identifier.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getID(): string {
 		return 'dossiq';
@@ -59,6 +63,8 @@ class SettingsSection implements IIconSection {
 	 * Get the display name of this section.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getName(): string {
 		return $this->l->t('Dossiq');
@@ -68,6 +74,8 @@ class SettingsSection implements IIconSection {
 	 * Get the priority for ordering this section.
 	 *
 	 * @return int
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getPriority(): int {
 		return 75;
@@ -77,6 +85,8 @@ class SettingsSection implements IIconSection {
 	 * Get the icon path for this section.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getIcon(): string {
 		return $this->urlGenerator->imagePath(appName: 'dossiq', file: 'app-dark.svg');

@@ -7,8 +7,7 @@
  * `DecisionRequestedEvent` (IEventDispatcher). Reused by three dossiq advice surfaces — the
  * BAC (bezwaarschriftencommissie) advice, the general adviesAanvraag, and the
  * consultatie/zienswijze — each of which maps to a decidesk `advice`
- * decisionType (ADR-005). It also exposes the voorstel→besluit
- * `report-adoption` raise. dossiq keeps its domain rules (BAC
+ * decisionType (ADR-005). dossiq keeps its domain rules (BAC
  * panel-independence, advice IDOR gate) and receives the outcome as a
  * projection via decidesk's `DecisionConcludedEvent` (consumed by
  * {@see \OCA\Dossiq\Listener\DecisionConcludedListener}); decidesk owns the
@@ -40,7 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 /**
- * Raises and consumes decidesk `advice` / `report-adoption` Decisions.
+ * Raises and consumes decidesk `advice` Decisions.
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
@@ -92,39 +91,4 @@ class AdviceDelegationService {
 			],
 		);
 	}//end raiseAdviceDecision()
-
-	/**
-	 * Raise a decidesk `report-adoption` Decision for a voorstel besluit-registration.
-	 *
-	 * The caller (voorstel besluit-registration node) keeps the parafeerroute
-	 * untouched; only the besluit *decision* is delegated. FAILS CLOSED when
-	 * the decidesk leaf is unavailable.
-	 *
-	 * @param string $proposalId The voorstel UUID.
-	 * @param array<string,mixed> $payload Provenance + context: subjectRegister, subjectLabel, externalReference, title, governingBody.
-	 *
-	 * @return string The decidesk decisionRef (UUID) to persist on the case.
-	 *
-	 * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
-	 *
-	 * @spec openspec/specs/remaining-decision-delegation/spec.md
-	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
-	 */
-	public function raiseVoorstelBesluit(string $proposalId, array $payload = []): string {
-		return $this->core->raiseDecision(
-			decisionType: ContractDecisionDelegationService::DECISION_TYPE_REPORT_ADOPTION,
-			externalReference: (string)($payload['externalReference'] ?? $proposalId),
-			subject: [
-				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
-				'subjectSchema' => 'proposal',
-				'subjectId' => $proposalId,
-				'subjectLabel' => (string)($payload['subjectLabel'] ?? ($payload['title'] ?? '')),
-			],
-			context: [
-				'title' => (string)($payload['title'] ?? ''),
-				'governingBody' => (string)($payload['governingBody'] ?? ''),
-				'explanation' => (string)($payload['explanation'] ?? ''),
-			],
-		);
-	}//end raiseVoorstelBesluit()
 }//end class

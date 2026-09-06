@@ -33,6 +33,8 @@ namespace OCA\Dossiq\Service;
  * @package  OCA\Dossiq\Service
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZgwPaginationHelper {
 	/**

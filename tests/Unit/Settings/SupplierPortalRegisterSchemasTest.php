@@ -41,7 +41,7 @@ class SupplierPortalRegisterSchemasTest extends TestCase {
 
 	public function testSevenSupplierSchemasDeclared(): void {
 		$schemas = $this->register['components']['schemas'] ?? [];
-		foreach (['supplier', 'supplierUser', 'supplierTender', 'supplierContract', 'supplierInvoice', 'supplierMessage', 'supplierKpi'] as $slug) {
+		foreach (['supplier', 'supplierUser', 'supplierTender', 'supplierContract', 'caseSupplierInvoice', 'supplierMessage', 'supplierKpi'] as $slug) {
 			$this->assertArrayHasKey($slug, $schemas, "supplier schema {$slug} must exist");
 		}
 	}
@@ -59,7 +59,7 @@ class SupplierPortalRegisterSchemasTest extends TestCase {
 
 	public function testRegisterListsSupplierSchemas(): void {
 		$listed = $this->register['components']['registers']['dossiq']['schemas'] ?? [];
-		foreach (['supplier', 'supplierUser', 'supplierTender', 'supplierContract', 'supplierInvoice', 'supplierMessage', 'supplierKpi'] as $slug) {
+		foreach (['supplier', 'supplierUser', 'supplierTender', 'supplierContract', 'caseSupplierInvoice', 'supplierMessage', 'supplierKpi'] as $slug) {
 			$this->assertContains($slug, $listed, "register must list {$slug}");
 		}
 	}
@@ -79,7 +79,7 @@ class SupplierPortalRegisterSchemasTest extends TestCase {
 		$tenders = array_filter($objects, fn ($o) => ($o['@self']['schema'] ?? '') === 'supplierTender');
 		$users = array_filter($objects, fn ($o) => ($o['@self']['schema'] ?? '') === 'supplierUser');
 		$contracts = array_filter($objects, fn ($o) => ($o['@self']['schema'] ?? '') === 'supplierContract');
-		$invoices = array_filter($objects, fn ($o) => ($o['@self']['schema'] ?? '') === 'supplierInvoice');
+		$invoices = array_filter($objects, fn ($o) => ($o['@self']['schema'] ?? '') === 'caseSupplierInvoice');
 		$messages = array_filter($objects, fn ($o) => ($o['@self']['schema'] ?? '') === 'supplierMessage');
 
 		$this->assertSame(3, count($suppliers));

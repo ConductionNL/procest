@@ -35,6 +35,8 @@ use OCP\Migration\IRepairStep;
 
 /**
  * Rewrites stored Dutch enum values to their English replacements.
+ *
+ * @spec exclude Data migration for the Dutch-to-English vocabulary change.
  */
 class RenameDutchValues implements IRepairStep {
 	/**

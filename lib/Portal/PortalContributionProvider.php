@@ -178,7 +178,7 @@ class PortalContributionProvider {
 				[
 					'id' => 'invoices',
 					'register' => self::REGISTER,
-					'schema' => 'supplierInvoice',
+					'schema' => 'caseSupplierInvoice',
 					'scopeField' => 'supplierRef',
 					'label' => 'Facturen',
 					'listable' => true,

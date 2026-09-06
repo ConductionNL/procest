@@ -139,7 +139,7 @@ class BelplanController extends Controller {
 		];
 
 		try {
-			$created = $objectService->saveObject($register, $schema, $record);
+			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			return new JSONResponse(['error' => 'Could not create belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
@@ -178,7 +178,7 @@ class BelplanController extends Controller {
 		}
 
 		try {
-			$updated = $objectService->saveObject($register, $schema, $patch, $id);
+			$updated = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: $id);
 		} catch (Throwable $e) {
 			return new JSONResponse(['error' => 'Could not update belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}

@@ -198,7 +198,7 @@ export default {
 		},
 
 		/**
-		 * @param id
+		 * @param {string} id Identifier of the id.
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 		 */
 		async revoke(id) {
@@ -211,7 +211,7 @@ export default {
 		},
 
 		/**
-		 * @param sub
+		 * @param {object} sub The sub.
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 		 */
 		async openActions(sub) {

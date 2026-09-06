@@ -145,6 +145,10 @@ class WorkflowReferenceResolver {
 				guards: (array)($transition['guards'] ?? []),
 				roleNameMap: $roleNameMap,
 			);
+			$transition['automaticActions'] = $this->resolveTransitionActions(
+				actions: (array)($transition['automaticActions'] ?? []),
+				roleNameMap: $roleNameMap,
+			);
 
 			$resolvedTransitions[] = $transition;
 		}//end foreach
@@ -177,6 +181,38 @@ class WorkflowReferenceResolver {
 
 		return $resolvedGuards;
 	}//end resolveTransitionGuards()
+
+	/**
+	 * Resolve the roleName reference on every automatic action of a transition.
+	 *
+	 * An action that names a role by NAME is inert once the seed has run,
+	 * because the engine addresses roles by id — the same shape of silence
+	 * a roleGuard suffers, one field along.
+	 *
+	 * @param array<int, mixed>     $actions     The raw automatic actions.
+	 * @param array<string, string> $roleNameMap Map of roleType name => id.
+	 *
+	 * @return array<int, mixed> The resolved actions.
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	private function resolveTransitionActions(array $actions, array $roleNameMap): array {
+		$resolved = [];
+		foreach ($actions as $action) {
+			if (is_array($action) === false) {
+				$resolved[] = $action;
+				continue;
+			}
+
+			if (isset($action['config']['roleName']) === true) {
+				$action['config']['roleId'] = ($roleNameMap[$action['config']['roleName']] ?? '');
+			}
+
+			$resolved[] = $action;
+		}//end foreach
+
+		return $resolved;
+	}//end resolveTransitionActions()
 
 	/**
 	 * Generate a UUID v4 string.

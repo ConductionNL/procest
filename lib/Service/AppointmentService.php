@@ -47,6 +47,8 @@ use RuntimeException;
  * Dispatches to the configured EXTERNAL backend (JCC or Qmatic) and stores
  * appointment records in OpenRegister. There is no local fallback — internal
  * scheduling lives in the OR calendar leaf.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class AppointmentService {
 	/**
@@ -77,6 +79,8 @@ class AppointmentService {
 	 * @param string $date The date (YYYY-MM-DD).
 	 *
 	 * @return array<int, array<string, mixed>> List of available timeslots.
+	 *
+	 * @spec openspec/specs/appointment-booking/spec.md
 	 */
 	public function getTimeslots(string $productId, string $locationId, string $date): array {
 		return $this->getBackend()->getTimeslots($productId, $locationId, $date);

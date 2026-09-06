@@ -21,8 +21,8 @@
  * they assert the KCC fields render, guarding against a 5xx render.
  */
 
-import { test, expect } from '@playwright/test'
-import { loadAllAdminSections } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { loadAllAdminSections } from '../helpers/nav.ts'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 

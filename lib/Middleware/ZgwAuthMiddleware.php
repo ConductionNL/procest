@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
  * the authenticated applicatie has the required scope for the request.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZgwAuthMiddleware extends Middleware {
 	/**
@@ -167,6 +169,8 @@ class ZgwAuthMiddleware extends Middleware {
 	 * @throws \OCA\Dossiq\Middleware\ZgwAuthException If authorization fails.
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $methodName required by Middleware interface
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		if (($controller instanceof ZgwController) === false) {
@@ -240,6 +244,8 @@ class ZgwAuthMiddleware extends Middleware {
 	 * @throws \Exception Re-throws any non-ZGW-auth exception for the next middleware.
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $controller/$methodName required by Middleware interface
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): JSONResponse {
 		if ($exception instanceof ZgwAuthException) {
@@ -450,6 +456,8 @@ class ZgwAuthMiddleware extends Middleware {
 	 * @param string $max The maximum allowed level
 	 *
 	 * @return bool True if actual is at or below max
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function isConfidentialityAllowed(string $actual, string $max): bool {
 		$actualIndex = array_search(needle: $actual, haystack: self::CONFIDENTIALITY_ORDER);

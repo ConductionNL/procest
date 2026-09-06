@@ -147,15 +147,16 @@ export default {
 	},
 
 	emits: [
-		'select',
-		'drag-start',
-		'connection-start',
-		'connection-end',
-		'step-click',
 		'add-step',
+		'connection-end',
+		'connection-start',
+		'delete-status',
+		'drag-start',
 		'keyboard-connect',
 		'keyboard-disconnect',
-		'delete-status',
+		'select',
+		'step-click',
+		'step-reorder',
 	],
 
 	data() {
@@ -195,9 +196,6 @@ export default {
 		 *
 		 * @param {string} statusId UUID of the status
 		 * @return {string} The status name, or the id if not found
-		 */
-		/**
-		 * @param statusId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		targetName(statusId) {
@@ -207,7 +205,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onMouseDown(event) {
@@ -218,7 +216,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionStartFromPort(event) {
@@ -226,8 +224,8 @@ export default {
 		},
 
 		/**
-		 * @param step
-		 * @param event
+		 * @param {object} step The step.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepDragStart(step, event) {
@@ -237,8 +235,8 @@ export default {
 		},
 
 		/**
-		 * @param targetStep
-		 * @param event
+		 * @param {object} targetStep The target step.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepDrop(targetStep, event) {

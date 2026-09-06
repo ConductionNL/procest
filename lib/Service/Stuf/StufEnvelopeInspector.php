@@ -76,7 +76,7 @@ class StufEnvelopeInspector {
 		if ($applicatie !== '') {
 			$endpoint = $this->register->findOne(
 				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-				filters: ['ontvangerApplicatie' => $applicatie]
+				filters: ['recipientApplication' => $applicatie]
 			);
 			if ($endpoint !== null) {
 				return $endpoint;
@@ -84,9 +84,9 @@ class StufEnvelopeInspector {
 		}
 
 		if ($headerEndpointId !== '') {
-			return $this->register->findOne(
+			return $this->register->findById(
 				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-				filters: ['id' => $headerEndpointId]
+				id: $headerEndpointId
 			);
 		}
 

@@ -35,6 +35,8 @@ use OCP\IUserSession;
 
 /**
  * Controller exposing Berichtenbox send/list/poll endpoints.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class BerichtenboxController extends Controller {
 	/**

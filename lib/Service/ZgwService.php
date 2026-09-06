@@ -45,6 +45,8 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwService {
 	/**
@@ -184,6 +186,8 @@ class ZgwService {
 	 * Get the OpenRegister ObjectService.
 	 *
 	 * @return object|null
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getObjectService(): ?object {
 		return $this->objectService;
@@ -193,6 +197,8 @@ class ZgwService {
 	 * Get the OpenRegister ConsumerMapper.
 	 *
 	 * @return object|null
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getConsumerMapper(): ?object {
 		return $this->consumerMapper;
@@ -202,6 +208,8 @@ class ZgwService {
 	 * Get the ZGW mapping service.
 	 *
 	 * @return ZgwMappingService
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getZgwMappingService(): ZgwMappingService {
 		return $this->zgwMappingService;
@@ -211,6 +219,8 @@ class ZgwService {
 	 * Get the pagination helper.
 	 *
 	 * @return ZgwPaginationHelper
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getPaginationHelper(): ZgwPaginationHelper {
 		return $this->paginationHelper;
@@ -220,6 +230,8 @@ class ZgwService {
 	 * Get the document service.
 	 *
 	 * @return ZgwDocumentService
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getDocumentService(): ZgwDocumentService {
 		return $this->documentService;
@@ -229,6 +241,8 @@ class ZgwService {
 	 * Get the business rules service.
 	 *
 	 * @return ZgwBusinessRulesService
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getBusinessRulesService(): ZgwBusinessRulesService {
 		return $this->businessRulesService;
@@ -238,6 +252,8 @@ class ZgwService {
 	 * Get the logger.
 	 *
 	 * @return LoggerInterface
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getLogger(): LoggerInterface {
 		return $this->logger;

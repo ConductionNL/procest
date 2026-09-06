@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Archival surface for emails linked to a case.
+ *
+ * @spec openspec/changes/case-email-integration/tasks.md#T05
  */
 class EmailArchivalService {
 

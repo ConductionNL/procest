@@ -47,6 +47,8 @@ use OCP\IUserSession;
 
 /**
  * Controller for the ZGW DRC zaakdossier.
+ *
+ * @spec openspec/changes/document-zaakdossier/tasks.md#T05
  */
 class ZaakdossierController extends Controller {
 	/**

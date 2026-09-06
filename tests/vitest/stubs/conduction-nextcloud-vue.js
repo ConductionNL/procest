@@ -28,7 +28,7 @@
  * @param {object} [options] Store options (unused)
  * @return {Function} A no-op "useStore" function
  */
-export function createObjectStore(id, options) {
+export function createObjectStore(_id, _options) {
 	return function useStubObjectStore() {
 		return {}
 	}

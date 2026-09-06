@@ -121,12 +121,12 @@
 		</div>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				v-if="availableCaseTypes.length > 0"
-				type="primary"
+				variant="primary"
 				:disabled="saving || !selectedCaseType"
 				@click="submit">
 				<template v-if="saving" #icon>
@@ -139,6 +139,7 @@
 </template>
 
 <script>
+import { getCurrentUser } from '@nextcloud/auth'
 import {
 	NcButton,
 	NcDialog,
@@ -256,6 +257,19 @@ export default {
 			}
 		},
 
+		/**
+		 * Load the status types of the SELECTED sub-case type.
+		 *
+		 * Filters on a bare `caseType` field name: the `_filters[caseType]`
+		 * form this used is inert, so the picker offered every case type's
+		 * statuses rather than the chosen one's.
+		 *
+		 * @param {object|null} caseType The selected sub-case type.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
 		async onCaseTypeSelected(caseType) {
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''
@@ -267,7 +281,7 @@ export default {
 				const results = await this.objectStore.fetchCollection(
 					'statusType',
 					{
-						'_filters[caseType]': caseType.id,
+						caseType: caseType.id,
 						_order: JSON.stringify({ order: 'asc' }),
 						_limit: 100,
 					},
@@ -335,7 +349,7 @@ export default {
 					(a, b) => (a.order || 0) - (b.order || 0),
 				)[0]
 				const currentUser =
-					(typeof OC !== 'undefined' && OC?.currentUser) || 'unknown'
+					(getCurrentUser() && getCurrentUser().uid) || 'unknown'
 
 				const caseData = {
 					title: this.form.title.trim(),

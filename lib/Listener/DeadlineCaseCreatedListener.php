@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Exception\NoTermijnDefinitieException;
+use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -40,6 +42,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Binds a TermijnInstance to a freshly-created dossiq case.
  *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
+ *
  * @template-implements IEventListener<Event>
  */
 class DeadlineCaseCreatedListener implements IEventListener {
@@ -48,11 +52,13 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *
 	 * @param TermijnService $termService TermijnService.
 	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseTypeSlugResolver $caseTypeSlugs,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -81,19 +87,45 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		}
 
 		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
-		$caseType = (string)($payload['caseType'] ?? '');
-		if ($caseId === '' || $caseType === '') {
+		$caseTypeRef = (string)($payload['caseType'] ?? '');
+		if ($caseId === '' || $caseTypeRef === '') {
+			return;
+		}
+
+		// 🔴 A `case` carries its case type as a UUID; a deadlineDefinition
+		// binds by SLUG. Handing the uuid straight to TermijnService matched
+		// no shipped case type, so no term was ever bound and no FlowTimer
+		// ever armed — and the refusal was invisible at the default loglevel.
+		$caseType = $this->caseTypeSlugs->toSlug(reference: $caseTypeRef);
+		if ($caseType === '') {
+			$this->logger->warning(
+				'Dossiq termijn: the case type behind a new case could not be resolved to a slug, '
+				. 'so no statutory term was started',
+				['case' => $caseId, 'caseType' => $caseTypeRef]
+			);
+
 			return;
 		}
 
 		try {
 			$this->termService->createTermijnInstance($caseId, $caseType);
-		} catch (\Throwable $e) {
-			// A case without a coupled definition is permissible — debug log only.
-			$this->logger->debug(
-				'Dossiq termijn: no automatic binding for case ' . $caseId . ': ' . $e->getMessage()
+		} catch (NoTermijnDefinitieException $e) {
+			// NOT debug. A case that matched no definition at all has no
+			// statutory clock running, which is exactly the state that hid a
+			// fleet-wide key mismatch behind a quiet log line. It is a valid
+			// configuration for a case type with no beslistermijn, so it is a
+			// warning rather than an error — but it is visible.
+			$this->logger->warning(
+				'Dossiq termijn: no active TermijnDefinitie for case type "' . $caseType . '", '
+				. 'so case ' . $caseId . ' runs without a statutory term',
+				['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
 			);
-		}
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $e->getMessage(),
+				['case' => $caseId, 'caseType' => $caseType, 'exception' => $e->getMessage()]
+			);
+		}//end try
 	}//end handle()
 
 	/**

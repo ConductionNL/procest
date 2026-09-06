@@ -85,7 +85,7 @@
 import { CnIndexPage } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
-import { NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ContentDuplicateIcon from 'vue-material-design-icons/ContentDuplicate.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import StarIcon from 'vue-material-design-icons/Star.vue'
@@ -99,9 +99,12 @@ export default {
 		StarIcon,
 		DeleteIcon,
 		ContentDuplicateIcon,
+		NcButton,
 		NcLoadingIcon,
 		CnIndexPage,
 	},
+
+	emits: ['create', 'select'],
 
 	data() {
 		return {
@@ -155,14 +158,14 @@ export default {
 		},
 
 		/**
-		 * @param caseTypeId
+		 * @param {string} caseTypeId Identifier of the case type id.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		async loadStatusTypeCount(caseTypeId) {
 			const statusTypes = await this.objectStore.fetchCollection(
 				'statusType',
 				{
-					'_filters[caseType]': caseTypeId,
+					caseType: caseTypeId,
 					_limit: 100,
 				},
 			)
@@ -175,7 +178,7 @@ export default {
 		},
 
 		/**
-		 * @param duration
+		 * @param {string} duration An ISO 8601 duration, for example P30D.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		formatDeadline(duration) {
@@ -183,7 +186,7 @@ export default {
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		formatValidity(ct) {
@@ -197,13 +200,13 @@ export default {
 					month: 'short',
 					year: 'numeric',
 				})
-				return `${from} \u2014 ${until}`
+				return `${from} – ${until}`
 			}
-			return t('dossiq', '{from} \u2014 (no end)', { from })
+			return t('dossiq', '{from} – (no end)', { from })
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		validityClass(ct) {
@@ -215,7 +218,7 @@ export default {
 		},
 
 		/**
-		 * @param row
+		 * @param {object} row The row.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		selectCaseType(row) {
@@ -223,7 +226,7 @@ export default {
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		async setDefault(ct) {
@@ -240,7 +243,7 @@ export default {
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		async confirmDelete(ct) {
@@ -248,7 +251,7 @@ export default {
 
 			try {
 				const cases = await this.objectStore.fetchCollection('case', {
-					'_filters[caseType]': ct.id,
+					caseType: ct.id,
 					_limit: 1,
 				})
 				if (cases && cases.length > 0) {
@@ -284,7 +287,7 @@ export default {
 				const statusTypes = await this.objectStore.fetchCollection(
 					'statusType',
 					{
-						'_filters[caseType]': ct.id,
+						caseType: ct.id,
 						_limit: 100,
 					},
 				)
@@ -338,7 +341,7 @@ export default {
 		/**
 		 * Deep-copy a case type into a new draft, then navigate to it.
 		 *
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/zaaktype-copy/tasks.md#T09
 		 */
 		async duplicate(ct) {

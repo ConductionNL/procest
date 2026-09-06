@@ -55,6 +55,8 @@ use OCA\OpenRegister\Mcp\IMcpToolProvider;
  *   the Nextcloud system admin group), mirroring StatusTransitionService.
  * - A non-admin caller may read a case only when they are its assignee
  *   (primary handler) or hold a role record linking them to the case.
+ *
+ * @spec openspec/specs/mcp-integration/spec.md
  */
 class DossiqToolProvider implements IMcpToolProvider {
 
@@ -139,6 +141,8 @@ class DossiqToolProvider implements IMcpToolProvider {
 	 * Returns the app ID that namespaces every tool id.
 	 *
 	 * @return string "dossiq"
+	 *
+	 * @spec openspec/specs/mcp-integration/spec.md
 	 */
 	public function getAppId(): string {
 		return 'dossiq';
@@ -151,6 +155,8 @@ class DossiqToolProvider implements IMcpToolProvider {
 	 * Per-object authorisation runs in invokeTool().
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/mcp-integration/spec.md
 	 */
 	public function getTools(): array {
 		return self::TOOL_DESCRIPTORS;
@@ -167,6 +173,8 @@ class DossiqToolProvider implements IMcpToolProvider {
 	 * @param array<string, mixed> $arguments Tool arguments from the LLM call
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/mcp-integration/spec.md
 	 */
 	public function invokeTool(string $toolId, array $arguments): array {
 		switch ($toolId) {

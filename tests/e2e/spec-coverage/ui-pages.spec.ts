@@ -15,13 +15,13 @@
  * (2026-08-04), a direct deep link renders its view correctly — the older
  * claim that it "resets the Vue history-mode router to Dashboard" is not true
  * of this build. Routing by sidebar label was actively harmful: several of
- * these pages have no nav entry at all in this build ("Advice", "Voorstellen"),
+ * these pages have no nav entry at all in this build ("Advice"),
  * and the ones that do sit inside COLLAPSED groups, so the click blocked on
  * actionability until the whole 60s test budget was gone.
  */
 
-import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 test.describe('Dashboard page render', () => {
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-page-renders-heading-and-widget-grid
@@ -91,26 +91,6 @@ test.describe('Cases index page render', () => {
 	})
 })
 
-test.describe('Voorstellen page render', () => {
-	// @e2e openspec/specs/case-management/spec.md#voorstellen-page-renders-heading-and-create-control
-	test('voorstellen page renders heading and create control', async ({ page }) => {
-		// The nav renders no "Voorstellen" entry (the Decision-making group's
-		// leaves are absent from this build's sidebar) — navigate by route.
-		await navToRoute(page, '/voorstellen')
-		// The page renders either the custom "B&W Voorstellen" view (heading +
-		// "Nieuw voorstel") or the generic index shell (an "Add Proposal" CTA)
-		// depending on the deployed build — accept either rendered shell, never
-		// an error. Wrap the union in .first() so a build that renders BOTH a
-		// heading and a button doesn't trip strict mode.
-		const customHeading = page.getByRole('heading', { name: /Voorstellen/ })
-		const addBtn = page.getByRole('button', { name: /Nieuw voorstel|^Add / })
-		await expect(customHeading.or(addBtn).first()).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	})
-})
-
 test.describe('Doorlooptijd page render', () => {
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
 	test('doorlooptijd renders processing-time analytics heading', async ({
@@ -130,35 +110,6 @@ test.describe('Doorlooptijd page render', () => {
 				level: 2,
 			}),
 		).toBeVisible({ timeout: 15000 })
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	})
-})
-
-test.describe('Bezwaren index page render', () => {
-	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaren-index-page-renders-list-shell
-	test('bezwaren index renders list shell', async ({ page }) => {
-		// The nav renders "Objections", not "Bezwaren" — navigate by route.
-		await navToRoute(page, '/bezwaren')
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	})
-})
-
-test.describe('Advice index page render', () => {
-	// @e2e openspec/specs/advice-management/spec.md#advice-index-page-renders-list-shell
-	test('advice index renders list shell', async ({ page }) => {
-		// The Decision-making group's leaves are absent from this build's
-		// sidebar, so there is no "Advice" nav entry — navigate by route.
-		await navToRoute(page, '/advice')
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })

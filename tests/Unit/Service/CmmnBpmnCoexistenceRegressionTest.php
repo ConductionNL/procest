@@ -79,8 +79,11 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			},
 		);
 
+		// The engine resolves the workflow through the CASE, not its case type:
+		// a case type may carry several routes, each with an active definition.
+		// See openspec/specs/workflow-variants/spec.md.
 		$templateLoader = $this->createMock(\OCA\Dossiq\Service\WorkflowTemplateLoader::class);
-		$templateLoader->method('getActiveTemplate')->with('ct-1')->willReturn(
+		$templateLoader->method('getTemplateForCase')->willReturn(
 			[
 				'transitions' => [
 					['id' => 't1', 'fromStatus' => 'st-1', 'toStatus' => 'st-2', 'label' => 'Go'],

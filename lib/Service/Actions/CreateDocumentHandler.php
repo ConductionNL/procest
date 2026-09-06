@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Handler for `createDocument` automatic actions.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class CreateDocumentHandler implements ActionHandlerInterface {
 	use HandlesTemplates;

@@ -85,6 +85,8 @@ final class SimulatorEHerkenningSamlAdapter implements EHerkenningSamlAdapterInt
 	 * The simulator is an active (non-dormant) tier, but not a live broker.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/external-integration-test-wiring/spec.md
 	 */
 	public function isActive(): bool {
 		return true;

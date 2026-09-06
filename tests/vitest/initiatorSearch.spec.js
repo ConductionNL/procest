@@ -12,11 +12,11 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-	personDisplayName,
-	personResult,
 	companyResult,
 	contactResult,
 	initiatorProjection,
+	personDisplayName,
+	personResult,
 	searchContacts,
 } from '../../src/services/initiatorSearch.js'
 

@@ -64,13 +64,13 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		);
 
 		// Seed berekening + uitbetaling.
-		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
+		$this->objects->seed('penaltyPaymentCalculation', [
 			'id' => 'b-1',
 			'deadlineInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
-		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
+		$this->objects->seed('dwangsomUitbetaling', [
 			'id' => 'u-1',
 			'penaltyPaymentCalculation' => 'b-1',
 			'amount' => 50000,

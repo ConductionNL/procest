@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -49,6 +50,7 @@ use Throwable;
 class WorkflowTemplateFlowMigrator {
 
 	use SearchesObjects;
+	use ProjectsOntoFlows;
 
 	/**
 	 * Provenance marker prefix written into the flow's notes.
@@ -61,12 +63,6 @@ class WorkflowTemplateFlowMigrator {
 	 */
 	private const MARKER_PREFIX = 'dossiq:workflowTemplate:';
 
-	/**
-	 * Flows read per page when scanning for existing markers.
-	 *
-	 * @var integer
-	 */
-	private const FLOW_PAGE = 100;
 
 	/**
 	 * Templates read per pass.
@@ -121,27 +117,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end migrate()
 
-	/**
-	 * Resolve OpenRegister's FlowService by name, or null when absent.
-	 *
-	 * By name and not by type-hint: dossiq must install and boot on an instance
-	 * without OpenRegister, where the class does not exist to hint against.
-	 *
-	 * @return object|null The FlowService, or null.
-	 */
-	private function flowService(): ?object {
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\Flow\FlowService');
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: FlowService could not be resolved',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-			);
-
-			return null;
-		}
-
-	}//end flowService()
 
 	/**
 	 * A summary describing a run that could not start.
@@ -174,6 +149,9 @@ class WorkflowTemplateFlowMigrator {
 	private function migrateAll(object $flowService, bool $dryRun): array {
 		$templates = $this->fetchTemplates();
 		$existing = $this->existingByMarker(flowService: $flowService);
+		// Read the statusType names ONCE for the whole pass rather than per
+		// template: every template in a pass resolves against the same index.
+		$statusNames = $this->statusNames();
 
 		$summary = $this->emptySummary(note: '');
 		$summary['total'] = count($templates);
@@ -185,6 +163,7 @@ class WorkflowTemplateFlowMigrator {
 				existing: $existing,
 				flowService: $flowService,
 				dryRun: $dryRun,
+				statusNames: $statusNames,
 			);
 			$summary[$row['outcome']] = ($summary[$row['outcome']] + 1);
 			$summary['rows'][] = $row;
@@ -201,10 +180,11 @@ class WorkflowTemplateFlowMigrator {
 	 * @param array<string, string> $existing    Marker to flow uuid.
 	 * @param object                $flowService OpenRegister's FlowService.
 	 * @param boolean               $dryRun      Report only.
+	 * @param array<string, string> $statusNames statusType uuid => name.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 */
-	private function migrateOne(array $template, array $existing, object $flowService, bool $dryRun): array {
+	private function migrateOne(array $template, array $existing, object $flowService, bool $dryRun, array $statusNames = []): array {
 		$id = (string)($template['id'] ?? ($template['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
@@ -212,7 +192,7 @@ class WorkflowTemplateFlowMigrator {
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'the template has no id'];
 		}
 
-		$graph = $this->graphOf(template: $template);
+		$graph = $this->graphOf(template: $template, statusNames: $statusNames);
 		if ($graph === null) {
 			// A template with no transitions is not a state machine; projecting
 			// it would produce a flow with nodes and no way between them, which
@@ -250,11 +230,12 @@ class WorkflowTemplateFlowMigrator {
 	 * case type.
 	 *
 	 * @param array<string, mixed> $template The stored template.
+	 * @param array<string, string> $statusNames statusType uuid => name, for the projection.
 	 *
 	 * @return array{nodes: array<int, array<string, mixed>>, edges: array<int, array<string, mixed>>}|null
 	 *         The graph, or null when the template has no usable transitions.
 	 */
-	private function graphOf(array $template): ?array {
+	private function graphOf(array $template, array $statusNames = []): ?array {
 		$transitions = $this->decodeList(value: ($template['transitions'] ?? null));
 		if ($transitions === []) {
 			return null;
@@ -263,8 +244,12 @@ class WorkflowTemplateFlowMigrator {
 		$statuses = [];
 		$edges = [];
 		foreach ($transitions as $index => $transition) {
-			$from = trim((string)($transition['fromStatus'] ?? ''));
-			$to = trim((string)($transition['toStatus'] ?? ''));
+			// RESOLVE TO THE NAME. A stored transition carries a statusType
+			// UUID; `dossiq.setStatus` resolves a NAME. An unresolvable value
+			// is passed through unchanged, which keeps a seed-shaped template
+			// (whose endpoints already ARE names) projecting exactly as before.
+			$from = $this->statusName(value: ($transition['fromStatus'] ?? ''), names: $statusNames);
+			$to = $this->statusName(value: ($transition['toStatus'] ?? ''), names: $statusNames);
 
 			// A wildcard source has no node to leave from. The seeder accepts
 			// `fromStatus: '*'` and no shipped template uses it, so it is
@@ -315,36 +300,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end nodeId()
 
-	/**
-	 * Decode a field the schema stores as a JSON-encoded string.
-	 *
-	 * `steps` and `transitions` are declared as strings holding JSON, which is
-	 * ADR-065's named cost of this model: they are opaque to OpenRegister. Rows
-	 * written before that were stored as native arrays, so both are accepted.
-	 *
-	 * @param mixed $value The stored value.
-	 *
-	 * @return array<int, array<string, mixed>> The decoded list.
-	 */
-	private function decodeList(mixed $value): array {
-		if (is_string($value) === true) {
-			$value = json_decode($value, true);
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$out = [];
-		foreach ($value as $entry) {
-			if (is_array($entry) === true) {
-				$out[] = $entry;
-			}
-		}
-
-		return $out;
-
-	}//end decodeList()
 
 	/**
 	 * The flow document to store.
@@ -398,6 +353,88 @@ class WorkflowTemplateFlowMigrator {
 	}//end description()
 
 	/**
+	 * Resolve one status reference to the name the flow node needs.
+	 *
+	 * Passes an unresolvable value through unchanged: a template stored in the
+	 * SEED shape already carries names, and rewriting those would break the
+	 * very case this resolution exists to preserve.
+	 *
+	 * @param mixed $value The stored status reference.
+	 * @param array<string, string> $names uuid => name.
+	 *
+	 * @return string The status name.
+	 *
+	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 */
+	private function statusName(mixed $value, array $names): string {
+		$raw = trim((string)$value);
+
+		return ($names[$raw] ?? $raw);
+	}//end statusName()
+
+	/**
+	 * Map every statusType uuid to its NAME.
+	 *
+	 * 🔴 THE PROJECTION MUST EMIT NAMES, AND IT WAS EMITTING UUIDS.
+	 *
+	 * `DossiqTxSetStatusNode` says so in its own description: it moves a case to
+	 * a status of its case type "named rather than referenced by id", because a
+	 * statusType uuid is minted per installation and a flow carrying one is
+	 * portable nowhere.
+	 *
+	 * The SEED files store step/transition statuses as names, which is what this
+	 * migrator was written against. The STORED objects do not: the seeder
+	 * resolves those names to statusType uuids on import, so on any live
+	 * instance `fromStatus`, `toStatus` and `step.status` are all uuids.
+	 * Measured on a running instance: 9 of 9 step statuses and every transition
+	 * endpoint were uuids.
+	 *
+	 * So the projection was feeding uuids into a node that resolves names. The
+	 * flows it produced could not have moved a case. Nothing caught it because
+	 * they arrive DISABLED — a disabled flow never runs, and the e2e asserts
+	 * only that they exist and are switched off.
+	 *
+	 * @return array<string, string> uuid => name, empty when unavailable.
+	 *
+	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 */
+	private function statusNames(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'status_type_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_limit' => self::BATCH_LIMIT],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not list status types for the flow projection',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+
+			return [];
+		}
+
+		$names = [];
+		foreach ($rows as $row) {
+			$uuid = trim((string)($row['id'] ?? ''));
+			$name = trim((string)($row['name'] ?? ''));
+			if ($uuid !== '' && $name !== '') {
+				$names[$uuid] = $name;
+			}
+		}
+
+		return $names;
+	}//end statusNames()
+
+	/**
 	 * Read the stored templates.
 	 *
 	 * @return array<int, array<string, mixed>> The templates.
@@ -432,83 +469,7 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end fetchTemplates()
 
-	/**
-	 * Map every already-projected flow by its provenance marker.
-	 *
-	 * @param object $flowService OpenRegister's FlowService.
-	 *
-	 * @return array<string, string> Marker to flow uuid.
-	 */
-	private function existingByMarker(object $flowService): array {
-		$map = [];
-		$offset = 0;
 
-		while (true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
-			if (is_array($page) === false || $page === []) {
-				return $map;
-			}
 
-			foreach ($page as $flow) {
-				$notes = (string)($flow->getNotes() ?? '');
-				if (str_starts_with($notes, self::MARKER_PREFIX) === true) {
-					$map[$notes] = (string)$flow->getUuid();
-				}
-			}
-
-			if (count($page) < self::FLOW_PAGE) {
-				return $map;
-			}
-
-			$offset += self::FLOW_PAGE;
-		}
-
-	}//end existingByMarker()
-
-	/**
-	 * Write one flow, never letting a single failure abort the rest.
-	 *
-	 * @param object               $flowService OpenRegister's FlowService.
-	 * @param array<string, mixed> $document    The flow document.
-	 * @param string               $marker      The provenance marker.
-	 * @param string|null          $uuid        The existing flow uuid, or null to create.
-	 *
-	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
-	 */
-	private function writeFlow(object $flowService, array $document, string $marker, ?string $uuid): array {
-		try {
-			$flow = $flowService->save($document, $uuid);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not project a workflow definition onto a flow',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
-			);
-
-			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
-		}
-
-		return [
-			'outcome' => $this->outcomeFor(uuid: $uuid),
-			'marker' => $marker,
-			'detail' => ('flow ' . (string)$flow->getUuid()),
-		];
-
-	}//end writeFlow()
-
-	/**
-	 * Whether writing against this uuid counts as a create or an update.
-	 *
-	 * @param string|null $uuid The existing flow uuid, or null.
-	 *
-	 * @return string Either `created` or `updated`.
-	 */
-	private function outcomeFor(?string $uuid): string {
-		if ($uuid === null) {
-			return 'created';
-		}
-
-		return 'updated';
-
-	}//end outcomeFor()
 
 }//end class

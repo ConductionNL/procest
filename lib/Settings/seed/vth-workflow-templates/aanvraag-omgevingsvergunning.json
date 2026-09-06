@@ -15,7 +15,7 @@
       "isInitial": true,
       "isFinal": false,
       "assigneeRole": "Behandelaar",
-      "description": "Aanvraag binnengekomen via DSO of handmatig — registratie en ontvangstbevestiging."
+      "description": "Aanvraag binnengekomen via DSO of handmatig: registratie en ontvangstbevestiging."
     },
     {
       "slug": "ontvankelijkheidstoets",

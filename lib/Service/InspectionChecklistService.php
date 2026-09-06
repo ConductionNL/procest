@@ -374,19 +374,19 @@ class InspectionChecklistService {
 		mixed $itemRef,
 	): void {
 		try {
-			$item = $objectService->find(
-				$itemRef,
+			// The find() call returns an ObjectEntity whose data lives in
+			// protected properties, so get_object_vars() from out here read
+			// an EMPTY array and the photo requirement never fired. The
+			// array bridge goes through jsonSerialize(), which exposes the
+			// real fields.
+			$item = $this->findObjectAsArray(
+				objectService: $objectService,
 				register: $register,
-				schema: 'checklistItem'
+				schema: 'checklistItem',
+				id: (string)$itemRef
 			);
 
-			// The find() call may return an OpenRegister entity or an
-			// array; normalise to an array so fotoRequired is readable.
-			if (is_object($item) === true) {
-				$item = get_object_vars(object: $item);
-			}
-
-			if (is_array($item) === true && ($item['photoRequired'] ?? false) === true) {
+			if ($item !== null && ($item['photoRequired'] ?? false) === true) {
 				throw new RuntimeException(
 					'Photo required for non-conformant checklist item ' . $itemRef
 				);

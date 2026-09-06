@@ -34,6 +34,8 @@ namespace OCA\Dossiq\Service\Kcc;
 
 /**
  * Deterministic Dutch sentiment analyser for KCC transcripts.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 class SentimentService {
 	/**

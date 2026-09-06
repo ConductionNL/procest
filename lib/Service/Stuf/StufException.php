@@ -28,6 +28,8 @@ use RuntimeException;
 
 /**
  * Base StUF adapter exception.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 class StufException extends RuntimeException {
 }//end class

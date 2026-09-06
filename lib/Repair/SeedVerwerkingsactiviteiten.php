@@ -42,6 +42,7 @@ use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Seeds the dossiq verwerkingsactiviteiten catalogue into OpenRegister (draft, upsert-by-code).
@@ -120,6 +121,7 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 
 		$created = 0;
 		$updated = 0;
+		$refused = [];
 		foreach ($activities as $definition) {
 			$code = (string)($definition['code'] ?? '');
 			if ($code === '') {
@@ -144,12 +146,32 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 				$mapper->update(entity: $existing);
 				$updated++;
 			} catch (\Throwable $e) {
+				$refused[] = $code;
 				$this->logger->error(
 					'Dossiq: failed to seed verwerkingsactiviteit',
 					['code' => $code, 'exception' => $e->getMessage()]
 				);
 			}//end try
 		}//end foreach
+
+		// A SEED THAT SEEDED NOTHING MUST NOT PRODUCE SUCCESS-SHAPED OUTPUT.
+		// Every row was refused on the Dutch legal-basis spellings and the step
+		// still printed "0 created (draft), 0 refreshed" — which reads as an
+		// idempotent re-run rather than an empty verwerkingsregister. The
+		// refusals are counted and named, so an operator sees that the AVG art.
+		// 30 catalogue is absent.
+		if ($refused !== []) {
+			$output->warning(
+				sprintf(
+					'Verwerkingsactiviteiten catalogue: %d created (draft), %d refreshed, %d REFUSED (%s). See the log for each refusal.',
+					$created,
+					$updated,
+					count($refused),
+					implode(', ', $refused)
+				)
+			);
+			return;
+		}
 
 		$output->info(sprintf('Verwerkingsactiviteiten catalogue seeded: %d created (draft), %d refreshed.', $created, $updated));
 
@@ -186,29 +208,65 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	 * @return void
 	 */
 	private function hydrate(object $entity, array $definition): void {
+		// OpenRegister renamed the entity's Dutch columns to English (naam ->
+		// name, beschrijving -> description, ...). QBMapper entities implement
+		// setters via __call over their DECLARED properties, so calling the
+		// old setter throws "naam is not a valid attribute" — which is exactly
+		// how all 7 catalogue rows failed on every fresh install. Each field
+		// therefore lists its candidate entity properties, newest first, and
+		// the one the deployed entity actually declares wins.
 		$stringFields = [
-			'name' => 'setNaam',
-			'beschrijving' => 'setBeschrijving',
-			'doelbinding' => 'setDoelbinding',
-			'rechtsgrond' => 'setRechtsgrond',
-			'bewaartermijn' => 'setBewaartermijn',
+			'name' => ['name', 'naam'],
+			'beschrijving' => ['description', 'beschrijving'],
+			'doelbinding' => ['purpose', 'doelbinding'],
+			'rechtsgrond' => ['legalBasis', 'rechtsgrond'],
+			'bewaartermijn' => ['retentionPeriod', 'bewaartermijn'],
 		];
-		foreach ($stringFields as $field => $setter) {
+		foreach ($stringFields as $field => $candidates) {
 			if (isset($definition[$field]) === true && is_string($definition[$field]) === true) {
-				$entity->{$setter}($definition[$field]);
+				$this->setFirstDeclared(entity: $entity, candidates: $candidates, value: $definition[$field]);
 			}
 		}
 
 		$arrayFields = [
-			'categorieenBetrokkenen' => 'setCategorieenBetrokkenen',
-			'categorieenPersoonsgegevens' => 'setCategorieenPersoonsgegevens',
-			'ontvangers' => 'setOntvangers',
+			'categorieenBetrokkenen' => ['dataSubjectCategories', 'categorieenBetrokkenen'],
+			'categorieenPersoonsgegevens' => ['personalDataCategories', 'categorieenPersoonsgegevens'],
+			'ontvangers' => ['recipients', 'ontvangers'],
 		];
-		foreach ($arrayFields as $field => $setter) {
+		foreach ($arrayFields as $field => $candidates) {
 			if (isset($definition[$field]) === true && is_array($definition[$field]) === true) {
-				$entity->{$setter}($definition[$field]);
+				$this->setFirstDeclared(entity: $entity, candidates: $candidates, value: $definition[$field]);
 			}
 		}
 
 	}//end hydrate()
+
+	/**
+	 * Set the first property the deployed entity actually declares.
+	 *
+	 * `method_exists()` cannot answer this (the setters are magic __call), so
+	 * the DECLARED PROPERTY decides. A value none of the candidates fit is
+	 * loud: seeding a catalogue row that silently loses its purpose or
+	 * retention period would ship an incomplete verwerkingsregister.
+	 *
+	 * @param object $entity OR Verwerkingsactiviteit entity.
+	 * @param array<int, string> $candidates Property names, newest first.
+	 * @param string|array<int|string, mixed> $value The value to set.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When no candidate property is declared.
+	 */
+	private function setFirstDeclared(object $entity, array $candidates, string|array $value): void {
+		foreach ($candidates as $property) {
+			if (property_exists($entity, $property) === true) {
+				$entity->{'set' . ucfirst($property)}($value);
+				return;
+			}
+		}
+
+		throw new RuntimeException(
+			'The deployed Verwerkingsactiviteit entity declares none of: ' . implode(', ', $candidates)
+		);
+	}//end setFirstDeclared()
 }//end class

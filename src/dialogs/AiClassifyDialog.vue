@@ -101,7 +101,7 @@ export default {
 
 	watch: {
 		/**
-		 * @param val
+		 * @param {string|number|boolean|object} val The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
 		 */
 		show(val) {

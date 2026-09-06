@@ -56,18 +56,26 @@ contiguous run (`Bezwaren`=45, `Beroepen`=46, `BezwaarDecisions`=47, `BezwaarAdv
 
 ### Requirement: REQ-POAG-003 — Every Grouped Page Stays Routable (Relocation Moves The Entry, Not The Page)
 
-dossiq SHALL keep every objections-and-appeals page routable at its existing route after the
-grouping. Relocation SHALL move only the menu entry; the `pages[]` declarations and their routes —
-`/bezwaren` (+`/bezwaren/:id`), `/beroepen` (+`/beroepen/:id`), `/bezwaar-decisions`
-(+`/bezwaar-decisions/:id`), `/bezwaar-advice-requests` (+`/bezwaar-advice-requests/:id`),
-`/settings/bezwaar-committees` (+`/settings/bezwaar-committees/:id`) — SHALL remain registered and
-reachable by direct URL and e2e specs. No page SHALL be added to `src/menu-layout.json#removals`.
+dossiq SHALL keep every objections-and-appeals DETAIL page routable at its existing route.
+Relocation moves only the menu entry, so `/bezwaar-decisions` (+`/bezwaar-decisions/:id`),
+`/bezwaar-advice-requests` (+`/bezwaar-advice-requests/:id`), `/settings/bezwaar-committees`
+(+`/settings/bezwaar-committees/:id`), `/bezwaren/:id` and `/beroepen/:id` SHALL remain registered
+and reachable by direct URL and e2e specs.
+
+AMENDED 2026-09-02. The `/bezwaren` and `/beroepen` INDEX pages are retired outright, not hidden.
+Each was an index over register `dossiq` and schema `case` whose only narrowing was
+`filter: { caseType: <uuid> }`, and Cases carries the same register, the same schema and the same
+narrowing through its `folderSidebar` (`filterField: caseType`). A second list over identical data
+is the duplication this grouping set out to remove, so hiding the entry stopped half way. Detail
+routes stay, so every objection and appeal link keeps resolving. The original clause forbidding a
+`src/menu-layout.json#removals` entry now holds for a different reason: there is no entry left to
+remove.
 
 #### Scenario: Deep links to grouped pages still resolve
 
 - **GIVEN** the grouping has shipped
-- **WHEN** a user navigates directly to `/bezwaren`, `/beroepen`, `/bezwaar-decisions`,
-  `/bezwaar-advice-requests`, or `/settings/bezwaar-committees`
+- **WHEN** a user navigates directly to `/bezwaar-decisions`, `/bezwaar-advice-requests`, or
+  `/settings/bezwaar-committees`
 - **THEN** the corresponding page SHALL load
 - **AND** the page route SHALL be unchanged from before the grouping
 

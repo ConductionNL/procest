@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
  * `zgw_mapping_zaak`, `zgw_mapping_zaaktype`, etc.
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwMappingService {
 	/**
@@ -187,6 +189,8 @@ class ZgwMappingService {
 	 * Get all known ZGW resource keys.
 	 *
 	 * @return string[]
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getResourceKeys(): array {
 		return self::RESOURCE_KEYS;
@@ -198,6 +202,8 @@ class ZgwMappingService {
 	 * @param string $resourceKey The ZGW resource key
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function hasMapping(string $resourceKey): bool {
 		return $this->getMapping(resourceKey: $resourceKey) !== null;

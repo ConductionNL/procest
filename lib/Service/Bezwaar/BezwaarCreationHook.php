@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Bezwaar;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -51,6 +52,9 @@ use RuntimeException;
  * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
 class BezwaarCreationHook {
+
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -103,12 +107,13 @@ class BezwaarCreationHook {
 
 		$schemas = $this->resolveSchemas();
 
-		$decision = $objectService->find(
-			$contestedDecisionId,
+		$decision = $this->findObjectAsArray(
+			objectService: $objectService,
 			register: $schemas['register'],
-			schema: $schemas['decision']
+			schema: $schemas['decision'],
+			id: $contestedDecisionId
 		);
-		if (is_array($decision) === false) {
+		if ($decision === null) {
 			throw new RuntimeException('Contested decision not found');
 		}
 
@@ -220,12 +225,13 @@ class BezwaarCreationHook {
 		string $objectionCaseId,
 		string $relatedCaseId,
 	): void {
-		$case = $objectService->find(
-			$objectionCaseId,
+		$case = $this->findObjectAsArray(
+			objectService: $objectService,
 			register: $register,
-			schema: $caseSchema
+			schema: $caseSchema,
+			id: $objectionCaseId
 		);
-		if (is_array($case) === false) {
+		if ($case === null) {
 			throw new RuntimeException('Bezwaar case not found');
 		}
 

@@ -96,6 +96,8 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface {
 	 * @inheritDoc
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/brp-register/spec.md#requirement-brp-person-register-schema-exists-in-openregister
 	 */
 	public function isDormant(): bool {
 		return true;

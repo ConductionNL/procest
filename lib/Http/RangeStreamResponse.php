@@ -38,6 +38,8 @@ use OCP\AppFramework\Http\Response;
  * @template-extends Response<200|206|404|416, array<string, mixed>>
  *
  * @psalm-suppress InvalidTemplateParam
+ *
+ * @spec openspec/changes/document-zaakdossier/tasks.md#T05
  */
 class RangeStreamResponse extends Response {
 
@@ -85,6 +87,8 @@ class RangeStreamResponse extends Response {
 	 * Render the response body.
 	 *
 	 * @return string The (possibly sliced) content.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
 	 */
 	public function render(): string {
 		return $this->body;

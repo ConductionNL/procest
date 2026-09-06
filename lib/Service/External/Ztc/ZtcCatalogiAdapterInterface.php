@@ -87,6 +87,8 @@ interface ZtcCatalogiAdapterInterface {
 	 *                                     correlationId.
 	 *
 	 * @return ZtcResult The lookup outcome (status + canonical URL).
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function resolveZaakType(string $caseTypeId, string $receiverSourceSlug, array $context = []): ZtcResult;
 
@@ -108,6 +110,8 @@ interface ZtcCatalogiAdapterInterface {
 	 *
 	 * @return ZtcResult The import outcome (status +
 	 *                   `localZaakTypeUrl`).
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function importZaakType(string $caseTypeUrl, array $context = []): ZtcResult;
 
@@ -116,6 +120,8 @@ interface ZtcCatalogiAdapterInterface {
 	 * an external Catalogi-API.
 	 *
 	 * @return bool TRUE when the adapter is a log-only stub.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function isDormant(): bool;
 }//end interface

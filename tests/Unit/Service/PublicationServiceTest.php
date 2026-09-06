@@ -27,6 +27,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\PublicationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Integriq\Event\DeliveryRequestedEvent;
+use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -72,6 +74,13 @@ class PublicationServiceTest extends TestCase {
 	private SettingsService $settingsService;
 
 	/**
+	 * The mocked event dispatcher (integriq ADR-041 delivery seam).
+	 *
+	 * @var IEventDispatcher|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IEventDispatcher $eventDispatcher;
+
+	/**
 	 * The service under test.
 	 *
 	 * @var PublicationService
@@ -85,6 +94,7 @@ class PublicationServiceTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$this->eventDispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
@@ -97,7 +107,11 @@ class PublicationServiceTest extends TestCase {
 			}
 		);
 
-		$this->service = new PublicationService(settingsService: $this->settingsService, logger: $logger);
+		$this->service = new PublicationService(
+			settingsService: $this->settingsService,
+			eventDispatcher: $this->eventDispatcher,
+			logger: $logger
+		);
 	}//end setUp()
 
 	/**
@@ -171,6 +185,138 @@ class PublicationServiceTest extends TestCase {
 
 		$this->assertCount(expectedCount: 2, haystack: $result['publications']);
 	}//end testPublishDecodesJsonStringPublications()
+
+	/**
+	 * Delivery fail-closed: an unhandled DeliveryRequestedEvent is recorded as
+	 * a refusal on the publication record — and the publication itself still
+	 * persists (a delivery failure never rolls back the publication).
+	 *
+	 * @return void
+	 */
+	public function testPublishRecordsRefusalWhenDeliveryNotHandled(): void {
+		$objectService = $this->createMock(originalClassName: PublicationObjectServiceStub::class);
+		$objectService->method('find')->willReturn(['id' => 'c1']);
+		$saved = null;
+		$objectService->method('saveObject')->willReturnCallback(
+			static function (array $object) use (&$saved): array {
+				$saved = $object;
+				return $object;
+			}
+		);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		// The dispatcher mock does nothing, so the event stays unhandled —
+		// exactly what happens when integriq registers no listener.
+		$result = $this->service->publish('c1', ['channel' => 'gemeenteblad']);
+
+		$this->assertSame(expected: 'refused', actual: $result['delivery']['status']);
+		$this->assertSame(expected: 'not_handled', actual: $result['delivery']['reason']);
+		$this->assertNotNull(actual: $saved);
+		$this->assertSame(expected: 'refused', actual: $saved['publications'][0]['delivery']['status']);
+	}//end testPublishRecordsRefusalWhenDeliveryNotHandled()
+
+	/**
+	 * A handled, routed delivery is recorded as requested with integriq's
+	 * event id and the correlation id the concluded projection will match on.
+	 *
+	 * @return void
+	 */
+	public function testPublishRecordsRequestedDelivery(): void {
+		$objectService = $this->createMock(originalClassName: PublicationObjectServiceStub::class);
+		$objectService->method('find')->willReturn(['id' => 'c1', 'title' => 'Kapvergunning']);
+		$saved = null;
+		$objectService->method('saveObject')->willReturnCallback(
+			static function (array $object) use (&$saved): array {
+				$saved = $object;
+				return $object;
+			}
+		);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$dispatched = null;
+		$this->eventDispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$dispatched): void {
+				$dispatched = $event;
+				if ($event instanceof DeliveryRequestedEvent) {
+					$event->setResultId(resultId: 'evt-42');
+					$event->setMatchedSubscriptions(matchedSubscriptions: 2);
+					$event->setHandled(handled: true);
+				}
+			}
+		);
+
+		$result = $this->service->publish('c1', ['channel' => 'gemeenteblad']);
+
+		$this->assertInstanceOf(expected: DeliveryRequestedEvent::class, actual: $dispatched);
+		$this->assertSame(expected: 'dossiq', actual: $dispatched->getSourceApp());
+		$this->assertSame(expected: 'besluit-publication', actual: $dispatched->getDeliveryKind());
+		$this->assertSame(expected: 'gemeenteblad', actual: $dispatched->getChannel());
+		$this->assertSame(expected: 'c1', actual: $dispatched->getSubjectId());
+		$this->assertSame(expected: 'requested', actual: $result['delivery']['status']);
+		$this->assertSame(expected: 'evt-42', actual: $result['delivery']['eventId']);
+		$this->assertSame(expected: 2, actual: $result['delivery']['matchedSubscriptions']);
+		$this->assertNotSame(expected: '', actual: (string)$result['delivery']['correlationId']);
+		$this->assertSame(
+			expected: $result['delivery']['correlationId'],
+			actual: $saved['publications'][0]['delivery']['correlationId']
+		);
+	}//end testPublishRecordsRequestedDelivery()
+
+	/**
+	 * A handled delivery with zero matched subscriptions is recorded as
+	 * unrouted — accepted, but nothing is configured to carry it, so the case
+	 * never claims the publication travelled.
+	 *
+	 * @return void
+	 */
+	public function testPublishRecordsUnroutedDelivery(): void {
+		$objectService = $this->createMock(originalClassName: PublicationObjectServiceStub::class);
+		$objectService->method('find')->willReturn(['id' => 'c1']);
+		$objectService->method('saveObject')->willReturnArgument(0);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$this->eventDispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event): void {
+				if ($event instanceof DeliveryRequestedEvent) {
+					$event->setResultId(resultId: 'evt-7');
+					$event->setHandled(handled: true);
+				}
+			}
+		);
+
+		$result = $this->service->publish('c1', ['channel' => 'website']);
+
+		$this->assertSame(expected: 'unrouted', actual: $result['delivery']['status']);
+		$this->assertSame(expected: 'evt-7', actual: $result['delivery']['eventId']);
+	}//end testPublishRecordsUnroutedDelivery()
+
+	/**
+	 * A throwing dispatch is recorded as a refusal and never rolls back the
+	 * publication.
+	 *
+	 * @return void
+	 */
+	public function testPublishRecordsRefusalWhenDispatchThrows(): void {
+		$objectService = $this->createMock(originalClassName: PublicationObjectServiceStub::class);
+		$objectService->method('find')->willReturn(['id' => 'c1']);
+		$saved = null;
+		$objectService->method('saveObject')->willReturnCallback(
+			static function (array $object) use (&$saved): array {
+				$saved = $object;
+				return $object;
+			}
+		);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$this->eventDispatcher->method('dispatchTyped')->willThrowException(new \RuntimeException('bus down'));
+
+		$result = $this->service->publish('c1', ['channel' => 'pdc']);
+
+		$this->assertSame(expected: 'refused', actual: $result['delivery']['status']);
+		$this->assertSame(expected: 'dispatch_failed', actual: $result['delivery']['reason']);
+		$this->assertNotNull(actual: $saved);
+		$this->assertSame(expected: 'pdc', actual: $saved['publications'][0]['channel']);
+	}//end testPublishRecordsRefusalWhenDispatchThrows()
 
 	/**
 	 * Publish rejects an unsupported channel.

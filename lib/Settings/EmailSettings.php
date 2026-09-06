@@ -102,6 +102,8 @@ class EmailSettings implements IDelegatedSettings {
 	 * Get the section ID this settings page belongs to.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function getSection(): string {
 		return 'dossiq';
@@ -114,6 +116,8 @@ class EmailSettings implements IDelegatedSettings {
 	 * this entry orders after it within the same section.
 	 *
 	 * @return int
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function getPriority(): int {
 		return 60;
@@ -123,6 +127,8 @@ class EmailSettings implements IDelegatedSettings {
 	 * Human-readable name of the delegated settings entry.
 	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function getName(): ?string {
 		return 'Case email (shared mailbox)';
@@ -136,6 +142,8 @@ class EmailSettings implements IDelegatedSettings {
 	 * flag and never surfaced as a readable delegated value.
 	 *
 	 * @return array<string,string[]> Map of appId to allowed config keys.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function getAuthorizedAppConfig(): array {
 		return [Application::APP_ID => self::MANAGED_KEYS];

@@ -36,6 +36,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
  */
 class SettingsServiceTest extends TestCase {
 

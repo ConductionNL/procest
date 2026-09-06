@@ -37,6 +37,8 @@ use RuntimeException;
 /**
  * HMAC-based JWT validation with first-class tenant claim support. Minting
  * lives with the external broker that issues the tokens — see the note below.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
  */
 class TenantJwtService {
 	/**
@@ -98,6 +100,8 @@ class TenantJwtService {
 	 *
 	 * @throws RuntimeException When the token is malformed, the signature
 	 *                          does not match, or the token is expired.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
 	 */
 	public function validate(string $token): array {
 		$parts = explode('.', $token);
@@ -132,6 +136,8 @@ class TenantJwtService {
 	 * @return string
 	 *
 	 * @throws RuntimeException When the claim is missing.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
 	 */
 	public function extractTenantId(array $claims): string {
 		$tid = (string)($claims['tenant_id'] ?? '');

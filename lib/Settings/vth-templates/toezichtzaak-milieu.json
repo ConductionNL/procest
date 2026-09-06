@@ -1,7 +1,7 @@
 {
   "_format": "dossiq-workflow-v1",
   "title": "Toezichtzaak Milieu",
-  "description": "Workflow voor milieu-inspectie — periodiek of incidenteel toezicht op milieuactiviteiten.",
+  "description": "Workflow voor milieu-inspectie: periodiek of incidenteel toezicht op milieuactiviteiten.",
   "version": 1,
   "steps": [
     {
@@ -88,9 +88,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Checklist moet zijn ingevuld"
-          }
+          "message": "Checklist moet zijn ingevuld"
         }
       ],
       "actions": []
@@ -139,9 +137,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Hercontrole moet zijn uitgevoerd"
-          }
+          "message": "Hercontrole moet zijn uitgevoerd"
         }
       ],
       "actions": []

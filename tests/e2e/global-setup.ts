@@ -12,12 +12,16 @@
  * from the canonical journeydoc template in hydra/templates/journeydoc/.
  */
 
-import { chromium, request, type FullConfig } from '@playwright/test'
+import type { FullConfig } from '@playwright/test'
+
+import { chromium, request } from '@playwright/test'
 import { execSync } from 'child_process'
-import * as path from 'path'
 import * as fs from 'fs'
-import { STORAGE_STATE } from './helpers/auth'
-import { BASE_URL } from './base-url'
+import * as path from 'path'
+import { BASE_URL } from './base-url.ts'
+import { STORAGE_STATE } from './helpers/auth.ts'
+import { getRequestToken, sweepFixtureResidue } from './helpers/fixtures.ts'
+import { assertOccReachable } from './helpers/occ.ts'
 
 const APP_ROOT = path.resolve(__dirname, '..', '..')
 const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'dossiq-main.js')
@@ -33,7 +37,7 @@ function ensureBundleBuilt(): void {
 	if (fs.existsSync(BUNDLE_PATH)) {
 		return
 	}
-	// eslint-disable-next-line no-console
+
 	console.log(
 		`[playwright globalSetup] bundle missing at ${BUNDLE_PATH}; running 'npm run build' once…`,
 	)
@@ -63,6 +67,27 @@ async function ensureNextcloudReachable(baseURL: string): Promise<void> {
 	}
 }
 
+/**
+ * Confirm the suite can run `occ` on the instance under test, BEFORE any spec
+ * runs.
+ *
+ * The suite is otherwise pure HTTP, but `dossiq/case` declares
+ * `x-openregister-archival` and OpenRegister refuses an archival record on every
+ * HTTP delete route it serves (openregister#3428). The only sanctioned removal
+ * is `occ openregister:objects:purge --force --apply`, so a rig where occ is out
+ * of reach is a rig where teardown cannot remove a single case.
+ *
+ * Deliberately fatal, and deliberately here. Left to teardown it would surface
+ * as a survivor list half an hour in, after the run had already seeded the data
+ * it could not clear; this way it is one step failure naming exactly what to
+ * set. The probe also proves the deployed OpenRegister actually HAS the command,
+ * which is the other half of the same question.
+ */
+async function ensureOccReachable(): Promise<void> {
+	const invocation = await assertOccReachable()
+	console.log(`[playwright globalSetup] occ reachable via ${invocation}`)
+}
+
 async function globalSetup(config: FullConfig): Promise<void> {
 	// Whatever the active config resolved, else the single shared resolver.
 	// Deliberately no `?? 'http://localhost:8080'` tail: off CI that literal is
@@ -76,6 +101,7 @@ async function globalSetup(config: FullConfig): Promise<void> {
 
 	ensureBundleBuilt()
 	await ensureNextcloudReachable(baseURL)
+	await ensureOccReachable()
 	fs.mkdirSync(path.dirname(STORAGE_STATE), { recursive: true })
 
 	const browser = await chromium.launch()
@@ -167,7 +193,7 @@ async function globalSetup(config: FullConfig): Promise<void> {
 						'1',
 					)
 				}
-			} catch (e) {
+			} catch {
 				// localStorage unavailable — tour dismissal falls back to helper clicks.
 			}
 		})
@@ -177,6 +203,48 @@ async function globalSetup(config: FullConfig): Promise<void> {
 
 	await context.storageState({ path: STORAGE_STATE })
 	await browser.close()
+
+	await clearFixtureResidue(baseURL)
+}
+
+/**
+ * Delete every object an earlier fixture run left on this instance.
+ *
+ * CI builds a throwaway Nextcloud per run, so this is a no-op there. A
+ * developer rig is the case it exists for: the suite seeds cases, caseTypes,
+ * statusTypes and workflowTemplates, and until now a run that was interrupted
+ * before its teardown — or one whose cases the archival schema refused to
+ * delete — left them behind. Eleven runs on one rig accumulated 68 cases, 33 of
+ * them fixture leftovers, and the sixth soft-deleted statusType they still
+ * pointed at is what made `spec-coverage/ui-pages.spec.ts:55` fail on a second
+ * run for a reason no change had introduced.
+ *
+ * Failure here is reported, not thrown: a residue sweep that cannot reach the
+ * API should not stop the suite from running and saying so itself.
+ *
+ * @param baseURL The resolved Nextcloud base URL.
+ */
+async function clearFixtureResidue(baseURL: string): Promise<void> {
+	const api = await request.newContext({
+		baseURL,
+		storageState: STORAGE_STATE,
+	})
+	try {
+		const token = await getRequestToken(api)
+		const survivors = await sweepFixtureResidue(api, token)
+		if (survivors.length > 0) {
+			console.warn(
+				'[playwright globalSetup] fixture residue that could NOT be removed: '
+					+ survivors.join(', '),
+			)
+		}
+	} catch (error) {
+		console.warn(
+			`[playwright globalSetup] fixture residue sweep skipped: ${String(error)}`,
+		)
+	} finally {
+		await api.dispose()
+	}
 }
 
 export default globalSetup

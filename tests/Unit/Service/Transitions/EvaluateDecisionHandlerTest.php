@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 use OCA\OpenRegister\Service\Dmn\DecisionEvaluationException;
 use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
 use PHPUnit\Framework\TestCase;
@@ -38,6 +39,9 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler
+ *
+ * @uses \OCA\Dossiq\Service\CaseFieldWriter
+ *
  *
  * @uses \OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator
  * @uses \OCA\OpenRegister\Service\Dmn\DecisionEvaluationException
@@ -79,6 +83,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $this->createMock(DecisionTableService::class),
 			engine: new DecisionTableEvaluator(),
 			settingsService: $this->createMock(SettingsService::class),
+			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
 
@@ -99,6 +104,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: new DecisionTableEvaluator(),
 			settingsService: $this->createMock(SettingsService::class),
+			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
 
@@ -136,6 +142,11 @@ class EvaluateDecisionHandlerTest extends TestCase {
 				$this->recorded = $object;
 				return $object;
 			}
+
+			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+				$this->recorded = array_merge((array) $this->recorded, $data);
+				return $this->recorded;
+			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
@@ -153,6 +164,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: $this->evaluatorReturning(['eligible' => true, 'tier' => 'gold']),
 			settingsService: $settings,
+			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
 
@@ -161,6 +173,10 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			'declaredIncome' => 20000,
 			'householdSize' => 2,
 		];
+
+		// The store already holds the case: the handler writes ONLY its
+		// outputs onto it, so preservation is the store's patch semantics.
+		$recorded = $case;
 
 		$result = $handler->handle(
 			actionConfig: [
@@ -176,11 +192,12 @@ class EvaluateDecisionHandlerTest extends TestCase {
 		self::assertTrue($result->succeeded);
 		self::assertSame(['eligible' => true, 'tier' => 'gold'], $result->data['outputs']);
 
-		// The persisted case (via ObjectService::saveObject) carries the
-		// decision's outputs under the configured outputMapping fields.
+		// The stored case carries the decision's outputs under the
+		// configured outputMapping fields.
 		self::assertSame(true, $recorded['subsidyEligible']);
 		self::assertSame('gold', $recorded['subsidyTier']);
-		// Original case fields are preserved.
+		// Original case fields are preserved: the handler patches its own
+		// outputs and never full-saves its snapshot over the stored case.
 		self::assertSame('case-1', $recorded['id']);
 		self::assertSame(20000, $recorded['declaredIncome']);
 	}//end testEvaluatesDecisionAndWritesOutputsOntoCase()
@@ -205,6 +222,11 @@ class EvaluateDecisionHandlerTest extends TestCase {
 				$this->recorded = $object;
 				return $object;
 			}
+
+			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+				$this->recorded = array_merge((array) $this->recorded, $data);
+				return $this->recorded;
+			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
@@ -222,12 +244,15 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: $this->evaluatorReturning(['eligible' => true, 'tier' => 'gold']),
 			settingsService: $settings,
+			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
 
 		// No inputMapping/outputMapping: same-name default — the case must
-		// carry fields literally named `income`/`householdSize`.
-		$case = ['income' => 10000, 'householdSize' => 1];
+		// carry fields literally named `income`/`householdSize`. The id is
+		// required: a snapshot without one cannot address the stored case,
+		// and the partial write refuses it.
+		$case = ['id' => 'case-2', 'income' => 10000, 'householdSize' => 1];
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'evaluateDecision', 'decisionKey' => 'subsidy-eligibility'],
@@ -264,6 +289,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: $this->evaluatorThrowing('no_rule_matched'),
 			settingsService: $settings,
+			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
 

@@ -8,10 +8,10 @@
  * dropping, and de-duplication.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	triggerWordsToText,
 	textToTriggerWords,
+	triggerWordsToText,
 } from '../../src/utils/kccTriggerWords.js'
 
 describe('triggerWordsToText', () => {

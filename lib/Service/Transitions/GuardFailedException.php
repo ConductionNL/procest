@@ -57,6 +57,8 @@ class GuardFailedException extends RuntimeException {
 	 * Get the failed guard snapshots.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/status-transition-engine/tasks.md#T10
 	 */
 	public function getFailedGuards(): array {
 		return $this->failedGuards;

@@ -36,6 +36,8 @@ use RuntimeException;
  * Creates permit cases from DSO vergunningaanvraag messages.
  * Supports multiple activities per application and calculates
  * deadlines based on procedure type (regulier: 8 weeks, uitgebreid: 26 weeks).
+ *
+ * @spec openspec/specs/dso-omgevingsloket-client/spec.md
  */
 class DsoIntakeService {
 
@@ -139,6 +141,8 @@ class DsoIntakeService {
 	 * @param string $procedureType The procedure type (regulier or uitgebreid)
 	 *
 	 * @return string ISO 8601 duration
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getDeadlineDuration(string $procedureType): string {
 		return self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];

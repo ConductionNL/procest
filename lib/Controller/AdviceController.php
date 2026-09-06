@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Controller for advice request workflow operations.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class AdviceController extends Controller {
 	/**

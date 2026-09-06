@@ -21,39 +21,33 @@
  *
  * Navigation: a deep-link `goto('/apps/dossiq/cases')` resets the
  * history-mode router to the Dashboard and the index never fetches its data,
- * so every test lands via `navTo(page, 'Cases')` (sidebar click). The
+ * so every test lands via `navTo(page, /^(All cases|Alle zaken)$/)` (sidebar click). The
  * "Support Dossiq" dialog is dismissed before each interaction.
  *
  * The CREATE-via-UI leg is split out into its own test guarded by the known
  * generic-dialog issue (#427) — see the inline note on that test.
  */
 
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog, navTo } from '../helpers/nav'
-import {
-	RUN_PREFIX,
-	getRequestToken,
+	cleanupRunObjects,
 	ensureCaseType,
-	seedCase,
-	showObject,
-	deleteObject,
-	tryDeleteObject,
+	getRequestToken,
 	listObjects,
 	objectId,
-	cleanupRunObjects,
-} from '../helpers/fixtures'
+	RUN_PREFIX,
+	seedCase,
+	showObject,
+	tryDeleteObject,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string
 let caseTypeId: string
-let caseTypeSeeded = false
 
 test.describe('Cases — full CRUD with persistence', () => {
 	test.describe.configure({ mode: 'serial' })
@@ -63,24 +57,25 @@ test.describe('Cases — full CRUD with persistence', () => {
 		token = await getRequestToken(api)
 		const ct = await ensureCaseType(api, token)
 		caseTypeId = ct.id
-		caseTypeSeeded = ct.seeded
 	})
 
 	test.afterAll(async () => {
-		// Remove every object this run created (cases first, then a seeded
-		// caseType), so no E2E data is left in the register.
-		await cleanupRunObjects(api, token, ['case'])
-		if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
+		// Remove every object this run created, child-first, so no e2e data is
+		// left in the register. A seeded caseType carries RUN_PREFIX in its
+		// title and is swept with the rest; an ADOPTED one does not and is left
+		// alone, which is the point of the prefix.
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 
 	/**
 	 * Open the Cases index via the sidebar and wait for the data fetch to
 	 * resolve into a populated table.
+	 *
 	 * @param page The page.
 	 */
 	async function openCasesList(page: Page): Promise<void> {
-		await navTo(page, 'Cases')
+		await navTo(page, /^(All cases|Alle zaken)$/)
 		await expect(
 			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
 		).toBeVisible({ timeout: 15000 })
@@ -89,6 +84,30 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await expect(page.locator('tbody tr').first()).toBeVisible({
 			timeout: 15000,
 		})
+	}
+
+	/**
+	 * Open the Cases index narrowed to ONE seeded case, and return its row.
+	 *
+	 * ⚠️ Every assertion about "the row this test created" has to go through
+	 * here. CnIndexPage pages at 20 rows, so on a demo-sized instance the
+	 * unfiltered index shows "Showing 20 of 51, Page 1 of 3" and a case seeded
+	 * moments ago sits on page 3 — the test then fails on volume rather than on
+	 * behaviour. `?title=` is the same URL-filter mechanism the queue spec
+	 * drives with `?caseType=`; it reaches the server query, so the row is on
+	 * page 1 whatever else the instance holds.
+	 *
+	 * @param page  The page.
+	 * @param title Exact title of the seeded case.
+	 */
+	async function openCaseRow(page: Page, title: string): Promise<Locator> {
+		await page.goto(
+			`/index.php/apps/dossiq/cases?title=${encodeURIComponent(title)}`,
+		)
+		await expect(page.locator('table tbody tr')).toHaveCount(1, {
+			timeout: 15000,
+		})
+		return page.locator('table tbody tr').first()
 	}
 
 	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
@@ -106,21 +125,21 @@ test.describe('Cases — full CRUD with persistence', () => {
 		const caseId = objectId(kase)
 		expect(caseId, 'case was created via the object API').not.toBe('')
 
+		// The nav contract first: the sidebar leaf reaches a populated list.
 		await openCasesList(page)
+
+		// Then narrow to the seeded row — see openCaseRow for why.
+		const row = await openCaseRow(page, title)
 
 		// The seeded row's human fields render in the list. dossiq assigns the
 		// zaaknummer itself (schema `case` x-openregister-processing) and IGNORES
 		// any supplied identifier, so assert the ASSIGNED identifier the create
 		// returned — the seed input never reaches the row.
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({
-			timeout: 15000,
-		})
+		await expect(row).toContainText(title)
 		const assignedIdentifier = String(
 			(kase as Record<string, unknown>).identifier ?? identifier,
 		)
-		await expect(
-			page.getByText(assignedIdentifier, { exact: false }).first(),
-		).toBeVisible()
+		await expect(row).toContainText(assignedIdentifier)
 	})
 
 	// FIXME(#719): the case DETAIL page never displays the zaaknummer. A case
@@ -150,12 +169,10 @@ test.describe('Cases — full CRUD with persistence', () => {
 			(kase as Record<string, unknown>).identifier ?? identifier,
 		)
 
-		await openCasesList(page)
+		const row = await openCaseRow(page, title)
 		await dismissSupportDialog(page)
 
 		// Click the seeded case's row to open its detail view.
-		const row = page.locator('tbody tr', { hasText: title }).first()
-		await expect(row).toBeVisible({ timeout: 15000 })
 		await row.getByText(title, { exact: false }).first().click()
 
 		// CaseDetail (manifest `type:"detail"`) renders the case title + the
@@ -194,13 +211,11 @@ test.describe('Cases — full CRUD with persistence', () => {
 		})
 		const caseId = objectId(kase)
 
-		await openCasesList(page)
+		const row = await openCaseRow(page, title)
 		await dismissSupportDialog(page)
 
 		// Open the row's Actions menu and pick Edit. CnIndexPage renders a
 		// per-row "Actions" button; the edit entry opens the schema edit form.
-		const row = page.locator('tbody tr', { hasText: title }).first()
-		await expect(row).toBeVisible({ timeout: 15000 })
 		await row.getByRole('button', { name: 'Actions' }).first().click()
 		const editItem = page.getByRole('menuitem', { name: /Edit/i }).first()
 		await expect(editItem).toBeVisible({ timeout: 10000 })
@@ -279,12 +294,11 @@ test.describe('Cases — full CRUD with persistence', () => {
 			)
 			.toBe(true)
 
-		// … and still renders in the Cases list.
-		await openCasesList(page)
-		await dismissSupportDialog(page)
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({
-			timeout: 15000,
-		})
+		// … and still renders in the Cases list. Filtered, for the same reason
+		// the read leg is: past 20 cases the index pages, and "not on page 1" is
+		// not "not in the list".
+		const row = await openCaseRow(page, title)
+		await expect(row).toContainText(title)
 	})
 
 	// CREATE-via-UI. Known issue #427: in some environments the Cases "Add"
@@ -326,9 +340,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 				{ timeout: 15000 },
 			)
 			.toBe(true)
-		await openCasesList(page)
-		await expect(page.getByText(newTitle, { exact: false }).first()).toBeVisible(
-			{ timeout: 15000 },
-		)
+		const row = await openCaseRow(page, newTitle)
+		await expect(row).toContainText(newTitle)
 	})
 })

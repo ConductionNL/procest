@@ -35,6 +35,8 @@ use OCP\IUserSession;
 
 /**
  * Controller for case email operations.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class EmailController extends Controller {
 	/**

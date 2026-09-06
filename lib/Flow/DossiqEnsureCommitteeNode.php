@@ -192,9 +192,12 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * @throws RuntimeException When the committee cannot be resolved or raised.
      *
      * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $context is IFlowNode's
+     * contract; the run's acting identity in it is applied by the engine's
+     * dispatcher now (openregister#3332), not read here.
      */
     public function execute(array $items, array $config, array $context): array {
-        unset($context);
         $this->validateConfig(config: $config);
 
         $field     = $this->configString(config: $config, key: 'committeeField', fallback: self::DEFAULT_COMMITTEE_FIELD);
@@ -218,6 +221,10 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
                 continue;
             }
 
+            // The committee READ and the mapping WRITE run under the flow
+            // run's `runAs` identity: the engine's RegistryStepDispatcher
+            // executes every contributed node inside `ObjectService::runAs()`
+            // (openregister#3332), so no local wrap is needed.
             $json[$outputKey] = $this->resolveBodyId(committeeId: $committeeId);
             $item['json']     = $json;
             $out[]            = $item;

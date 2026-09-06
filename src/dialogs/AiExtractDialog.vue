@@ -149,7 +149,7 @@ export default {
 
 	watch: {
 		/**
-		 * @param val
+		 * @param {string|number|boolean|object} val The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
 		 */
 		show(val) {
@@ -179,7 +179,7 @@ export default {
 		},
 
 		/**
-		 * @param checked
+		 * @param {boolean} checked Whether the checked is set.
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
 		 */
 		toggleAll(checked) {
@@ -187,7 +187,7 @@ export default {
 		},
 
 		/**
-		 * @param name
+		 * @param {string} name The name.
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
 		 */
 		toggleField(name) {

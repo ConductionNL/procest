@@ -36,6 +36,8 @@ use OCP\Util;
 
 /**
  * Dashboard widget showing available case types for quick case creation.
+ *
+ * @spec openspec/specs/dashboard/spec.md
  */
 class StartCaseWidget implements IWidget {
 	/**
@@ -55,6 +57,8 @@ class StartCaseWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget identifier
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getId(): string {
 		// FROZEN at the old app-id prefix — see CasesOverviewWidget::getId().
@@ -66,6 +70,8 @@ class StartCaseWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget title
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getTitle(): string {
 		return $this->l10n->t('Start case');
@@ -76,6 +82,8 @@ class StartCaseWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return int The widget order
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getOrder(): int {
 		return 15;
@@ -86,6 +94,8 @@ class StartCaseWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The icon CSS class
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getIconClass(): string {
 		return 'icon-dossiq-widget';
@@ -96,6 +106,8 @@ class StartCaseWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string|null The widget URL or null
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getUrl(): ?string {
 		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
@@ -108,6 +120,8 @@ class StartCaseWidget implements IWidget {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function load(): void {
 		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).

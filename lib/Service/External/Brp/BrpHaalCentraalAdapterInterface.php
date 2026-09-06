@@ -95,6 +95,8 @@ interface BrpHaalCentraalAdapterInterface {
 	 *
 	 * @return BrpLookupResult The lookup outcome (status + persoon
 	 *                         envelope minus BSN).
+	 *
+	 * @spec openspec/changes/brp-kvk-register-sets/proposal.md
 	 */
 	public function lookup(string $bsn, array $context = []): BrpLookupResult;
 
@@ -103,6 +105,8 @@ interface BrpHaalCentraalAdapterInterface {
 	 * Haal Centraal.
 	 *
 	 * @return bool TRUE when the adapter is a log-only stub.
+	 *
+	 * @spec openspec/changes/brp-kvk-register-sets/proposal.md
 	 */
 	public function isDormant(): bool;
 }//end interface

@@ -116,10 +116,7 @@ export default {
 		 * @spec openspec/specs/my-work/spec.md
 		 */
 		filter() {
-			const uid =
-				(getCurrentUser() && getCurrentUser().uid)
-				|| (typeof OC !== 'undefined' && OC.currentUser)
-				|| ''
+			const uid = (getCurrentUser() && getCurrentUser().uid) || ''
 			return { assignee: uid }
 		},
 
@@ -187,7 +184,7 @@ export default {
 		 * Build a UUID→name map from an OpenRegister collection.
 		 *
 		 * @param {Array<object>} collection The fetched objects.
-		 * @return {Object<string, string>} id → title/name.
+		 * @return {{[key: string]: string}} id to title or name.
 		 */
 		buildNameMap(collection) {
 			const map = {}

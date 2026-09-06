@@ -33,9 +33,18 @@
 - [x] Implement
 - [x] Test
 
-### Task 4: Retire workflowTemplate and collapse the two menu entries
+### Task 4: Collapse the two menu entries onto Flows
+- **spec_ref**: `.../spec.md#requirement-req-wdf-006-flows-is-the-single-authoring-entry`
+- **files**: `src/manifest.json`, `src/menu-layout.json`, `tests/e2e/changed-surfaces.spec.ts`, `tests/e2e/spec-coverage/settings-pages.spec.ts`
+- **acceptance_criteria**:
+  - GIVEN the settings menu THEN Flows is present and Workflow definitions is absent
+  - GIVEN a direct link to `/settings/workflow-definitions` THEN the page still renders
+- [x] Implement
+- [x] Test — with a control asserting Flows IS present, so a menu that failed to render cannot pass as an absence
+
+### Task 5: Retire the workflowTemplate object itself
 - **spec_ref**: deferred
 - **acceptance_criteria**:
-  - Deliberately out of scope. The projection must be adopted and proven before the definition can go, and the definition still carries per-step SLAs, checklists and roles the projection does not. Removing the definitions page while it is still the only authoring surface would take away the way to edit a live workflow.
+  - Deliberately out of scope, and narrower than it was. The menu no longer offers two answers (Task 4), and OpenRegister#3350 gave `UserTaskNode` the ability to arm its own deadline, so a projected flow can now carry the per-step SLAs the definition used to hold alone. What the projection still does not carry is per-step checklists and roles. Retiring the object means moving those first; until then the page stays routable so a live definition can still be read and edited deliberately.
 - [ ] Implement
 - [ ] Test

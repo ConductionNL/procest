@@ -30,6 +30,10 @@
   @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 -->
 <template>
+	<!-- CnNotesTabComponent is a COMPUTED component (leafTab('notes')),
+	     guarded by the v-if below. The rule resolves registered
+	     components only and cannot see a computed one. -->
+	<!-- eslint-disable-next-line vue/no-undef-components -->
 	<CnNotesTabComponent
 		v-if="CnNotesTabComponent"
 		:objectId="objectId"

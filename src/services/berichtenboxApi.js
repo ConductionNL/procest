@@ -4,7 +4,7 @@ import { generateUrl } from '@nextcloud/router'
 const baseUrl = generateUrl('/apps/dossiq/api/berichtenbox')
 
 /**
- * @param data
+ * @param {object} data The data.
  * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
  */
 export async function sendMessage(data) {
@@ -13,7 +13,7 @@ export async function sendMessage(data) {
 }
 
 /**
- * @param caseId
+ * @param {string} caseId Identifier of the case id.
  * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
  */
 export async function listMessages(caseId) {
@@ -28,7 +28,7 @@ export async function getTypeCodes() {
 }
 
 /**
- * @param messageId
+ * @param {string} messageId Identifier of the message id.
  * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
  */
 export async function pollReadStatus(messageId) {

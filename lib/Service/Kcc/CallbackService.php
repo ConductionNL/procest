@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $isPrivileged is the standard
  * cross-agent/own-record scoping flag used across the app's controllers.
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
 class CallbackService {
 	/**
@@ -71,6 +73,8 @@ class CallbackService {
 	 * @return array<string, mixed> The callback payload.
 	 *
 	 * @throws OCSBadRequestException When validation fails.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
 	 */
 	public function buildPayload(array $data, string $agentId): array {
 		$phone = trim((string)($data['customerPhone'] ?? ''));
@@ -144,6 +148,8 @@ class CallbackService {
 	 * @return array<string, mixed> The updated callback record.
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $succeeded is the attempt outcome.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-callback-scheduling-and-sla-tracking
 	 */
 	public function applyAttempt(array $callback, bool $succeeded, ?DateTimeImmutable $now = null): array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -181,6 +187,8 @@ class CallbackService {
 	 * @return array<string, mixed> The cancelled callback record.
 	 *
 	 * @throws OCSBadRequestException When not found or not owned.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-callback-scheduling-and-sla-tracking
 	 */
 	public function cancel(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -208,6 +216,8 @@ class CallbackService {
 	 * @param bool $isPrivileged Whether the caller may see all callbacks.
 	 *
 	 * @return array<int, array<string, mixed>> The callback requests.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-callback-scheduling-and-sla-tracking
 	 */
 	public function list(array $filters, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -232,6 +242,8 @@ class CallbackService {
 	 * @param array<string, mixed> $callback The callback record.
 	 *
 	 * @return array<string, mixed> The saved record.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-callback-scheduling-and-sla-tracking
 	 */
 	public function persist(string $id, array $callback): array {
 		[$objectService, $register, $schema] = $this->resolve();

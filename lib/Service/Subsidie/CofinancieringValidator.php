@@ -50,6 +50,8 @@ class CofinancieringValidator {
 	 * @param array<int, array<string, mixed>> $rows The contribution rows.
 	 *
 	 * @return float The total in EUR.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function sumBedragen(array $rows): float {
 		$sum = 0.0;
@@ -69,6 +71,8 @@ class CofinancieringValidator {
 	 * @param float $projectTotal The project total.
 	 *
 	 * @return bool True when the funding sources reconcile to the total.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function reconciles(float $subsidyAmount, array $cofinanciering, float $projectTotal): bool {
 		$total = ($subsidyAmount + $this->sumBedragen(rows: $cofinanciering));
@@ -81,6 +85,8 @@ class CofinancieringValidator {
 	 * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
 	 *
 	 * @return bool True when EU co-financing is present.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function hasEuCofinanciering(array $cofinanciering): bool {
 		foreach ($cofinanciering as $row) {
@@ -104,6 +110,8 @@ class CofinancieringValidator {
 	 * @param float $projectTotal The project total.
 	 *
 	 * @return array{valid: bool, error: string|null, euCofinanciering: bool}
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function validate(float $subsidyAmount, array $cofinanciering, float $projectTotal): array {
 		if ($projectTotal <= 0.0) {

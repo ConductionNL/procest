@@ -79,55 +79,65 @@ class VthWorkflowGraphResolver {
 	/**
 	 * Resolve the steps[] and transitions[] blocks against the status map.
 	 *
-	 * Returns null when any status name does not resolve — the caller reports
-	 * that as skipped (no partial seed).
+	 * A non-empty `unresolved` means the template must not be seeded: the
+	 * caller reports it as skipped and there is no partial seed.
+	 *
+	 * 🔑 IT NAMES WHAT IT COULD NOT RESOLVE, AND IT COLLECTS ALL OF THEM. The
+	 * old version returned null at the first miss and logged "unresolved status
+	 * in steps", so the one thing an operator needed, which status, was the one
+	 * thing the message left out. `toezichtbezoek` named the status `Inspectie`
+	 * while its case type `toezichtzaak-bouw` carries `Inspectie fase 1` to
+	 * `fase 3`, and that mismatch survived every install since the catalogue
+	 * shipped because nothing ever printed the name.
 	 *
 	 * @param array<string, mixed> $data The decoded catalog entry.
 	 * @param string $slug The template slug.
 	 * @param array<string, string> $statusMap Status name → UUID map.
 	 * @param array<string, string> $spawnTargets Template slug → caseType UUID, for spawnCase.
 	 *
-	 * @return array<string, mixed>|null {steps, transitions}, or null when unresolved
+	 * @return array{steps: array<int, array<string, mixed>>, transitions: array<int, array<string, mixed>>, unresolved: array<int, string>}
 	 *
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
-	public function resolve(array $data, string $slug, array $statusMap, array $spawnTargets = []): ?array {
-		$resolvedSteps = $this->resolveSteps(
+	public function resolve(array $data, string $slug, array $statusMap, array $spawnTargets = []): array {
+		$steps = $this->resolveSteps(
 			slug: $slug,
 			rawSteps: ($data['steps'] ?? []),
 			statusMap: $statusMap,
 		);
-		if ($resolvedSteps === null) {
-			$this->logger->warning(
-				'Dossiq: VTH workflow template — unresolved status in steps, skipping',
-				['app' => Application::APP_ID, 'slug' => $slug]
-			);
-			return null;
-		}
 
-		$resolvedTransitions = $this->resolveTransitions(
+		$transitions = $this->resolveTransitions(
 			slug: $slug,
 			rawTransitions: ($data['transitions'] ?? []),
 			statusMap: $statusMap,
 			spawnTargets: $spawnTargets,
 		);
-		if ($resolvedTransitions === null) {
+
+		$unresolved = array_values(
+			array_unique(array_merge($steps['unresolved'], $transitions['unresolved']))
+		);
+
+		if ($unresolved !== []) {
 			$this->logger->warning(
-				'Dossiq: VTH workflow template — unresolved status in transitions, skipping',
-				['app' => Application::APP_ID, 'slug' => $slug]
+				'Dossiq: VTH workflow template skipped, the case type has no such status',
+				[
+					'app' => Application::APP_ID,
+					'slug' => $slug,
+					'unresolvedStatuses' => $unresolved,
+					'availableStatuses' => array_keys($statusMap),
+				]
 			);
-			return null;
 		}
 
 		return [
-			'steps' => $resolvedSteps,
-			'transitions' => $resolvedTransitions,
+			'steps' => $steps['rows'],
+			'transitions' => $transitions['rows'],
+			'unresolved' => $unresolved,
 		];
 	}//end resolve()
 
 	/**
 	 * Resolve the steps[] block against the status name → UUID map.
-	 * Returns null when any status name does not resolve.
 	 *
 	 * `$rawSteps` is deliberately typed as a list of MIXED: it comes straight
 	 * from `json_decode()` of a catalog file, so a malformed entry can be a
@@ -137,10 +147,11 @@ class VthWorkflowGraphResolver {
 	 * @param array<int, mixed> $rawSteps Steps from the catalog file
 	 * @param array<string, string> $statusMap Name → UUID map
 	 *
-	 * @return array<int, array<string, mixed>>|null Resolved steps, or null
+	 * @return array{rows: array<int, array<string, mixed>>, unresolved: array<int, string>}
 	 */
-	private function resolveSteps(string $slug, array $rawSteps, array $statusMap): ?array {
+	private function resolveSteps(string $slug, array $rawSteps, array $statusMap): array {
 		$resolved = [];
+		$unresolved = [];
 		foreach ($rawSteps as $step) {
 			if (is_array($step) === false) {
 				continue;
@@ -148,7 +159,8 @@ class VthWorkflowGraphResolver {
 
 			$statusName = (string)($step['statusName'] ?? '');
 			if ($statusName === '' || isset($statusMap[$statusName]) === false) {
-				return null;
+				$unresolved[] = $this->nameOrPlaceholder(name: $statusName, placeholder: '(no statusName)');
+				continue;
 			}
 
 			$stepSlug = (string)($step['slug'] ?? '');
@@ -166,13 +178,13 @@ class VthWorkflowGraphResolver {
 			];
 		}//end foreach
 
-		return $resolved;
+		return ['rows' => $resolved, 'unresolved' => $unresolved];
 	}//end resolveSteps()
 
 	/**
 	 * Resolve the transitions[] block against the status name → UUID map.
-	 * Accepts "*" as a wildcard for fromStatus (any status). Returns null
-	 * when any non-wildcard status name does not resolve.
+	 * Accepts "*" as a wildcard for fromStatus (any status), and names every
+	 * non-wildcard status that does not resolve.
 	 *
 	 * `$rawTransitions` is deliberately typed as a list of MIXED: it comes
 	 * straight from `json_decode()` of a catalog file, so a malformed entry can
@@ -184,24 +196,30 @@ class VthWorkflowGraphResolver {
 	 * @param array<string, string> $statusMap Name → UUID map
 	 * @param array<string, string> $spawnTargets Template slug → caseType UUID
 	 *
-	 * @return array<int, array<string, mixed>>|null Resolved transitions, or null
+	 * @return array{rows: array<int, array<string, mixed>>, unresolved: array<int, string>}
 	 */
-	private function resolveTransitions(string $slug, array $rawTransitions, array $statusMap, array $spawnTargets): ?array {
+	private function resolveTransitions(string $slug, array $rawTransitions, array $statusMap, array $spawnTargets): array {
 		$resolved = [];
+		$unresolved = [];
 		foreach ($rawTransitions as $transition) {
 			if (is_array($transition) === false) {
 				continue;
 			}
 
 			$toName = (string)($transition['toStatus'] ?? '');
-			if ($toName === '' || isset($statusMap[$toName]) === false) {
-				return null;
-			}
-
 			$fromName = (string)($transition['fromStatus'] ?? '');
 			$fromId = $this->resolveFromStatus(fromName: $fromName, statusMap: $statusMap);
+
+			if ($toName === '' || isset($statusMap[$toName]) === false) {
+				$unresolved[] = $this->nameOrPlaceholder(name: $toName, placeholder: '(no toStatus)');
+			}
+
 			if ($fromId === null) {
-				return null;
+				$unresolved[] = $this->nameOrPlaceholder(name: $fromName, placeholder: '(no fromStatus)');
+			}
+
+			if ($fromId === null || $toName === '' || isset($statusMap[$toName]) === false) {
+				continue;
 			}
 
 			$transitionSlug = (string)($transition['slug'] ?? '');
@@ -225,7 +243,7 @@ class VthWorkflowGraphResolver {
 			];
 		}//end foreach
 
-		return $resolved;
+		return ['rows' => $resolved, 'unresolved' => $unresolved];
 	}//end resolveTransitions()
 
 	/**
@@ -313,6 +331,25 @@ class VthWorkflowGraphResolver {
 			],
 		];
 	}//end normaliseSpawnCase()
+
+	/**
+	 * The status name, or a placeholder when the catalogue entry left it out.
+	 *
+	 * A missing name and an unknown name are both reasons to skip, and the
+	 * summary has to tell them apart.
+	 *
+	 * @param string $name The name from the catalogue entry.
+	 * @param string $placeholder What to report when there is no name at all.
+	 *
+	 * @return string The name to report.
+	 */
+	private function nameOrPlaceholder(string $name, string $placeholder): string {
+		if ($name === '') {
+			return $placeholder;
+		}
+
+		return $name;
+	}//end nameOrPlaceholder()
 
 	/**
 	 * Resolve one transition's fromStatus name to a UUID.

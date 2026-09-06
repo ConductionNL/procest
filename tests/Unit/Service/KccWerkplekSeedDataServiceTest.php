@@ -90,6 +90,54 @@ class KccWerkplekSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * A refused row is counted, and refusals make the seed unsuccessful.
+	 *
+	 * THE COUNTS ARE THE WHOLE POINT. `seed()` used to log each row failure and
+	 * then return `success: true` with the untouched counters, so "seven rows
+	 * refused" and "seven rows already present" both came back as
+	 * `success: true, quickActions: 0, belplannen: 0` — and only one of those
+	 * means the install is healthy. The repair step printed the second reading
+	 * either way.
+	 *
+	 * @return void
+	 */
+	public function testRefusedRowsAreCountedAndBreakSuccess(): void {
+		$objects = new RefusingKccSeedObjectService();
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'dossiq',
+					'kcc_quick_action_schema' => 'kccQuickAction',
+					'belplan_schema' => 'belplan',
+					default => '',
+				};
+			},
+		);
+
+		$result = (new KccWerkplekSeedDataService($settings, $this->createMock(LoggerInterface::class)))->seed();
+
+		self::assertSame(false, $result['success'], 'a seed that seeded nothing must not report success');
+		self::assertSame(7, $result['failed'], 'every refused row must be counted');
+		self::assertSame(0, $result['quickActions']);
+		self::assertSame(0, $result['belplannen']);
+		self::assertStringContainsString('refused', (string)$result['message']);
+	}//end testRefusedRowsAreCountedAndBreakSuccess()
+
+	/**
+	 * A healthy seed still reports no failures, so the counter cannot be noise.
+	 *
+	 * @return void
+	 */
+	public function testASuccessfulSeedReportsNoFailures(): void {
+		$result = $this->service->seed();
+
+		self::assertSame(true, $result['success']);
+		self::assertSame(0, $result['failed']);
+	}//end testASuccessfulSeedReportsNoFailures()
+
+	/**
 	 * @return void
 	 */
 	public function testQuickActionTypesAreValidEnumValues(): void {
@@ -191,4 +239,53 @@ class FakeKccSeedObjectService {
 		$schema = (string)(($query['@self'] ?? [])['schema'] ?? '');
 		return $this->findObjects('', $schema);
 	}
+}
+
+/**
+ * An ObjectService that refuses every write, the way OpenRegister refuses Anonymous.
+ *
+ * The read side answers empty rather than throwing, which is the harder case:
+ * the seed then believes nothing exists yet and attempts every row.
+ */
+class RefusingKccSeedObjectService {
+	/**
+	 * Refuse the write.
+	 *
+	 * @param array<string, mixed> $object Object.
+	 * @param string $register Register id.
+	 * @param string $schema Schema id.
+	 *
+	 * @return array<string, mixed> Never returns.
+	 *
+	 * @throws \RuntimeException Always.
+	 */
+	public function saveObject(array $object, string $register, string $schema): array {
+		throw new \RuntimeException(
+			sprintf("User 'Anonymous' does not have permission to 'create' objects in schema '%s'", $schema)
+		);
+	}//end saveObject()
+
+	/**
+	 * Slug-aware search bridge, answering empty.
+	 *
+	 * @param string $registerSlug Register slug.
+	 * @param string $schemaSlug Schema slug.
+	 * @param array<string, mixed> $filters Filters.
+	 *
+	 * @return array<int, array<string, mixed>> Always empty.
+	 */
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+		return [];
+	}//end searchObjectsBySlug()
+
+	/**
+	 * Numeric-ID search bridge, answering empty.
+	 *
+	 * @param array<string, mixed> $query Query.
+	 *
+	 * @return array<int, array<string, mixed>> Always empty.
+	 */
+	public function searchObjects(array $query = []): array {
+		return [];
+	}//end searchObjects()
 }

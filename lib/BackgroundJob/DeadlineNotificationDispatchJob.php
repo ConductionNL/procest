@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
  * Asynchronous queued notification dispatcher.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 class DeadlineNotificationDispatchJob extends QueuedJob {
 	/**

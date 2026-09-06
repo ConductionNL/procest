@@ -7,6 +7,7 @@
  * payload (see lib/Service/ProcessMiningService.php) into the exact
  * CnChartWidget series/categories and table row arrays the view renders.
  * Dossiq owns this shaping arithmetic; the chart engine itself is
+ *
  * @conduction/nextcloud-vue's CnChartWidget (ADR-Leaf-First — no bespoke
  * chart components here).
  *

@@ -88,6 +88,8 @@ export default {
 		},
 	},
 
+	emits: ['open'],
+
 	computed: {
 		/**
 		 * Card heading for one case on the personal work index.

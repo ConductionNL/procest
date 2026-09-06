@@ -51,6 +51,8 @@ use RuntimeException;
  *   PATCH  /api/saas/tenants/{tenantId}       → update (display + optional status)
  *   DELETE /api/saas/tenants/{tenantId}       → destroy
  *   POST   /api/saas/tenants/{tenantId}/status → transition
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-02-tenant-crud-lifecycle/tasks.md
  */
 class TenantSaasController extends Controller {
 	/**

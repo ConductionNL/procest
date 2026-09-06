@@ -146,6 +146,8 @@ export default {
 		},
 	},
 
+	emits: ['drafted'],
+
 	data() {
 		return {
 			loading: true,

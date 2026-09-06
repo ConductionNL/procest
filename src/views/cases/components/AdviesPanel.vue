@@ -132,7 +132,7 @@ export default {
 		caseId: {
 			immediate: true,
 			/**
-			 * @param value
+			 * @param {string|number|boolean|object} value The new value.
 			 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 			 */
 			handler(value) {
@@ -169,7 +169,7 @@ export default {
 		},
 
 		/**
-		 * @param item
+		 * @param {object} item The item.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		async onRemind(item) {
@@ -181,7 +181,7 @@ export default {
 		},
 
 		/**
-		 * @param item
+		 * @param {object} item The item.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		async onMarkReceived(item) {
@@ -197,7 +197,7 @@ export default {
 		},
 
 		/**
-		 * @param item
+		 * @param {object} item The item.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		onViewDocument(item) {
@@ -207,7 +207,7 @@ export default {
 		},
 
 		/**
-		 * @param type
+		 * @param {string} type The type.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		typeLabel(type) {
@@ -217,7 +217,7 @@ export default {
 		},
 
 		/**
-		 * @param type
+		 * @param {string} type The type.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		typeBadgeType(type) {
@@ -225,7 +225,7 @@ export default {
 		},
 
 		/**
-		 * @param status
+		 * @param {string} status The status.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		statusLabel(status) {
@@ -238,7 +238,7 @@ export default {
 		},
 
 		/**
-		 * @param status
+		 * @param {string} status The status.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		statusBadgeType(status) {
@@ -251,7 +251,7 @@ export default {
 		},
 
 		/**
-		 * @param item
+		 * @param {object} item The item.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		isOverdue(item) {
@@ -262,7 +262,7 @@ export default {
 		},
 
 		/**
-		 * @param item
+		 * @param {object} item The item.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		daysOverdue(item) {
@@ -274,7 +274,7 @@ export default {
 		},
 
 		/**
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		formatDate(value) {

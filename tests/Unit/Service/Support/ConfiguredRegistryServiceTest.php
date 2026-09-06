@@ -307,6 +307,67 @@ class ConfiguredRegistryServiceTest extends TestCase {
 	}//end testSaveWithAnIdUpdatesInPlace()
 
 	/**
+	 * 🔴 A CLIENT-SUPPLIED IDENTITY MUST NOT ADDRESS AN OBJECT.
+	 *
+	 * `saveObject()` resolves its target from the payload — `@self.id` first,
+	 * then `id` — and the write is PUT-semantic, so keys the payload omits are
+	 * NULLED. Every caller here builds the payload from
+	 * `$this->request->getParams()`.
+	 *
+	 * Several callers stripped `id` for exactly this reason and did not know
+	 * about `@self`. Measured on a running instance BEFORE this fix: a POST to
+	 * the create endpoint carrying `@self: {id: <another role>}` returned 201
+	 * with the victim's own uuid, and the victim's row came back holding the
+	 * attacker's values.
+	 *
+	 * @return void
+	 */
+	public function testAClientSuppliedIdentityCannotAddressAnObject(): void {
+		$this->withConfig('14', '153');
+		$stub = $this->objectService();
+		$service = $this->subject($stub);
+
+		$service->save(
+			'organisatie_rol_schema',
+			[
+				'roleName' => 'X',
+				'id' => 'someone-elses-object',
+				'uuid' => 'someone-elses-object',
+				'@self' => ['id' => 'someone-elses-object'],
+			]
+		);
+
+		$written = $stub->calls[0][3];
+		$this->assertArrayNotHasKey('id', $written);
+		$this->assertArrayNotHasKey('uuid', $written);
+		$this->assertArrayNotHasKey('@self', $written, '@self is the key saveObject reads FIRST');
+		$this->assertSame('X', $written['roleName'], 'the rest of the payload still saves');
+	}//end testAClientSuppliedIdentityCannotAddressAnObject()
+
+	/**
+	 * The explicit $id parameter still wins, so updates keep working.
+	 *
+	 * The guard above must not turn every update into a create — that would
+	 * trade a security hole for silent data duplication.
+	 *
+	 * @return void
+	 */
+	public function testTheExplicitIdParameterStillAddressesTheObject(): void {
+		$this->withConfig('14', '153');
+		$stub = $this->objectService();
+		$service = $this->subject($stub);
+
+		$service->save(
+			'organisatie_rol_schema',
+			['roleName' => 'X', '@self' => ['id' => 'someone-elses-object']],
+			'role-9'
+		);
+
+		$this->assertSame('role-9', $stub->calls[0][3]['id']);
+		$this->assertArrayNotHasKey('@self', $stub->calls[0][3]);
+	}//end testTheExplicitIdParameterStillAddressesTheObject()
+
+	/**
 	 * Saving into an unconfigured registry throws rather than silently no-oping.
 	 *
 	 * A silent no-op here is exactly the failure mode procest#794 was about:

@@ -18,34 +18,8 @@
  * were removed); their obsolete scenarios were dropped here accordingly.
  */
 
-import { test, expect } from '@playwright/test'
-import { navToRoute, trackDossiqErrors } from '../helpers/nav'
-
-test.describe('Beroepen (appeals) index page', () => {
-	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#beroepen-index-page-renders-list-shell
-	test('beroepen index renders the appeals list shell with a create control', async ({
-		page,
-	}) => {
-		const errors = trackDossiqErrors(page)
-		// The nav renders "Appeals", not "Beroepen" — navigate by route so this
-		// does not depend on the current translation of the menu string.
-		await navToRoute(page, '/beroepen')
-		// View switcher renders as buttons, not radios.
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		// Distinct create control for the appeals surface.
-		await expect(
-			page.getByRole('button', { name: /^Add Beroep|^Add Case/ }),
-		).toBeVisible()
-		await expect(
-			page.getByRole('button', { name: 'Actions' }).first(),
-		).toBeVisible()
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-		expect(errors, errors.join('\n')).toEqual([])
-	})
-})
+import { expect, test } from '@playwright/test'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 test.describe('Bezwaaradviescommissies (advisory committees) page', () => {
 	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaar-committees-settings-page-renders-list-shell

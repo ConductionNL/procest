@@ -55,7 +55,7 @@ class TermijnNotificationServiceTest extends TestCase {
 			},
 		);
 
-		$objects->saveObject('dossiq', 'deadlineInstance', [
+		$objects->seed('deadlineInstance', [
 			'id' => 'ti-1',
 			'case' => 'Z/2026/300',
 			'endDateCurrent' => '2026-07-27',

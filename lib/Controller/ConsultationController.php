@@ -43,6 +43,8 @@ use OCP\IRequest;
  *
  * Every endpoint carries the NoAdminRequired annotation and applies the
  * ConsultationAccessGuard (OWASP A01:2021, ADR-005 Rule 3).
+ *
+ * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
  */
 class ConsultationController extends Controller {
 	/**

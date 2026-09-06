@@ -35,6 +35,8 @@ use OCP\IUserSession;
 
 /**
  * Controller for zaaktype template management.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class TemplateController extends Controller {
 	/**

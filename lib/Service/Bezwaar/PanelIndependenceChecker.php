@@ -181,8 +181,13 @@ class PanelIndependenceChecker {
 		// to treating the input as the case id.
 		$caseId = $objectionId;
 		if ($legacyObjSchema !== '') {
-			$bezwaar = $objectService->find($objectionId, register: $register, schema: $legacyObjSchema);
-			if (is_array($bezwaar) === true) {
+			$bezwaar = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $legacyObjSchema,
+				id: $objectionId
+			);
+			if ($bezwaar !== null) {
 				$caseId = (string)($bezwaar['case'] ?? $objectionId);
 			}
 		}
@@ -207,8 +212,13 @@ class PanelIndependenceChecker {
 			return '';
 		}
 
-		$decision = $objectService->find($contestedId, register: $register, schema: $decisionSchema);
-		if (is_array($decision) === false) {
+		$decision = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $decisionSchema,
+			id: $contestedId
+		);
+		if ($decision === null) {
 			return '';
 		}
 

@@ -33,6 +33,8 @@ use OCP\IRequest;
 
 /**
  * Public (citizen-facing) endpoints for appointment view/cancel by token.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class PublicAppointmentController extends Controller {
 	/**

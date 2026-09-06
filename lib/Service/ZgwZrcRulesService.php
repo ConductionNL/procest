@@ -61,6 +61,8 @@ namespace OCA\Dossiq\Service;
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
+ *
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class ZgwZrcRulesService extends ZgwRulesBase {
 	/**

@@ -31,7 +31,7 @@
 						v-for="org in commonOrganizations"
 						:key="org"
 						type="tertiary"
-						@click="aangezochtBevoegdGezag = org">
+						@click="requestedCompetentAuthority = org">
 						{{ org }}
 					</NcButton>
 				</div>
@@ -56,7 +56,7 @@
 			</NcButton>
 			<NcButton
 				type="primary"
-				:disabled="!aangezochtBevoegdGezag || submitting"
+				:disabled="!requestedCompetentAuthority || submitting"
 				@click="submit">
 				{{ t('dossiq', 'Initiate') }}
 			</NcButton>

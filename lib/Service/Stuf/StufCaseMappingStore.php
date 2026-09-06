@@ -109,7 +109,7 @@ class StufCaseMappingStore {
 	}//end persist()
 
 	/**
-	 * The (bronEntiteit, bronId, endpointId) triple that identifies one mapping.
+	 * The (sourceEntity, sourceId, endpointId) triple that identifies one mapping.
 	 *
 	 * @param array $case The case.
 	 * @param array $endpoint The endpoint.
@@ -118,7 +118,7 @@ class StufCaseMappingStore {
 	 */
 	private function identity(array $case, array $endpoint): array {
 		return [
-			'bronEntiteit' => 'case',
+			'sourceEntity' => 'case',
 			'sourceId' => (string)($case['id'] ?? ''),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
 		];

@@ -316,7 +316,7 @@ export default {
 			this.loading = true
 			try {
 				const result = await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})
 				this.statusTypes = result || []
@@ -377,7 +377,7 @@ export default {
 		},
 
 		/**
-		 * @param st
+		 * @param {object} st The status type.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		startEdit(st) {
@@ -455,7 +455,7 @@ export default {
 		},
 
 		/**
-		 * @param st
+		 * @param {object} st The status type.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		async deleteStatusType(st) {
@@ -495,8 +495,8 @@ export default {
 
 		// Drag and drop
 		/**
-		 * @param index
-		 * @param event
+		 * @param {number} index Index of the row in the list.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		onDragStart(index, event) {
@@ -505,7 +505,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		onDragOver(index) {
@@ -519,7 +519,7 @@ export default {
 		},
 
 		/**
-		 * @param targetIndex
+		 * @param {number} targetIndex The target index.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		async onDrop(targetIndex) {

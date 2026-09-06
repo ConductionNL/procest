@@ -9,7 +9,7 @@
  * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
 	collectUnresolved,
 	renderPreview,

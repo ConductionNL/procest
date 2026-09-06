@@ -87,13 +87,13 @@ export default {
 	name: 'CasesOnMapView',
 	components: { CnMapWidget, NcSelect, NcLoadingIcon, AlertIcon },
 	props: {
-		/** OpenRegister register slug holding the cases. @type {string} */
+		/** @type {string} OpenRegister register slug holding the cases. */
 		register: {
 			type: String,
 			default: 'dossiq',
 		},
 
-		/** OpenRegister schema slug for the case objects. @type {string} */
+		/** @type {string} OpenRegister schema slug for the case objects. */
 		schema: {
 			type: String,
 			default: 'case',

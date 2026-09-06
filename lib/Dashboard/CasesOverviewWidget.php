@@ -36,6 +36,8 @@ use OCP\Util;
 
 /**
  * Dashboard widget showing an overview of recent cases.
+ *
+ * @spec openspec/specs/dashboard/spec.md
  */
 class CasesOverviewWidget implements IWidget {
 	/**
@@ -55,6 +57,8 @@ class CasesOverviewWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget identifier
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getId(): string {
 		// FROZEN at `procest_*` — deliberately NOT renamed with the app id.
@@ -73,6 +77,8 @@ class CasesOverviewWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The widget title
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getTitle(): string {
 		return $this->l10n->t('Cases overview');
@@ -83,6 +89,8 @@ class CasesOverviewWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return int The widget order
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getOrder(): int {
 		return 10;
@@ -93,6 +101,8 @@ class CasesOverviewWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string The icon CSS class
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getIconClass(): string {
 		return 'icon-dossiq-widget';
@@ -103,6 +113,8 @@ class CasesOverviewWidget implements IWidget {
 	 *
 	 * @inheritDoc
 	 * @return string|null The widget URL or null
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getUrl(): ?string {
 		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
@@ -115,6 +127,8 @@ class CasesOverviewWidget implements IWidget {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function load(): void {
 		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).

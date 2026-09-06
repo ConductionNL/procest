@@ -39,6 +39,7 @@ const BASE_URL = generateUrl('/apps/dossiq/api/external/bag')
  * @param {string} [options.huisnummertoevoeging] House number addition.
  * @return {Promise<{lookupStatus: string, address: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
 export async function lookupAddress(postcode, huisnummer, options = {}) {
@@ -59,6 +60,7 @@ export async function lookupAddress(postcode, huisnummer, options = {}) {
  * @param {string} id BAG pand identificatie.
  * @return {Promise<{lookupStatus: string, address: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
 export async function lookupPand(id) {
@@ -72,6 +74,7 @@ export async function lookupPand(id) {
  * @param {string} id BAG verblijfsobject identificatie.
  * @return {Promise<{lookupStatus: string, address: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
+ *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
 export async function lookupVerblijfsobject(id) {

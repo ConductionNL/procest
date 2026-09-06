@@ -11,10 +11,10 @@
  * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-4-1
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	buildSpanPreview,
 	buildInitialSelections,
+	buildSpanPreview,
 	filterSelectedSpans,
 	isSpanToggleable,
 } from '../../src/utils/redactionAssistHelpers.js'

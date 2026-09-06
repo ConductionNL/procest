@@ -30,7 +30,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param id
+		 * @param {string} id Identifier of the id.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		openDetail(id) {
@@ -51,7 +51,7 @@ export default {
 		},
 
 		/**
-		 * @param id
+		 * @param {string} id Identifier of the id.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		onSaved(id) {

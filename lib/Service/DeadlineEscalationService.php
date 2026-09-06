@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Threshold-aware escalation dispatcher for the daily termijn scan.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
  */
 class DeadlineEscalationService {
 	/**

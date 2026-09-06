@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
  * Ensures that users can only access data belonging to their tenant.
  * Platform admins can access any tenant via context switching.
  * Returns 404 (not 403) for cross-tenant access to prevent information leakage.
+ *
+ * @spec openspec/specs/tenant-isolation/spec.md
  */
 class TenantMiddleware extends Middleware {
 	/**
@@ -79,6 +81,8 @@ class TenantMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $methodName is fixed by
 	 * OCP\AppFramework\Middleware::beforeController(); the tenant check keys off
 	 * the controller class and the request, not the action name.
+	 *
+	 * @spec openspec/specs/tenant-isolation/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		// Skip for exempt controllers.
@@ -157,6 +161,8 @@ class TenantMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
 	 * inspected.
+	 *
+	 * @spec openspec/specs/tenant-isolation/spec.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): JSONResponse {
 		if ($exception->getCode() === 404) {

@@ -33,6 +33,8 @@ use DateTimeZone;
 
 /**
  * Persists and updates StufMessage audit rows.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
 class StufMessageHandler {
 
@@ -81,7 +83,7 @@ class StufMessageHandler {
 	 * @param string $messageKind The bericht code (Lk01, Lv01, ...).
 	 * @param string $role The functie (creeerZaak, ...).
 	 * @param string|null $caseId Optional zaak identificatie.
-	 * @param string|null $bronEntiteit Optional dossiq source-entity type (case, contact).
+	 * @param string|null $sourceEntity Optional dossiq source-entity type (case, contact).
 	 * @param string|null $sourceId Optional dossiq source-entity id.
 	 *
 	 * @return array The persisted StufMessage as array.
@@ -95,22 +97,22 @@ class StufMessageHandler {
 		string $messageKind,
 		string $role,
 		?string $caseId = null,
-		?string $bronEntiteit = null,
+		?string $sourceEntity = null,
 		?string $sourceId = null,
 	): array {
 		$data = [
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
 			'direction' => self::DIRECTION_OUTBOUND,
-			'berichtSoort' => $messageKind,
+			'messageKind' => $messageKind,
 			'role' => $role,
 			'entiteittype' => 'ZAK',
-			'referentienummer' => $referentienummer,
+			'referenceNumber' => $referentienummer,
 			'caseIdentification' => ($caseId ?? ''),
-			'gerelateerdeZaakId' => ($caseId ?? ''),
+			'relatedCaseId' => ($caseId ?? ''),
 			'envelopeXml' => $envelopeXml,
 			'sentOn' => $this->isoNow(),
-			'bronEntiteit' => ($bronEntiteit ?? ''),
+			'sourceEntity' => ($sourceEntity ?? ''),
 			'sourceId' => ($sourceId ?? ''),
 			'status' => 'verzonden',
 			'retries' => [],
@@ -144,12 +146,12 @@ class StufMessageHandler {
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
 			'direction' => self::DIRECTION_INBOUND,
-			'berichtSoort' => $messageKind,
+			'messageKind' => $messageKind,
 			'role' => ($role ?? ''),
 			'entiteittype' => 'ZAK',
 			'crossRefnummer' => $crossRefnummer,
 			'caseIdentification' => ($caseId ?? ''),
-			'gerelateerdeZaakId' => ($caseId ?? ''),
+			'relatedCaseId' => ($caseId ?? ''),
 			'envelopeXml' => $responseXml,
 			'sentOn' => $this->isoNow(),
 			'receivedOn' => $this->isoNow(),
@@ -164,7 +166,7 @@ class StufMessageHandler {
 	 * @param array $msg The existing StufMessage row.
 	 * @param int $attempt The retry attempt number.
 	 * @param int $httpStatus The HTTP status code on this attempt.
-	 * @param array $fout The fout payload (code, omschrijving, details, soort).
+	 * @param array $fout The fout payload (code, omschrijving, details, kind).
 	 * @param int $durationMs The wall-clock duration of this attempt.
 	 *
 	 * @return array The updated row.
@@ -174,10 +176,10 @@ class StufMessageHandler {
 	public function recordRetry(array $msg, int $attempt, int $httpStatus, array $fout, int $durationMs): array {
 		$retries = (array)($msg['retries'] ?? []);
 		$retries[] = [
-			'poging' => $attempt,
+			'attempt' => $attempt,
 			'timestamp' => $this->isoNow(),
 			'httpStatus' => $httpStatus,
-			'duurMs' => $durationMs,
+			'durationMs' => $durationMs,
 			'fout' => $fout,
 		];
 		$msg['retries'] = $retries;
@@ -191,7 +193,7 @@ class StufMessageHandler {
 	 *
 	 * @param array $msg The existing message row.
 	 * @param string $newStatus One of verzonden, bevestigd, fout, wacht_op_retry.
-	 * @param array $extras Optional extra fields to merge (httpStatus, duurMs, fout, responseEnvelopeXml, ontvangenOp).
+	 * @param array $extras Optional extra fields to merge (httpStatus, durationMs, fout, responseEnvelopeXml, receivedOn).
 	 *
 	 * @return array The updated row.
 	 *
@@ -222,7 +224,7 @@ class StufMessageHandler {
 	public function findOutboundByReferentienummer(string $referentienummer): ?array {
 		$match = $this->register->findOne(
 			schema: StufRegisterAccess::SCHEMA_MESSAGE,
-			filters: ['referentienummer' => $referentienummer, 'direction' => self::DIRECTION_OUTBOUND]
+			filters: ['referenceNumber' => $referentienummer, 'direction' => self::DIRECTION_OUTBOUND]
 		);
 
 		if ($match !== null) {
@@ -239,7 +241,7 @@ class StufMessageHandler {
 		// IN and has to be a second query.
 		return $this->register->findOne(
 			schema: StufRegisterAccess::SCHEMA_MESSAGE,
-			filters: ['referentienummer' => $referentienummer, 'direction' => self::LEGACY_DIRECTION_OUTBOUND]
+			filters: ['referenceNumber' => $referentienummer, 'direction' => self::LEGACY_DIRECTION_OUTBOUND]
 		);
 	}//end findOutboundByReferentienummer()
 

@@ -41,6 +41,8 @@ use Throwable;
 
 /**
  * Transcription orchestrator for voice-memo FieldEvidence records.
+ *
+ * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
  */
 class TranscriptionService {
 	/**

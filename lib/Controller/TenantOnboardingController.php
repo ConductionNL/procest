@@ -35,6 +35,8 @@ use OCP\IUserSession;
 
 /**
  * Onboarding REST controller.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 class TenantOnboardingController extends Controller {
 	/**
@@ -58,6 +60,8 @@ class TenantOnboardingController extends Controller {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function progress(string $tenantId): JSONResponse {
@@ -76,6 +80,8 @@ class TenantOnboardingController extends Controller {
 	 * @param string $step Step name.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function complete(string $tenantId, string $step): JSONResponse {
@@ -107,6 +113,8 @@ class TenantOnboardingController extends Controller {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function activate(string $tenantId): JSONResponse {
@@ -125,6 +133,8 @@ class TenantOnboardingController extends Controller {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function initialise(string $tenantId): JSONResponse {

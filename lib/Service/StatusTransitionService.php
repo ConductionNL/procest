@@ -110,9 +110,13 @@ class StatusTransitionService {
 			return ['transitions' => [], 'current' => []];
 		}
 
-		$caseTypeId = (string)($case['caseType'] ?? '');
 		$currentId = (string)($case['status'] ?? '');
-		$template = $this->templateLoader->getActiveTemplate(caseTypeId: $caseTypeId);
+
+		// 🔑 THE CASE, NOT ITS CASE TYPE. A case type may carry several routes,
+		// and a case pinned to one of them must be offered that route's
+		// transitions. Asking by case type alone returned whichever active
+		// definition the store listed first.
+		$template = $this->templateLoader->getTemplateForCase(case: $case);
 
 		$result = [
 			'transitions' => [],
@@ -163,7 +167,7 @@ class StatusTransitionService {
 	 * Execute a guarded transition.
 	 *
 	 * @param string $caseId Case UUID
-	 * @param string $transitionId Transition id from the active workflowTemplate
+	 * @param string $transitionId Transition id from the workflow the case runs on
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 *
@@ -184,8 +188,7 @@ class StatusTransitionService {
 		// H2: Capture the @self.version at read time for the optimistic lock check below.
 		$readVersion = (int)(($case['@self']['version'] ?? ($case['version'] ?? 0)));
 
-		$caseTypeId = (string)($case['caseType'] ?? '');
-		$transition = $this->templateLoader->getTransitionById(caseTypeId: $caseTypeId, transitionId: $transitionId);
+		$transition = $this->templateLoader->getTransitionForCase(case: $case, transitionId: $transitionId);
 		if ($transition === null) {
 			throw new RuntimeException('transition_not_found');
 		}

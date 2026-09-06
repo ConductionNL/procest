@@ -49,6 +49,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Dispatches needs-input events for the StUF adapter.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-needs-input-escalation
  */
 class NeedsInputDispatcher {
 	/**

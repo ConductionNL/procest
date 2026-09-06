@@ -89,6 +89,7 @@ export default {
 
 		/**
 		 * Load the audit for the entered year.
+		 *
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		load() {

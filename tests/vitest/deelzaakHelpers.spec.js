@@ -25,12 +25,12 @@
  * @spec openspec/changes/deelzaak-support/tasks.md#T11
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	subCaseCountBadge,
 	hasSubCaseBadge,
 	orphanWarningMessage,
 	requiresOrphanWarning,
+	subCaseCountBadge,
 } from '../../src/utils/deelzaakHelpers.js'
 
 describe('subCaseCountBadge', () => {

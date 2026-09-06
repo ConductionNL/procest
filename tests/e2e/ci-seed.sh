@@ -198,7 +198,7 @@ required = {
     # components.schemas.<key>.slug — every one of these is exercised by
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
-    'schemas': ['case', 'caseType', 'statusType', 'workflowTemplate', 'task', 'complaint'],
+    'schemas': ['case', 'caseType', 'statusType', 'workflowTemplate', 'caseTask', 'complaint'],
 }[kind]
 with open(path) as fh:
     raw = fh.read()
@@ -215,6 +215,24 @@ except json.JSONDecodeError:
     sys.exit(1)
 items = body if isinstance(body, list) else body.get('results', [])
 slugs = {i.get('slug') for i in items if isinstance(i, dict)}
+
+# A PAGE IS NOT THE POPULATION. `total` is what the instance holds; `items` is
+# what this request returned. On a shared instance carrying several apps those
+# differ wildly, and a slug that simply fell off the page reads exactly like a
+# slug the import never created — with an error message that blames the import.
+# Refuse to judge rather than report a false absence.
+total = None
+if isinstance(body, dict):
+    for _k in ('total', 'count'):
+        if isinstance(body.get(_k), int):
+            total = body[_k]
+            break
+if total is not None and total > len(items):
+    print(f'::error::{kind} listing is TRUNCATED: {len(items)} of {total} returned.')
+    print('::error::Raise the _limit on this request. A missing slug cannot be '
+          'distinguished from one that fell off the page, so this check is '
+          'refusing to report either.')
+    sys.exit(1)
 missing = [s for s in required if s not in slugs]
 print(f'[ci-seed] {kind} present ({len(slugs)}): {sorted(s for s in slugs if s)}')
 if missing:
@@ -230,13 +248,13 @@ PY
 REG_BODY="$(mktemp)"
 REG_CODE="$(curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
 	-o "$REG_BODY" -w '%{http_code}' \
-	"${BASE}/index.php/apps/openregister/api/registers?_limit=300" || echo 000)"
+	"${BASE}/index.php/apps/openregister/api/registers?_limit=2000" || echo 000)"
 verify "$REG_BODY" registers "$REG_CODE"
 
 SCH_BODY="$(mktemp)"
 SCH_CODE="$(curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
 	-o "$SCH_BODY" -w '%{http_code}' \
-	"${BASE}/index.php/apps/openregister/api/schemas?_limit=1000" || echo 000)"
+	"${BASE}/index.php/apps/openregister/api/schemas?_limit=10000" || echo 000)"
 verify "$SCH_BODY" schemas "$SCH_CODE"
 
 # The register existing is still not the same as it being READABLE by the admin
@@ -294,7 +312,7 @@ for path in \
 	"/index.php/apps/dossiq/api/settings" \
 	"/index.php/apps/dossiq/api/manifest" \
 	"/index.php/settings/admin/dossiq" \
-	"/index.php/apps/openregister/api/registers?_limit=1"
+	"/index.php/apps/openregister/api/registers?_limit=2000"
 do
 	code="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" \
 		-H 'OCS-APIRequest: true' "${BASE}${path}" || echo 000)"
@@ -392,27 +410,23 @@ if [ "$DEMO_CODE" != "200" ]; then
 	echo "::warning::skip-demo-data returned HTTP ${DEMO_CODE}; if this app declares a demo-data step, the setup wizard will cover the SPA in every spec."
 fi
 
-# Project the workflow definitions onto flows.
+# NOTHING RUNS HERE, AND THAT IS THE FIX (dossiq#1556 vs #1557).
 #
-# `changed-surfaces.spec.ts` asserts that every workflow definition appears as
-# a DISABLED projected flow, carrying the `dossiq:workflowTemplate:` marker.
-# Nothing here produced them and the app does not project on install -- it is a
-# one-shot migration, and the spec says so in its own failure:
+# Two PRs landed the same projection step within minutes of each other. #1557
+# put it in section 2b above, where it belongs: it names `--user`, which the
+# command REQUIRES ("--user is required: a flow needs an owner and an
+# organisation"), and it `exit 1`s on failure. #1556 appended a second copy
+# here that named no --user and sent both streams to /dev/null, so the command
+# returned INVALID on every single run and the script reported it as a
+# `::warning` nobody reads. It projected nothing, ever.
 #
-#   Error: no projected flow found - run `occ dossiq:workflows:migrate-to-flows`
+# CI stayed green because the flows arrived incidentally from whatever else had
+# touched the instance first -- the block's own comment admitted as much. Proven
+# on a rig: with `--user admin` the command creates 4 correctly-disabled
+# projected flows and `changed-surfaces.spec.ts` passes 7/7.
 #
-# The spec still passed most of the time, which is the part worth naming: the
-# flows were arriving incidentally from whatever else had touched the instance
-# first. A precondition that holds by accident is a test that fails on ordering
-# rather than on the behaviour it claims to check.
-#
-# `php occ` bare, matching the other seeds in the fleet: the shared workflow
-# invokes this script with cwd at the Nextcloud server root. Idempotent -- a
-# second run re-projects the same definitions rather than duplicating them.
-if php occ dossiq:workflows:migrate-to-flows >/dev/null 2>&1; then
-	echo "[ci-seed] projected workflow definitions onto flows"
-else
-	echo "::warning::dossiq:workflows:migrate-to-flows failed; changed-surfaces.spec.ts will report no projected flows."
-fi
+# So the duplicate is gone rather than repaired. One invocation, in the section
+# whose ordering comment explains why it must follow the register import, and it
+# fails the seed loudly instead of quietly degrading the suite's preconditions.
 
 echo "[ci-seed] done."

@@ -73,16 +73,51 @@ class ZgwZtcRulesServiceTest extends TestCase {
 			}
 
 			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				// Real OpenRegister contract: a top-level `id`/`uuid` filter
+				// addresses a schema property no schema declares and matches
+				// ZERO rows. Only declared-property filters resolve.
+				if (isset($filters['id']) === true || isset($filters['uuid']) === true) {
+					return [];
+				}
+
 				// Key on (register|schema|caseType filter) — the production filter shape.
 				$caseType = (string)($filters['caseType'] ?? '');
 				$isFinal = isset($filters['isFinal']) === true ? '1' : '';
-				$idFilter = (string)($filters['id'] ?? '');
-				$key = $register . '|' . $schema . '|' . $caseType . '|' . $isFinal . '|' . $idFilter;
+				$key = $register . '|' . $schema . '|' . $caseType . '|' . $isFinal . '|';
 				return $this->map[$key] ?? [];
 			}
 
 			public function searchObjects(array $query): array {
 				return [];
+			}
+
+			/**
+			 * The real get-by-id path: resolves the id directly, throws on a
+			 * miss, returns an entity-shaped object like the live service.
+			 */
+			public function find(
+				int|string $id,
+				?array $_extend = [],
+				bool $files = false,
+				string|int|null $register = null,
+				string|int|null $schema = null,
+			): object {
+				foreach ($this->map as $rows) {
+					foreach ($rows as $row) {
+						if (($row['id'] ?? null) === (string)$id) {
+							return new class ($row) implements \JsonSerializable {
+								public function __construct(private readonly array $row) {
+								}
+
+								public function jsonSerialize(): array {
+									return $this->row;
+								}
+							};
+						}
+					}
+				}
+
+				throw new \OCP\AppFramework\Db\DoesNotExistException('Object ' . $id . ' does not exist');
 			}
 		};
 	}

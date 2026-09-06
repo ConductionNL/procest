@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Pre-send domain error: vrijBericht template not registered.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 class VrijBerichtNotRegisteredException extends StufException {
 }//end class

@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Resolves vault references to plaintext secrets at send time.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
  */
 class StufVaultService {
 	/**

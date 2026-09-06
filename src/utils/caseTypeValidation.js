@@ -39,9 +39,6 @@ export function getConfidentialityOptions() {
  *
  * @param {object} data Case type data
  * @return {{ valid: boolean, errors: object }}
- */
-/**
- * @param data
  * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
  */
 export function validateCaseType(data) {
@@ -105,10 +102,6 @@ export function validateCaseType(data) {
  * @param {object} caseType Case type data
  * @param {Array} statusTypes Array of status type objects linked to this case type
  * @return {{ valid: boolean, errors: string[] }}
- */
-/**
- * @param caseType
- * @param statusTypes
  * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
  */
 export function validateForPublish(caseType, statusTypes) {
@@ -147,7 +140,7 @@ export function validateForPublish(caseType, statusTypes) {
 
 /**
  *
- * @param field
+ * @param {object} field The field.
  */
 function getFieldLabel(field) {
 	const labels = {

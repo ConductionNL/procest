@@ -106,7 +106,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param key
+		 * @param {string} key The key.
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		editMapping(key) {
@@ -114,7 +114,7 @@ export default {
 		},
 
 		/**
-		 * @param config
+		 * @param {object} config The config.
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async saveMapping(config) {
@@ -129,7 +129,7 @@ export default {
 		},
 
 		/**
-		 * @param key
+		 * @param {string} key The key.
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async resetMapping(key) {

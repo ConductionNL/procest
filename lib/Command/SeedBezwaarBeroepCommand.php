@@ -40,6 +40,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Seed the Bezwaar & Beroep case types, status types and role types.
+ *
+ * @spec openspec/specs/bezwaar-beroep-workflow/spec.md#requirement-req-bbw-001-bezwaar-casetype-seed-shall-be-installed-with-awb-compliant-process-configuration
  */
 class SeedBezwaarBeroepCommand extends Command {
 	/**

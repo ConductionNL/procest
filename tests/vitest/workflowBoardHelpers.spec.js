@@ -6,7 +6,7 @@
  * resolution (kanban-board-keyboard-status-transition, REQ-KBD-01).
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { columnsExcludingCurrent } from '../../src/utils/workflowBoardHelpers.js'
 
 describe('columnsExcludingCurrent', () => {

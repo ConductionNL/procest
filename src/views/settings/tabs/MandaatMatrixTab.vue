@@ -122,7 +122,7 @@ export default {
 		active: {
 			immediate: true,
 			/**
-			 * @param v
+			 * @param {string|number|boolean|object} v The new value.
 			 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 			 */
 			handler(v) {
@@ -187,7 +187,7 @@ export default {
 		},
 
 		/**
-		 * @param mandaat
+		 * @param {object} mandaat The mandaat.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		openEditor(mandaat) {
@@ -213,7 +213,7 @@ export default {
 		},
 
 		/**
-		 * @param payload
+		 * @param {object} payload The payload.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		async onMandaatSave(payload) {

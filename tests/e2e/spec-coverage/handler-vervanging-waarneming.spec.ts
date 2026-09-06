@@ -14,13 +14,13 @@
  * gracefully rather than hard-failing the suite.
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { becomesVisible } from '../helpers/becomes-visible.js'
-import { dismissSupportDialog } from '../helpers/nav'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 import {
 	SubstitutionAdmin,
 	SubstitutionPersonalSettings,
-} from '../helpers/page-components'
+} from '../helpers/page-components.ts'
 
 test.describe('Handler vervanging/waarneming spec coverage', () => {
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution

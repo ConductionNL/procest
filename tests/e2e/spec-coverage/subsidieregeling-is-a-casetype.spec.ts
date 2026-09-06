@@ -18,7 +18,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { dismissSupportDialog, navToRoute, sidebarNav } from '../helpers/nav'
+import { dismissSupportDialog, navToRoute, sidebarNav } from '../helpers/nav.ts'
 
 test.setTimeout(90000)
 

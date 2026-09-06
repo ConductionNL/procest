@@ -51,6 +51,8 @@ use Throwable;
 
 /**
  * Middleware that resolves the tenant and binds it to the TenantContext.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
  */
 class TenantContextMiddleware extends Middleware {
 	/**
@@ -100,6 +102,8 @@ class TenantContextMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $methodName is fixed by
 	 * OCP\AppFramework\Middleware::beforeController(); tenant resolution keys off
 	 * the controller class and the request, not the action name.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		if (in_array(get_class($controller), self::EXEMPT_CONTROLLERS, true) === true) {
@@ -150,6 +154,8 @@ class TenantContextMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::afterException(); this hook only
 	 * re-throws.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		throw $exception;

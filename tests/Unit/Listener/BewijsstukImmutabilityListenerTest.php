@@ -91,7 +91,7 @@ class BewijsstukImmutabilityListenerTest extends TestCase {
 	private function entity(array $payload, string $schemaId = self::SCHEMA): ObjectEntity {
 		$entity = new ObjectEntity();
 		$entity->setObject($payload);
-		$entity->setSchemaId($schemaId);
+		$entity->setSchema($schemaId);
 		$entity->setUuid('22222222-2222-2222-2222-222222222222');
 
 		return $entity;

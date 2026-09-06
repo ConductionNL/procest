@@ -2,8 +2,8 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Dossiq Case Management Register",
-        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-        "version": "0.13.2"
+        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts.",
+        "version": "0.14.0"
     },
     "x-openregister": {
         "type": "application",
@@ -16,12 +16,12 @@
         "schemas": {
             "caseType": {
                 "slug": "caseType",
-                "icon": "BriefcaseVariantOutline",
+                "icon": "FolderCogOutline",
                 "version": "1.2.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
-                "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+                "description": "Case type definition: defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
                 "type": "object",
                 "required": [
                     "title"
@@ -44,13 +44,6 @@
                         "type": "string",
                         "description": "Auto-generated identifier",
                         "title": "Identifier"
-                    },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
                     },
                     "purpose": {
                         "type": "string",
@@ -90,7 +83,7 @@
                         ],
                         "default": "bpmn",
                         "title": "Handling Model",
-                        "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) = the structured workflowTemplate/StatusTransitionService engine, unchanged. 'cmmn' = the adaptive CaseModelEngine (caseModel definition, case.casePlanState runtime). A caseType is driven by exactly one of the two — see openspec/specs/cmmn-adaptive-case/spec.md REQ-CMMN-008."
+                        "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) uses the structured workflow template. 'cmmn' uses the adaptive case model. A case type is driven by exactly one of the two."
                     },
                     "confidentiality": {
                         "type": "string",
@@ -216,7 +209,7 @@
                     },
                     "defaultAssignee": {
                         "type": "string",
-                        "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type (REQ-INTAKE-03a)",
+                        "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type",
                         "title": "Default assignee"
                     },
                     "workflowDefinition": {
@@ -226,7 +219,7 @@
                         "x-relation-filter": {
                             "caseType": "@objectId"
                         },
-                        "description": "UUID reference to the pinned active workflowTemplate for this case type. When unset, new cases fall through to the latest published workflowTemplate for this caseType. New cases are bound to the version that is published+isActive at the moment of case creation (see case.workflowTemplate + case.workflowVersion).",
+                        "description": "The default route through this case type: the workflow a case follows when it is not given one of its own. A case type may carry several routes, and this names the one new cases take. When unset, a case falls through to the case type's only active workflow. A case keeps the workflow it was bound to, even after a newer version is published (see case.workflowTemplate and case.workflowVersion).",
                         "title": "Workflow Definition"
                     },
                     "layerIds": {
@@ -237,7 +230,7 @@
                             "$ref": "wmsLayer"
                         },
                         "default": [],
-                        "description": "Subscribed wmsLayer UUIDs visible on this case type's maps (wms-wfs-layers REQ-WMS-4). Empty array = only isDefault layers visible.",
+                        "description": "Subscribed wmsLayer UUIDs visible on this case type's maps. An empty array shows only the default layers.",
                         "title": "Layer IDs"
                     },
                     "iv3TaskField": {
@@ -293,6 +286,19 @@
                         "default": false,
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "intake",
+                            "pending-info",
+                            "in-progress",
+                            "review",
+                            "closed",
+                            "stranded"
+                        ],
+                        "description": "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.",
+                        "title": "Role"
                     }
                 }
             },
@@ -366,7 +372,7 @@
             "roleType": {
                 "slug": "roleType",
                 "icon": "BadgeAccountOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "RolType",
                 "title": "Role Type",
@@ -396,6 +402,21 @@
                         "description": "Reference to the parent case type",
                         "title": "Case Type"
                     },
+                    "genericRole": {
+                        "type": "string",
+                        "enum": [
+                            "initiator",
+                            "co_initiator",
+                            "handler",
+                            "advisor",
+                            "decision_maker",
+                            "coordinator",
+                            "stakeholder",
+                            "contact"
+                        ],
+                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",
+                        "title": "Generic Role"
+                    },
                     "ncGroupId": {
                         "type": "string",
                         "nullable": true,
@@ -407,7 +428,7 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
                 "title": "Property Definition",
@@ -453,8 +474,14 @@
                             "enum",
                             "json"
                         ],
-                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative — flattening them to 'string' — moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
+                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative: flattening them to 'string'. Moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
                         "title": "Property Type"
+                    },
+                    "maxLength": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Maximum length",
+                        "description": "Longest value this property accepts."
                     },
                     "enumValues": {
                         "type": "array",
@@ -469,6 +496,13 @@
                         "default": false,
                         "description": "Whether this property is required on cases",
                         "title": "Is Required"
+                    },
+                    "requiredAtStatus": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "statusType",
+                        "title": "Required from status",
+                        "description": "The status from which this property must be answered."
                     },
                     "defaultValue": {
                         "type": "string",
@@ -502,13 +536,6 @@
                         "description": "Description of this document type",
                         "x-translatable": true,
                         "title": "Description"
-                    },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
                     },
                     "caseType": {
                         "type": "string",
@@ -593,13 +620,6 @@
                         "description": "Description of this decision type",
                         "x-translatable": true,
                         "title": "Description"
-                    },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
                     },
                     "caseType": {
                         "type": "string",
@@ -699,8 +719,8 @@
                         }
                     }
                 },
-                "icon": "BriefcaseOutline",
-                "version": "1.9.0",
+                "icon": "FolderAccountOutline",
+                "version": "1.13.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -987,7 +1007,7 @@
                         "daysSinceActivity": {
                             "type": "integer",
                             "materialise": false,
-                            "description": "Whole days since the object was last modified (falls back to creation date). v1 sources @self.updated — the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
+                            "description": "Whole days since the object was last modified (falls back to creation date). V1 sources @self.updated: the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
                             "expression": {
                                 "dateDiff": {
                                     "from": {
@@ -1018,13 +1038,6 @@
                             }
                         }
                     },
-                    "x-openregister-lifecycle": {
-                        "field": "status",
-                        "initial": {
-                            "from": "caseType",
-                            "field": "initialStatus"
-                        }
-                    },
                     "x-openregister-flows": [
                         {
                             "name": "Case behandeling",
@@ -1050,13 +1063,41 @@
                                     "id": "status-ontvangen",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Ontvangen"
+                                        "status": "Ontvangen",
+                                        "role": "intake"
                                     }
                                 },
                                 {
                                     "id": "check-complete",
                                     "type": "openregister.switch",
-                                    "config": {}
+                                    "config": {},
+                                    "_note": "The conditions live HERE, on exits[], because that is the engine's contract: FlowTokenRouter reads a node's exits and follows edges by fromExit. They used to sit on the edges themselves, where the engine never looks. Every enabled transition then appeared unconditional, the first one won, and a COMPLETE case was routed to 'Wacht op aanvulling'. Exits are tried in declaration order; the one without a condition is the required else.",
+                                    "exits": [
+                                        {
+                                            "id": "compleet",
+                                            "condition": {
+                                                "!!": [
+                                                    {
+                                                        "var": "json.description"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": "onvolledig",
+                                            "condition": {
+                                                "<": [
+                                                    {
+                                                        "var": "json.aanvullingRound"
+                                                    },
+                                                    3
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": "gestrand"
+                                        }
+                                    ]
                                 },
                                 {
                                     "id": "count-round",
@@ -1078,16 +1119,20 @@
                                     "id": "status-wacht",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Wacht op aanvulling"
+                                        "status": "Wacht op aanvulling",
+                                        "role": "pending-info",
+                                        "required": false
                                     }
                                 },
                                 {
-                                    "id": "ask-indiener",
+                                    "id": "ask-aanvulling",
                                     "type": "dossiq.askPerson",
+                                    "_note": "THIS STEP ADDRESSES THE BEHANDELAAR, NOT THE INDIENER, AND IT USED TO BE NAMED AND WORDED AS THOUGH IT DID THE OPPOSITE. An indiener has no Nextcloud identity in this app at all: the case carries them as `initiatorSourceId` (a BSN, a KvK number or a contact URI) or as the pseudonymous `portalSubject`, while a task's `assignee` is a Nextcloud uid or group id and the completion gate resolves it as one. So the ask cannot go to the applicant. It goes to the handler, who asks the applicant and records the supplement on the case, which is also the only way `description` gets filled and the loop back to `check-complete` ever takes the `compleet` exit.\n\nAND IT MUST NAME SOMEBODY WHEN THE CASE NAMES NOBODY. `assignee` is not in the case schema's `required`, so a case filed from the New case dialog with only a title and a case type has none, `{{ case.assignee }}` resolved to nothing, and the run DIED here: reproduced twice on clean installs. `assigneeFallback` is the declared second choice, the same `behandelaars` group `task-behandelaar` already uses and ProvisionAssignedGroups already creates. Unassigned work goes to the group's queue rather than killing the case.",
                                     "config": {
-                                        "question": "Vul uw aanvraag aan",
-                                        "details": "Uw aanvraag is nog niet compleet. Vul de ontbrekende gegevens aan zodat wij verder kunnen.",
+                                        "question": "Vraag de indiener om aanvulling",
+                                        "details": "Deze aanvraag is niet compleet. Vraag de indiener om de ontbrekende gegevens en vul ze aan in de zaak.",
                                         "assignee": "{{ case.assignee }}",
+                                        "assigneeFallback": "behandelaars",
                                         "dueInDays": "14",
                                         "signalKey": "aanvulling"
                                     }
@@ -1096,7 +1141,9 @@
                                     "id": "status-gestrand",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Gestrand"
+                                        "status": "Gestrand",
+                                        "role": "stranded",
+                                        "required": false
                                     }
                                 },
                                 {
@@ -1108,7 +1155,8 @@
                                     "id": "status-behandeling",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "In behandeling"
+                                        "status": "In behandeling",
+                                        "role": "in-progress"
                                     }
                                 },
                                 {
@@ -1144,7 +1192,9 @@
                                     "id": "status-commissie",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Bij commissie"
+                                        "status": "Bij commissie",
+                                        "role": "review",
+                                        "required": false
                                     }
                                 },
                                 {
@@ -1164,16 +1214,19 @@
                                 {
                                     "id": "besluit-document",
                                     "type": "dossiq.action.mergeTemplate",
+                                    "_note": "The keys are the ones DossiqMergeTemplateNode REQUIRES (templateSlug + targetField); the first shipped config said template/outputName, which validateConfig refuses at execute(), so every run stranded here and no case could ever close. The `template` key carries the inline template text (HandlesTemplates::renderTemplate reads it first and treats it as the template itself, not a lookup key). targetField must be a property the case schema declares, or the store silently strips the rendered document on save.",
                                     "config": {
-                                        "template": "besluit",
-                                        "outputName": "besluit.pdf"
+                                        "templateSlug": "besluit",
+                                        "template": "Besluit op de aanvraag {{case.title}} ({{case.identifier}}). De planningscommissie heeft de aanvraag beoordeeld. Uitkomst: {{case.commissieBesluit.decision}}. Dit besluit is vastgelegd bij afronding van de behandeling.",
+                                        "targetField": "besluitDocument"
                                     }
                                 },
                                 {
                                     "id": "status-afgehandeld",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Afgehandeld"
+                                        "status": "Afgehandeld",
+                                        "role": "closed"
                                     }
                                 },
                                 {
@@ -1196,34 +1249,23 @@
                                 {
                                     "id": "e-compleet",
                                     "from": "check-complete",
+                                    "fromExit": "compleet",
                                     "to": "status-behandeling",
-                                    "label": "compleet",
-                                    "condition": {
-                                        "!!": [
-                                            {
-                                                "var": "json.description"
-                                            }
-                                        ]
-                                    }
+                                    "label": "compleet"
                                 },
                                 {
                                     "id": "e-onvolledig",
                                     "from": "check-complete",
+                                    "fromExit": "onvolledig",
                                     "to": "status-wacht",
-                                    "label": "onvolledig",
-                                    "condition": {
-                                        "<": [
-                                            {
-                                                "var": "json.aanvullingRound"
-                                            },
-                                            3
-                                        ]
-                                    }
+                                    "label": "onvolledig"
                                 },
                                 {
                                     "id": "e-gestrand",
                                     "from": "check-complete",
-                                    "to": "status-gestrand"
+                                    "fromExit": "gestrand",
+                                    "to": "status-gestrand",
+                                    "label": "gestrand"
                                 },
                                 {
                                     "id": "e-wacht",
@@ -1233,11 +1275,11 @@
                                 {
                                     "id": "e-count",
                                     "from": "count-round",
-                                    "to": "ask-indiener"
+                                    "to": "ask-aanvulling"
                                 },
                                 {
                                     "id": "e-heraanbieding",
-                                    "from": "ask-indiener",
+                                    "from": "ask-aanvulling",
                                     "to": "check-complete"
                                 },
                                 {
@@ -1304,13 +1346,14 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Title of this case",
-                        "title": "Title"
+                        "title": "Title",
+                        "order": 2
                     },
                     "description": {
                         "type": "string",
                         "description": "Detailed description of this case",
-                        "visible": false,
-                        "title": "Description"
+                        "title": "Description",
+                        "order": 3
                     },
                     "identifier": {
                         "type": "string",
@@ -1324,7 +1367,66 @@
                         "$ref": "caseType",
                         "description": "Reference to the case type",
                         "title": "Case type",
-                        "facetable": true
+                        "facetable": true,
+                        "x-openregister-prefill": {
+                            "fields": {
+                                "title": "title",
+                                "status": "initialStatus",
+                                "assignee": "defaultAssignee"
+                            }
+                        },
+                        "x-openregister-extends-form": {
+                            "definitions": {
+                                "schema": "propertyDefinition",
+                                "filter": {
+                                    "caseType": "$value"
+                                }
+                            },
+                            "map": {
+                                "title": "name",
+                                "definition": "definition",
+                                "description": "description",
+                                "type": "propertyType",
+                                "maxLength": "maxLength",
+                                "enum": "enumValues",
+                                "required": "isRequired",
+                                "default": "defaultValue"
+                            },
+                            "values": {
+                                "mode": "array",
+                                "arrayKey": "properties",
+                                "definitionRef": "propertyDefinition",
+                                "nameKey": "name",
+                                "valueKey": "value"
+                            }
+                        },
+                        "order": 1
+                    },
+                    "properties": {
+                        "type": "array",
+                        "title": "Properties",
+                        "description": "Extra properties this case answers, as decided by its case type. Each entry holds the definition it answers, that definition's name, and the value. Cases of different types carry different entries here, and a case whose type declares none carries an empty array.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "propertyDefinition": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "title": "Property definition",
+                                    "description": "The propertyDefinition this entry answers"
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "title": "Name",
+                                    "description": "The definition's name, stored beside the value so a case can be read without resolving every definition first"
+                                },
+                                "value": {
+                                    "type": "string",
+                                    "title": "Value",
+                                    "description": "The answer, as text. A non-scalar answer is stored JSON-encoded"
+                                }
+                            }
+                        }
                     },
                     "status": {
                         "type": "string",
@@ -1333,9 +1435,10 @@
                         "x-relation-filter": {
                             "caseType": "@object.caseType"
                         },
-                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express dossiq's per-caseType statusType graph yet — revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. x-relation-filter scopes the picker to the case's own type's statuses.",
+                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by the x-openregister-prefill block on `caseType` (status <- initialStatus), which is what actually writes it. The schema also carried an x-openregister-lifecycle block claiming to do this; it was invalid and ignored (OR's static mode requires field+initial+transitions over an ENUM-anchored field, and `status` is a $ref uuid), logged 8x per install, and is removed. Transitions are owned by StatusTransitionService: dossiq#1678 ruled that OR's lifecycle engine cannot express a per-caseType dynamic statusType graph, and declaring OR's graph mode here would install a second engine over the same field. x-relation-filter scopes the picker to the case's own type's statuses.",
                         "title": "Status",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 4
                     },
                     "isFinalStatus": {
                         "type": "boolean",
@@ -1354,36 +1457,37 @@
                             "case": "@objectId"
                         },
                         "description": "Reference to the result record (set on completion)",
-                        "visible": false,
-                        "title": "Result"
+                        "title": "Result",
+                        "order": 13
                     },
                     "startDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was started",
-                        "visible": false,
-                        "title": "Start Date"
+                        "title": "Start date",
+                        "order": 9
                     },
                     "endDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was completed",
-                        "visible": false,
-                        "title": "End Date"
+                        "title": "End Date",
+                        "order": 12
                     },
                     "plannedEndDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Planned end date",
-                        "visible": false,
-                        "title": "Planned End Date"
+                        "title": "Planned end date",
+                        "order": 10
                     },
                     "deadline": {
                         "type": "string",
                         "format": "date",
                         "readOnly": true,
                         "description": "Processing deadline. Computed declaratively by OpenRegister as startDate + the case type's processingDeadline (x-openregister-calculations.deadline).",
-                        "title": "Deadline"
+                        "title": "Deadline",
+                        "order": 11
                     },
                     "confidentiality": {
                         "type": "string",
@@ -1399,14 +1503,16 @@
                         ],
                         "description": "Confidentiality level",
                         "title": "Confidentiality",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 7
                     },
                     "assignee": {
                         "type": "string",
                         "referenceType": "nextcloud-user",
                         "description": "Nextcloud user ID of the primary handler",
                         "title": "Assignee",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 5
                     },
                     "intakeChannel": {
                         "type": "string",
@@ -1421,9 +1527,10 @@
                             "zgw-api"
                         ],
                         "default": "manual",
-                        "description": "The channel through which this case was intaken (REQ-INTAKE-08b, REQ-INTAKE-11a)",
+                        "description": "The channel through which this case was intaken",
                         "title": "Intake channel",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 8
                     },
                     "priority": {
                         "type": "string",
@@ -1436,7 +1543,8 @@
                         "default": "normal",
                         "description": "Case priority",
                         "title": "Priority",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 6
                     },
                     "parentCase": {
                         "type": "string",
@@ -1444,7 +1552,8 @@
                         "$ref": "case",
                         "title": "Parent case",
                         "description": "Reference to parent case (for sub-cases)",
-                        "visible": true
+                        "visible": true,
+                        "order": 14
                     },
                     "relatedCases": {
                         "type": "string",
@@ -1466,7 +1575,7 @@
                     },
                     "casePlanState": {
                         "type": "string",
-                        "description": "CMMN runtime plan-item state (JSON-encoded object: planItemStates, milestones, caseFile, eventLog), written exclusively by CaseModelEngine. Present only when caseType.handlingModel = 'cmmn'; absent/empty for BPMN-handled cases. Single OR write path per case — see openspec/specs/cmmn-adaptive-case/spec.md REQ-CMMN-006.",
+                        "description": "CMMN runtime plan-item state, holding planItemStates, milestones, caseFile and eventLog. Only the case model engine writes it. It is present when the case type's handlingModel is 'cmmn', and empty for cases handled by BPMN.",
                         "visible": false,
                         "title": "Case Plan State"
                     },
@@ -1480,8 +1589,20 @@
                         "type": "integer",
                         "default": 0,
                         "description": "Number of deadline extensions applied",
-                        "visible": false,
                         "title": "Extension Count"
+                    },
+                    "aanvullingRound": {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Counts how often the applicant was asked to supplement this case. The flow's completeness check increments it and strands the case after three rounds. Declared because the store strips what the schema does not declare: without it the counter reset on every save and the loop never ended.",
+                        "visible": false,
+                        "title": "Supplement round"
+                    },
+                    "actionResult": {
+                        "type": "object",
+                        "description": "The result payload of the last flow action step that ran on this case. DossiqFlowNodeBase merges it onto the case under this key (or the step's own output key). Declared because the store strips undeclared fields, so the result would silently vanish on save.",
+                        "visible": false,
+                        "title": "Action result"
                     },
                     "sourceOrganisation": {
                         "type": "string",
@@ -1553,13 +1674,11 @@
                             "caseType": "@object.caseType"
                         },
                         "description": "Reference to the bound workflow template",
-                        "visible": false,
                         "title": "Workflow Template"
                     },
                     "workflowVersion": {
                         "type": "integer",
                         "description": "Version number of the bound workflow template",
-                        "visible": false,
                         "title": "Workflow Version"
                     },
                     "permitApplicationRef": {
@@ -1584,7 +1703,8 @@
                         "type": "string",
                         "format": "date",
                         "description": "Computed legal deadline (indieningsdatum + procedure working days)",
-                        "title": "Deadline Date"
+                        "title": "Deadline Date",
+                        "visible": false
                     },
                     "competentAuthority": {
                         "type": "string",
@@ -1604,7 +1724,8 @@
                         "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
                         "minimum": 0,
                         "maximum": 1,
-                        "facetable": true
+                        "facetable": true,
+                        "visible": false
                     },
                     "qualityStatus": {
                         "type": "string",
@@ -1615,7 +1736,8 @@
                             "fair",
                             "poor"
                         ],
-                        "facetable": true
+                        "facetable": true,
+                        "visible": false
                     },
                     "initiatorType": {
                         "type": "string",
@@ -1625,24 +1747,26 @@
                             "contact"
                         ],
                         "title": "Initiator type",
-                        "description": "Type of the case initiator (indiener): person (BRP natuurlijk persoon), company (KvK niet-natuurlijk persoon), or contact (Nextcloud contact). Display projection of the canonical ADR-048 requester semantic reference (semantic-case-intake) — optional, additive."
+                        "description": "Type of the case initiator (indiener): person (BRP natuurlijk persoon), company (KvK niet-natuurlijk persoon), or contact (Nextcloud contact). Display projection of the canonical ADR-048 requester semantic reference (semantic-case-intake): optional, additive."
                     },
                     "initiatorSourceId": {
                         "type": "string",
                         "title": "Initiator source id",
-                        "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection — the canonical requester reference is owned by semantic-case-intake."
+                        "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection: the canonical requester reference is owned by semantic-case-intake.",
+                        "visible": false
                     },
                     "initiatorDisplayName": {
                         "type": "string",
                         "title": "Initiator display name",
-                        "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering."
+                        "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering.",
+                        "visible": false
                     },
                     "requester": {
                         "type": "string",
                         "format": "uuid",
                         "referenceSemanticType": "https://openregister.app/ns#Requester",
                         "title": "Requester",
-                        "description": "Canonical ADR-048 semantic reference (UUID) to the party who requested this case, set when the case arrives via the ns#Case semantic handoff. The initiatorType/initiatorSourceId/initiatorDisplayName fields are the display projection of this reference — one write path."
+                        "description": "Canonical ADR-048 semantic reference (UUID) to the party who requested this case, set when the case arrives via the ns#Case semantic handoff. The initiatorType/initiatorSourceId/initiatorDisplayName fields are the display projection of this reference: one write path."
                     },
                     "handoffSource": {
                         "type": "string",
@@ -1653,7 +1777,8 @@
                     "portalSubject": {
                         "type": "string",
                         "title": "Portal subject reference",
-                        "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner."
+                        "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner.",
+                        "visible": false
                     },
                     "decisions": {
                         "type": "array",
@@ -1665,13 +1790,66 @@
                             "$ref": "decision"
                         },
                         "referenceType": "decision",
-                        "x-allow-create": true
+                        "x-allow-create": true,
+                        "visible": false
+                    },
+                    "besluitDocument": {
+                        "type": "string",
+                        "title": "Decision document",
+                        "description": "The rendered decision text the case flow's document step (besluit-document, dossiq.action.mergeTemplate) writes before the case reaches its final status. Declared here because the store strips what the schema does not declare: without this property the merge would report success while the document silently never persisted, and the case would close undocumented. Empty for cases the flow has not decided.",
+                        "visible": false
+                    },
+                    "aanvulling": {
+                        "type": "object",
+                        "title": "Supplement answer",
+                        "description": "The signal payload of the supplement task (ask-aanvulling, signalKey aanvulling) the handler completes once the applicant has supplied what was missing. The flow stamps it onto the case when the task completes. Declared because the store strips what the schema does not declare: an undeclared signal field is silently gone the moment any writer saves the case.",
+                        "visible": false
+                    },
+                    "voorbereiding": {
+                        "type": "object",
+                        "title": "Preparation answer",
+                        "description": "The signal payload of the employee's preparation task (task-behandelaar, signalKey voorbereiding). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "toetsRegisterB": {
+                        "type": "object",
+                        "title": "Register B review",
+                        "description": "The outcome Decidiq returns for the register B review (decide-register-b, signalKey toetsRegisterB). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "tweedeToets": {
+                        "type": "object",
+                        "title": "Second review",
+                        "description": "The outcome Decidiq returns for the second substantive review (decide-tweede-toets, signalKey tweedeToets). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "commissieBesluit": {
+                        "type": "object",
+                        "title": "Commission decision",
+                        "description": "The outcome Decidiq returns for the planning commission's final decision (decide-commissie, signalKey commissieBesluit). The document step's template reads its decision field. Declared because the store strips what the schema does not declare: this field was measured being silently dropped on the closure rig while the run reported success.",
+                        "visible": false
+                    },
+                    "publications": {
+                        "type": "array",
+                        "title": "Publications",
+                        "description": "Besluit publication records written by PublicationService, one per channel: channel, publishedAt, notes, and the delivery record integriq reports back through the ADR-041 delivery seam (status, correlationId, eventId, attempts, error, concludedAt). Declared because the store strips what the schema does not declare: PublicationService wrote this field from the day it shipped and it was silently dropped on every save.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "visible": false
+                    },
+                    "publishedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Published at",
+                        "description": "Timestamp of the most recent besluit publication on any channel. Declared because the store strips what the schema does not declare.",
+                        "visible": false
                     }
                 },
                 "searchable": true
             },
-            "task": {
-                "slug": "task",
+            "caseTask": {
+                "slug": "caseTask",
                 "x-openregister-notifications": {
                     "taskAssigned": {
                         "trigger": {
@@ -1693,7 +1871,7 @@
                         }
                     }
                 },
-                "icon": "CheckboxMarkedOutline",
+                "icon": "CheckboxMarkedCircleOutline",
                 "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "Taak",
@@ -1806,7 +1984,7 @@
                     },
                     "blocksCase": {
                         "type": "boolean",
-                        "description": "Set when a case flow is waiting on this task. Derived — see x-openregister-calculations.",
+                        "description": "Set when a case flow is waiting on this task. Derived: see x-openregister-calculations.",
                         "title": "Blocks a case",
                         "facetable": true
                     }
@@ -1817,7 +1995,7 @@
                         "isTerminalStatus": {
                             "type": "boolean",
                             "materialise": true,
-                            "description": "True when the task status is terminal (completed/terminated/disabled — mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
+                            "description": "True when the task status is terminal (completed/terminated/disabled: mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
                             "expression": {
                                 "or": [
                                     {
@@ -1976,7 +2154,7 @@
                     "blocksCase": {
                         "type": "boolean",
                         "materialise": true,
-                        "description": "Whether a case flow is currently WAITING on this task. True when the task records the run that created it and has not yet been answered. This is the half of the relationship a person cannot otherwise see: `case` already says which case the task belongs to, but not that the case has stopped and is waiting for them. Materialised so a work queue can filter on it server-side — a client-side filter over server-paged rows silently drops what it never fetched. Declarative per ADR-031: this is derived state, not a service.",
+                        "description": "Whether a case flow is currently WAITING on this task. True when the task records the run that created it and has not yet been answered. This is the half of the relationship a person cannot otherwise see: `case` already says which case the task belongs to, but not that the case has stopped and is waiting for them. Materialised so a work queue can filter on it server-side: a client-side filter over server-paged rows silently drops what it never fetched. Declarative per ADR-031: this is derived state, not a service.",
                         "expression": {
                             "and": [
                                 {
@@ -2015,7 +2193,7 @@
             },
             "role": {
                 "slug": "role",
-                "icon": "AccountHardHat",
+                "icon": "AccountKeyOutline",
                 "version": "1.1.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "Rol",
@@ -2597,51 +2775,6 @@
                     }
                 }
             },
-            "catalog": {
-                "slug": "catalog",
-                "icon": "BookOpenPageVariant",
-                "version": "1.0.0",
-                "x-schema-org": "schema:DataCatalog",
-                "x-zgw-equivalent": "Catalogus",
-                "title": "Catalog",
-                "description": "A catalogus groups case types, decision types, and document types",
-                "type": "object",
-                "required": [
-                    "domain"
-                ],
-                "properties": {
-                    "domain": {
-                        "type": "string",
-                        "maxLength": 5,
-                        "description": "Abbreviated domain name (max 5 characters)",
-                        "title": "Domain"
-                    },
-                    "rsin": {
-                        "type": "string",
-                        "maxLength": 9,
-                        "description": "RSIN of the responsible organisation",
-                        "title": "RSIN"
-                    },
-                    "contactPersonManagementName": {
-                        "type": "string",
-                        "maxLength": 40,
-                        "description": "Name of the management contact",
-                        "title": "Management Contact Name"
-                    },
-                    "contactPersonManagementPhoneNumber": {
-                        "type": "string",
-                        "maxLength": 20,
-                        "description": "Phone number of the management contact",
-                        "title": "Management Contact Phone"
-                    },
-                    "contactPersonManagementEmailAddress": {
-                        "type": "string",
-                        "maxLength": 254,
-                        "description": "Email of the management contact",
-                        "title": "Management Contact Email"
-                    }
-                }
-            },
             "zaaktypeInformatieobjecttype": {
                 "slug": "zaaktypeInformatieobjecttype",
                 "icon": "LinkVariant",
@@ -3005,405 +3138,14 @@
                     }
                 }
             },
-            "proposal": {
-                "slug": "proposal",
-                "icon": "FileDocumentEditOutline",
-                "version": "1.1.0",
-                "x-schema-org": "schema:CreativeWork",
-                "title": "Proposal",
-                "description": "A B&W voorstel (proposal) for decision-making in a case",
-                "type": "object",
-                "required": [
-                    "case",
-                    "type",
-                    "subject",
-                    "author",
-                    "status"
-                ],
-                "properties": {
-                    "case": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "case",
-                        "onDelete": "CASCADE",
-                        "description": "Reference to the parent case",
-                        "title": "Case"
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": [
-                            "dt_advice",
-                            "collegeadvies",
-                            "raadsvoorstel"
-                        ],
-                        "description": "Type of voorstel (DT-advies, Collegeadvies, Raadsvoorstel)",
-                        "title": "Type",
-                        "facetable": true
-                    },
-                    "subject": {
-                        "type": "string",
-                        "maxLength": 255,
-                        "description": "Subject of the voorstel (usually derived from case title)",
-                        "title": "Subject"
-                    },
-                    "author": {
-                        "type": "string",
-                        "description": "Nextcloud user UID who created the voorstel",
-                        "title": "Drafter",
-                        "facetable": true
-                    },
-                    "department": {
-                        "type": "string",
-                        "description": "Department of the steller",
-                        "title": "Department"
-                    },
-                    "portfolioHolder": {
-                        "type": "string",
-                        "description": "Nextcloud user UID of the responsible portfolio holder (wethouder)",
-                        "title": "Portfolio Holder"
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "draft",
-                            "in_parafering",
-                            "ter_accordering",
-                            "geaccordeerd",
-                            "aangeboden",
-                            "besloten",
-                            "archived",
-                            "teruggestuurd"
-                        ],
-                        "default": "draft",
-                        "description": "Current status of the voorstel in the parafering lifecycle",
-                        "title": "Status",
-                        "facetable": true
-                    },
-                    "parafeerroute": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "parafeerroute",
-                        "x-relation-filter": {
-                            "proposalType": "@object.type"
-                        },
-                        "description": "Reference to the parafeerroute being used",
-                        "title": "Sign-off Route"
-                    },
-                    "routeSnapshot": {
-                        "type": "string",
-                        "description": "Snapshot of the parafeerroute steps at submission time (JSON-encoded array)",
-                        "visible": false,
-                        "title": "Route Snapshot"
-                    },
-                    "currentStep": {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Current step number in the parafeerroute (1-based, 0 = not yet submitted)",
-                        "title": "Current Step"
-                    },
-                    "returnedFromStep": {
-                        "type": "integer",
-                        "description": "Step number from which the voorstel was returned (for resume on resubmit)",
-                        "visible": false,
-                        "title": "Returned From Step"
-                    },
-                    "document": {
-                        "type": "string",
-                        "description": "Nextcloud file ID of the primary voorstel document",
-                        "title": "Document"
-                    },
-                    "attachments": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "description": "Nextcloud file IDs of attached documents (bijlagen)",
-                        "title": "Attachments"
-                    },
-                    "handling": {
-                        "type": "string",
-                        "enum": [
-                            "hamerstuk",
-                            "bespreekstuk"
-                        ],
-                        "description": "Treatment type in the college meeting",
-                        "title": "Treatment"
-                    },
-                    "decision": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "decision",
-                        "x-relation-filter": {
-                            "case": "@object.case"
-                        },
-                        "description": "Reference to the linked decision (set when besluit is registered)",
-                        "visible": false,
-                        "title": "Decision"
-                    }
-                },
-                "searchable": true,
-                "configuration": {
-                    "x-openregister-lifecycle": {
-                        "field": "status",
-                        "initial": "draft",
-                        "final": [
-                            "besloten",
-                            "archived"
-                        ],
-                        "transitions": {
-                            "startParafering": {
-                                "from": [
-                                    "draft"
-                                ],
-                                "to": "in_parafering",
-                                "requires": "OCA\\Dossiq\\Lifecycle\\VoorstelSubmitGuard",
-                                "description": "Start initialing route. Rejected when the required onderwerp or type fields are empty."
-                            },
-                            "paraferingDone": {
-                                "from": [
-                                    "in_parafering"
-                                ],
-                                "to": "ter_accordering",
-                                "description": "Initialing complete; ready for accordance."
-                            },
-                            "accord": {
-                                "from": [
-                                    "ter_accordering"
-                                ],
-                                "to": "geaccordeerd",
-                                "description": "Accord the proposal."
-                            },
-                            "submit": {
-                                "from": [
-                                    "geaccordeerd"
-                                ],
-                                "to": "aangeboden",
-                                "description": "Submit the proposal for decision."
-                            },
-                            "decide": {
-                                "from": [
-                                    "aangeboden"
-                                ],
-                                "to": "besloten",
-                                "description": "Decision made on the proposal."
-                            },
-                            "archive": {
-                                "from": [
-                                    "besloten"
-                                ],
-                                "to": "archived",
-                                "description": "Archive the proposal."
-                            },
-                            "sendBack": {
-                                "from": [
-                                    "in_parafering",
-                                    "ter_accordering",
-                                    "geaccordeerd",
-                                    "aangeboden"
-                                ],
-                                "to": "teruggestuurd",
-                                "description": "Send the proposal back for revisions."
-                            },
-                            "revise": {
-                                "from": [
-                                    "teruggestuurd"
-                                ],
-                                "to": "draft",
-                                "description": "Take a returned proposal back into draft."
-                            }
-                        }
-                    }
-                }
-            },
-            "parafeerroute": {
-                "slug": "parafeerroute",
-                "icon": "RoutesClock",
-                "version": "1.1.0",
-                "deprecated": true,
-                "deprecatedSince": "2026-06-14",
-                "x-schema-org": "schema:HowTo",
-                "title": "Endorsement Route",
-                "description": "DEPRECATED (migrate-parafering-to-or-approval-workflow): parafering chain-state is now backed by OpenRegister's approval-workflow (ApprovalChain/ApprovalStep) per ADR-022. Existing rows remain readable until sunset; no new rows are written. A configurable endorsement route defining the sequence of parafering steps for a voorstel.",
-                "type": "object",
-                "required": [
-                    "name",
-                    "steps"
-                ],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 255,
-                        "description": "Name of this parafeerroute (e.g. Collegeadvies - Omgevingsvergunning)",
-                        "title": "Name"
-                    },
-                    "caseType": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "caseType",
-                        "description": "Reference to the case type this route is associated with",
-                        "facetable": true,
-                        "title": "Case Type"
-                    },
-                    "proposalType": {
-                        "type": "string",
-                        "enum": [
-                            "dt_advice",
-                            "collegeadvies",
-                            "raadsvoorstel"
-                        ],
-                        "description": "Voorstel type this route applies to",
-                        "title": "Proposal Type"
-                    },
-                    "steps": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "order": {
-                                    "type": "integer",
-                                    "description": "Step order (1-based)",
-                                    "title": "Order"
-                                },
-                                "type": {
-                                    "type": "string",
-                                    "enum": [
-                                        "advice",
-                                        "parafering",
-                                        "accordering"
-                                    ],
-                                    "description": "Step type",
-                                    "title": "Type"
-                                },
-                                "actor": {
-                                    "type": "string",
-                                    "description": "User UID, group name, or role name",
-                                    "title": "Actor"
-                                },
-                                "actorType": {
-                                    "type": "string",
-                                    "enum": [
-                                        "user",
-                                        "group",
-                                        "role"
-                                    ],
-                                    "description": "Type of actor reference",
-                                    "title": "Actor Type"
-                                },
-                                "mandatory": {
-                                    "type": "boolean",
-                                    "default": true,
-                                    "description": "Whether this step can be skipped",
-                                    "title": "Mandatory"
-                                },
-                                "label": {
-                                    "type": "string",
-                                    "description": "Display label for this step",
-                                    "title": "Label"
-                                }
-                            }
-                        },
-                        "description": "Ordered list of parafering steps",
-                        "title": "Steps"
-                    },
-                    "isDefault": {
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Whether this is the default route for the linked case type and voorstel type",
-                        "title": "Is Default"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Description of when this route should be used",
-                        "title": "Description"
-                    }
-                }
-            },
-            "parafeeractie": {
-                "slug": "parafeeractie",
-                "icon": "CheckDecagram",
-                "version": "1.0.0",
-                "x-schema-org": "schema:Action",
-                "title": "Endorsement Action",
-                "description": "An immutable record of a parafering action on a voorstel step",
-                "type": "object",
-                "required": [
-                    "proposal",
-                    "step",
-                    "actor",
-                    "action"
-                ],
-                "properties": {
-                    "proposal": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "proposal",
-                        "onDelete": "CASCADE",
-                        "description": "Reference to the proposal",
-                        "title": "Proposal"
-                    },
-                    "step": {
-                        "type": "integer",
-                        "description": "Step number in the parafeerroute",
-                        "title": "Step"
-                    },
-                    "actor": {
-                        "type": "string",
-                        "description": "Nextcloud user UID who performed the action",
-                        "title": "Actor"
-                    },
-                    "actorType": {
-                        "type": "string",
-                        "enum": [
-                            "user",
-                            "delegate"
-                        ],
-                        "default": "user",
-                        "description": "Whether the actor acted directly or as delegate",
-                        "title": "Actor Type"
-                    },
-                    "onBehalfOf": {
-                        "type": "string",
-                        "description": "Nextcloud user UID of the principal (if acting as delegate)",
-                        "title": "On Behalf Of"
-                    },
-                    "action": {
-                        "type": "string",
-                        "enum": [
-                            "parafered",
-                            "returned",
-                            "advised",
-                            "skipped",
-                            "accorded"
-                        ],
-                        "description": "The action performed",
-                        "title": "Action",
-                        "facetable": true
-                    },
-                    "comment": {
-                        "type": "string",
-                        "description": "Comment or reason (mandatory for returned/skipped)",
-                        "title": "Comment"
-                    },
-                    "advice": {
-                        "type": "string",
-                        "description": "Advisory text (for advies steps)",
-                        "title": "Advice"
-                    },
-                    "mandate": {
-                        "type": "string",
-                        "description": "Mandate reference (for delegate actions)",
-                        "title": "Mandate"
-                    }
-                }
-            },
             "workflowTemplate": {
                 "slug": "workflowTemplate",
                 "icon": "SitemapOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:HowTo",
                 "x-cmmn-equivalent": "CasePlanModel",
                 "title": "Workflow Template",
-                "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions. v1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec).",
+                "description": "A workflow definition for a case type: defines process steps, status transitions, guards, and automatic actions. V1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec). V1.2 additive: `variant` names which route through the case type this workflow describes, so one case type can carry several routes with one active workflow each; absent variant is the route `standaard`, which is every workflow that predates the property (see workflow-variants spec).",
                 "type": "object",
                 "required": [
                     "title",
@@ -3460,18 +3202,26 @@
                     },
                     "steps": {
                         "type": "string",
-                        "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional — legacy, normalised on read to routingRule.single-role), routingRule (optional object {strategy: single-role|or-set|hierarchical|round-robin|least-loaded, roleType: UUID, roleTypes: [UUID], fallback: UUID}), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). v1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean} — requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour.",
+                        "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional. Legacy, normalised on read to routingRule.single-role), routingRule (optional object {strategy: single-role|or-set|hierarchical|round-robin|least-loaded, roleType: UUID, roleTypes: [UUID], fallback: UUID}), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). V1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean}. Requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour.",
                         "title": "Steps"
                     },
                     "transitions": {
                         "type": "string",
-                        "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID — legacy, normalised on read to routingRule.or-set), routingRule (optional object same shape as workflowStep.routingRule). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify",
+                        "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID. Legacy, normalised on read to routingRule.or-set), routingRule (optional object same shape as workflowStep.routingRule). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify",
                         "title": "Transitions"
                     },
                     "nodePositions": {
                         "type": "string",
                         "description": "JSON-encoded map of status UUID to {x, y} canvas positions for the visual editor",
                         "title": "Node Positions"
+                    },
+                    "variant": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "default": "standaard",
+                        "description": "Which route through the case type this workflow describes. A case type may carry several routes, and one workflow per route can be active at a time. Leave this alone when the case type has one route. Example: a handhavingszaak runs the ordinary route under Awb 5:24 and the spoedeisende route under Awb 5:31.",
+                        "title": "Variant",
+                        "x-notes": "Normalised on read: an absent or empty value is the route 'standaard'. A route is a sibling, not a child. This property is unrelated to parentWorkflow, which describes an unimplemented Enterprise-tier hierarchy BETWEEN case types. See openspec/specs/workflow-variants/spec.md."
                     },
                     "parentWorkflow": {
                         "type": "string",
@@ -3482,99 +3232,13 @@
                     }
                 }
             },
-            "paraferingAuditEntry": {
-                "slug": "paraferingAuditEntry",
-                "icon": "ShieldCheckOutline",
-                "version": "1.0.0",
-                "deprecated": true,
-                "deprecationNote": "Superseded by OR audit trail via migrate-parafering-to-or-audit (ADR-022, consume-or-audit-trail-fleet-wide). New parafering transitions are recorded through OR's hash-chained audit trail (procest.parafering.* actions, discoverable via GET /api/audit-trails?objectUuid={voorstelId}). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
-                "x-schema-org": "schema:Action",
-                "title": "Endorsement Audit Entry",
-                "description": "DEPRECATED (migrate-parafering-to-or-audit): historical append-only audit entries for parafeerroute transitions. New transitions are recorded via OR's native audit trail instead of this schema. Existing rows remain readable for one major release. Originally: regulator-grade entry per transition (started, paraferd, advised, terugsturen, route-changed, completed) with actor, role, timestamp, reason, content snapshot, redacted IP, and SHA-256 tamper-detection hash.",
-                "type": "object",
-                "required": [
-                    "proposal",
-                    "action",
-                    "actor",
-                    "actorRole",
-                    "timestamp",
-                    "contentSnapshot",
-                    "auditEntryHash"
-                ],
-                "properties": {
-                    "proposal": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "proposal",
-                        "onDelete": "CASCADE",
-                        "description": "Reference to the proposal that this transition occurred on",
-                        "title": "Proposal"
-                    },
-                    "step": {
-                        "type": "string",
-                        "description": "Step identifier or order within the routeSnapshot at action moment (string to support both numeric orders and UUID refs)",
-                        "title": "Step"
-                    },
-                    "action": {
-                        "type": "string",
-                        "enum": [
-                            "started",
-                            "paraferd",
-                            "terugsturen",
-                            "advised",
-                            "route-changed",
-                            "completed"
-                        ],
-                        "title": "Action",
-                        "description": "Transition type that produced this audit entry",
-                        "facetable": true
-                    },
-                    "actor": {
-                        "type": "string",
-                        "description": "Nextcloud user UID who triggered the transition (always the session user, never request body)",
-                        "title": "Actor"
-                    },
-                    "actorRole": {
-                        "type": "string",
-                        "description": "Role at the moment of action (steller, adviseur, parafeerder, accorderend, beheerder, secretariaat) derived from the routeSnapshot step or admin-override context",
-                        "facetable": true,
-                        "title": "Actor Role"
-                    },
-                    "timestamp": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "Server-side ISO 8601 (UTC) timestamp at write moment, never accepted from client",
-                        "title": "Timestamp"
-                    },
-                    "reason": {
-                        "type": "string",
-                        "description": "Reason text; mandatory for terugsturen and route-changed, optional for others",
-                        "title": "Reason"
-                    },
-                    "contentSnapshot": {
-                        "type": "object",
-                        "description": "Immutable JSON copy of voorstel.{onderwerp, document, bijlagen, routeSnapshot, currentStep, status} at transition moment",
-                        "title": "Content Snapshot"
-                    },
-                    "ipAddress": {
-                        "type": "string",
-                        "description": "Originating IP address redacted to /24 (IPv4) or /48 (IPv6) per AVG minimisation",
-                        "title": "IP Address"
-                    },
-                    "auditEntryHash": {
-                        "type": "string",
-                        "description": "SHA-256 (64 lowercase hex) of canonical JSON of the entry excluding this field, for tamper detection",
-                        "title": "Audit Entry Hash"
-                    }
-                }
-            },
             "automaticAction": {
                 "slug": "automaticAction",
                 "icon": "RobotOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "title": "Automatic Action",
-                "description": "Declarative automatic action. HISTORICAL: this description used to say the slug was referenced from transitions[].automaticActions[].ref and resolved at dispatch time — it never was. SideEffectDispatcher runs a separate vocabulary keyed on an inline `type`, and nothing has ever read these objects at run time. They are migrated to OpenRegister flows by `occ dossiq:actions:migrate-to-flows`, where each becomes a flow around the matching dossiq.action.* node; the flow is what executes. Kept for the migration and for reading historical configuration.",
+                "description": "Declarative automatic action. HISTORICAL: this description used to say the slug was referenced from transitions[].automaticActions[].ref and resolved at dispatch time: it never was. SideEffectDispatcher runs a separate vocabulary keyed on an inline `type`, and nothing has ever read these objects at run time. They are migrated to OpenRegister flows by `occ dossiq:actions:migrate-to-flows`, where each becomes a flow around the matching dossiq.action.* node; the flow is what executes. Kept for the migration and for reading historical configuration.",
                 "type": "object",
                 "required": [
                     "slug",
@@ -3599,14 +3263,14 @@
                             "mergeTemplate",
                             "scheduleReminder"
                         ],
-                        "description": "Action handler type — must match a registered ActionHandlerInterface implementation",
+                        "description": "Action handler type: must match a registered ActionHandlerInterface implementation",
                         "title": "Type"
                     },
                     "tenantId": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "tenant",
-                        "description": "Owning tenant — cross-tenant resolution is rejected by the registry",
+                        "description": "Owning tenant: cross-tenant resolution is rejected by the registry",
                         "title": "Tenant ID"
                     },
                     "title": {
@@ -3634,7 +3298,7 @@
                     "isPublished": {
                         "type": "boolean",
                         "default": false,
-                        "description": "Legacy publish flag. It never gated anything: SideEffectDispatcher does not read these objects at all. The migration to OpenRegister flows ignores it — enable or disable the resulting flow instead.",
+                        "description": "Legacy publish flag. It never gated anything: SideEffectDispatcher does not read these objects at all. The migration to OpenRegister flows ignores it: enable or disable the resulting flow instead.",
                         "title": "Is Published"
                     },
                     "active": {
@@ -3652,7 +3316,7 @@
                 "x-schema-org": "schema:LegalCase",
                 "x-zgw-equivalent": "Bezwaarzaak",
                 "title": "Objection",
-                "description": "Bezwaar lifecycle entity — captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
+                "description": "Bezwaar lifecycle entity: captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
                 "type": "object",
                 "required": [
                     "case",
@@ -3690,7 +3354,7 @@
                             "Withdrawn"
                         ],
                         "default": "Received",
-                        "description": "Bezwaar lifecycle status — drives the status-transition-engine state machine",
+                        "description": "Bezwaar lifecycle status: drives the status-transition-engine state machine",
                         "facetable": true,
                         "title": "Status"
                     },
@@ -3726,7 +3390,7 @@
                     "suspensionEnd": {
                         "type": "string",
                         "format": "date",
-                        "description": "Opschorting end date — adds (end - start) days to decisionDeadline",
+                        "description": "Opschorting end date: adds (end - start) days to decisionDeadline",
                         "title": "Suspension End"
                     },
                     "suspension": {
@@ -3749,19 +3413,19 @@
                     "noticeOfDefault": {
                         "type": "string",
                         "format": "date",
-                        "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17 — starts the 14-day grace clock",
+                        "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17. Starts the 14-day grace clock",
                         "title": "Notice of Default"
                     },
                     "penaltyPayment": {
                         "type": "number",
                         "default": 0,
-                        "description": "Accrued dwangsom liability in euros — computed declaratively, capped at €1442 (AWB 4:17 lid 2)",
+                        "description": "Accrued dwangsom liability in euros: computed declaratively, capped at €1442 (AWB 4:17 lid 2)",
                         "title": "Penalty Amount"
                     },
                     "decisionDeadline": {
                         "type": "string",
                         "format": "date",
-                        "description": "Statutory deadline for the beslissing op bezwaar — computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)",
+                        "description": "Statutory deadline for the beslissing op bezwaar: computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)",
                         "title": "Decision Deadline"
                     }
                 },
@@ -3770,7 +3434,7 @@
                     "decisionDeadline": {
                         "type": "date",
                         "materialise": true,
-                        "description": "Statutory beslistermijn op bezwaar (AWB 7:10 lid 1, 3, 4): ontvangstdatum + 6 weeks + verdagingsperiode (days, AWB 7:10 lid 3) + opschorting (days, AWB 7:10 lid 4). Materialised (server-side filterable); recomputed on every bezwaar save. Replaces the pre-2026-07 inert array-form string-DSL declaration (addWeeks/addDays), which OpenRegister's calculation engine never honoured — it accepts only a field-keyed map of AST expressions. verdagingsperiode/opschorting are coalesced to 0: OpenRegister's dateAdd returns NULL for a non-numeric amount, so a bare prop ref would null the entire statutory deadline on any bezwaar saved without those optional fields (schema defaults do not protect the PUT-semantic update path).",
+                        "description": "Statutory beslistermijn op bezwaar (AWB 7:10 lid 1, 3, 4): ontvangstdatum + 6 weeks + verdagingsperiode (days, AWB 7:10 lid 3) + opschorting (days, AWB 7:10 lid 4). Materialised (server-side filterable); recomputed on every bezwaar save. Replaces the pre-2026-07 inert array-form string-DSL declaration (addWeeks/addDays), which OpenRegister's calculation engine never honoured: it accepts only a field-keyed map of AST expressions. Verdagingsperiode/opschorting are coalesced to 0: OpenRegister's dateAdd returns NULL for a non-numeric amount, so a bare prop ref would null the entire statutory deadline on any bezwaar saved without those optional fields (schema defaults do not protect the PUT-semantic update path).",
                         "expression": {
                             "dateAdd": {
                                 "date": {
@@ -4037,12 +3701,12 @@
             },
             "objection": {
                 "slug": "objection",
-                "icon": "FileDocumentAlertOutline",
+                "icon": "FileAlertOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Message",
                 "x-zgw-equivalent": "Bezwaarschrift",
                 "title": "Objection",
-                "description": "Bezwaarschrift (objection letter) — captures the formal objection content linked to a bezwaar case and the contested decision",
+                "description": "Bezwaarschrift (objection letter): captures the formal objection content linked to a bezwaar case and the contested decision",
                 "type": "object",
                 "required": [
                     "case",
@@ -4124,7 +3788,7 @@
                 "x-schema-org": "schema:Event",
                 "x-zgw-equivalent": "Hoorzitting",
                 "title": "Hearing Session",
-                "description": "Hoorzitting (hearing) — manages scheduling, invitations, inspection-of-file, attendance, minutes and audit hooks for bezwaar hearings per Awb art. 7:2-7:7",
+                "description": "Hoorzitting (hearing): manages scheduling, invitations, inspection-of-file, attendance, minutes and audit hooks for bezwaar hearings per Awb art. 7:2-7:7",
                 "type": "object",
                 "required": [
                     "case",
@@ -4335,7 +3999,7 @@
                 "x-schema-org": "schema:Report",
                 "x-zgw-equivalent": "AdviesBezwaarschriftencommissie",
                 "title": "Advisory Report",
-                "description": "Advisory committee report (advies bezwaarschriftencommissie) — records the committee's advice on a bezwaar case per Awb art. 7:13",
+                "description": "Advisory committee report (advies bezwaarschriftencommissie): records the committee's advice on a bezwaar case per Awb art. 7:13",
                 "type": "object",
                 "required": [
                     "case",
@@ -4428,7 +4092,7 @@
                 "x-schema-org": "schema:LegalForceStatus",
                 "x-zgw-equivalent": "BeslissingOpBezwaar",
                 "title": "Appeal Decision",
-                "description": "Beslissing op bezwaar (decision on objection) — formal decision recording with disposition, motivation, and rechtsmiddelenclausule per Awb art. 7:11-7:12",
+                "description": "Beslissing op bezwaar (decision on objection): formal decision recording with disposition, motivation, and rechtsmiddelenclausule per Awb art. 7:11-7:12",
                 "type": "object",
                 "required": [
                     "case",
@@ -4541,7 +4205,7 @@
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "BeslissingOpBezwaar",
                 "title": "Objection Decision",
-                "description": "Beslissing op bezwaar — canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
+                "description": "Beslissing op bezwaar: canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
                 "type": "object",
                 "required": [
                     "bezwaar",
@@ -4567,7 +4231,7 @@
                             "upheld_revoke",
                             "upheld_amend"
                         ],
-                        "description": "Awb art. 7:11 canonical outcome — drives mandatory fields, replacement besluit, and proceskosten eligibility",
+                        "description": "Awb art. 7:11 canonical outcome. Drives mandatory fields, replacement besluit, and proceskosten eligibility",
                         "title": "Disposition Type"
                     },
                     "reasoning": {
@@ -4601,12 +4265,12 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "decision",
-                        "description": "New besluit replacing the primair besluit — required when dispositionType is gegrond_wijzigen, optional for gegrond_herroepen, MUST NOT be set otherwise",
+                        "description": "New besluit replacing the primair besluit: required when dispositionType is gegrond_wijzigen, optional for gegrond_herroepen, MUST NOT be set otherwise",
                         "title": "Replacement Decision"
                     },
                     "appealNotice": {
                         "type": "object",
-                        "description": "Structured rechtsmiddelenclausule — replaces free-form prose; every required sub-field MUST be filled before publication",
+                        "description": "Structured rechtsmiddelenclausule: replaces free-form prose; every required sub-field MUST be filled before publication",
                         "properties": {
                             "competentCourt": {
                                 "type": "string",
@@ -4660,7 +4324,7 @@
                     },
                     "legalCostsCompensation": {
                         "type": "object",
-                        "description": "Awb art. 7:15 cost award — awardable only when dispositionType is gegrond_herroepen or gegrond_wijzigen, the bezwaarmaker requested it, and the herroeping is attributable to onrechtmatigheid van het primair besluit; totalAmount is calculated as awardedPoints * pointValue",
+                        "description": "Awb art. 7:15 cost award. Awardable only when dispositionType is gegrond_herroepen or gegrond_wijzigen, the bezwaarmaker requested it, and the herroeping is attributable to onrechtmatigheid van het primair besluit; totalAmount is calculated as awardedPoints * pointValue",
                         "properties": {
                             "requested": {
                                 "type": "boolean",
@@ -4762,7 +4426,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:LegalAction",
                 "title": "Appeal",
-                "description": "Beroep escalation envelope — the municipality's tracking record around a citizen's appeal of a beslissing op bezwaar at the administrative court (rechtbank, Awb hoofdstuk 8). Dossiq does NOT run the court process; this schema captures filing window, court reference, chamber, file-inspection requests (Awb 8:42), judgment outcome, and cascade back into the bezwaar workflow. Immutability after appellantFilingDate is enforced by BeroepService; OpenRegister provides the per-save audit trail.",
+                "description": "Beroep escalation envelope: the municipality's tracking record around a citizen's appeal of a beslissing op bezwaar at the administrative court (rechtbank, Awb hoofdstuk 8). Dossiq does NOT run the court process; this schema captures filing window, court reference, chamber, file-inspection requests (Awb 8:42), judgment outcome, and cascade back into the bezwaar workflow. Immutability after appellantFilingDate is enforced by BeroepService; OpenRegister provides the per-save audit trail.",
                 "type": "object",
                 "required": [
                     "case",
@@ -4783,14 +4447,14 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "objectionProceeding",
-                        "description": "The bezwaar lifecycle record that escalated to beroep — immutable after appellantFilingDate is set",
+                        "description": "The bezwaar lifecycle record that escalated to beroep: immutable after appellantFilingDate is set",
                         "title": "Source Objection"
                     },
                     "contestedDecision": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "bezwaarDecision",
-                        "description": "The beslissing op bezwaar being contested — immutable after appellantFilingDate is set",
+                        "description": "The beslissing op bezwaar being contested: immutable after appellantFilingDate is set",
                         "title": "Contested Decision"
                     },
                     "courtReference": {
@@ -4842,7 +4506,7 @@
                     "latefilingNotice": {
                         "type": "boolean",
                         "default": false,
-                        "description": "Computed: true when appellantFilingDate > filingDeadline. Informational only — only the rechtbank weighs verschoonbare termijnoverschrijding.",
+                        "description": "Computed: true when appellantFilingDate > filingDeadline. Informational only: only the rechtbank weighs verschoonbare termijnoverschrijding.",
                         "title": "Late Filing Notice"
                     },
                     "fileInspectionRequests": {
@@ -4929,10 +4593,10 @@
             },
             "mapLayer": {
                 "slug": "mapLayer",
-                "icon": "MapOutline",
+                "icon": "LayersOutline",
                 "version": "1.0.0",
                 "title": "Map Layer",
-                "description": "GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
+                "description": "GIS map layer configuration for case maps: defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
                 "type": "object",
                 "required": [
                     "title",
@@ -5033,7 +4697,7 @@
                 "icon": "LayersOutline",
                 "version": "1.0.0",
                 "title": "WMS/WFS Layer",
-                "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. Subscribed per case type via caseType.layerIds. All outbound traffic routed through the GIS proxy (wms-wfs-layers REQ-WMS-3).",
+                "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
                 "type": "object",
                 "required": [
                     "title",
@@ -5060,7 +4724,7 @@
                     "url": {
                         "type": "string",
                         "format": "uri",
-                        "description": "Service base URL — MUST match an entry in the GIS proxy allowlist (REQ-WMS-3)",
+                        "description": "Service base URL: MUST match an entry in the GIS proxy allowlist",
                         "title": "URL"
                     },
                     "layerName": {
@@ -5079,7 +4743,7 @@
                         "minimum": 0,
                         "maximum": 1,
                         "default": 0.7,
-                        "description": "Default overlay opacity (0.0 transparent — 1.0 opaque)",
+                        "description": "Default overlay opacity (0.0 transparent: 1.0 opaque)",
                         "title": "Opacity"
                     },
                     "attribution": {
@@ -5090,7 +4754,7 @@
                     "queryable": {
                         "type": "boolean",
                         "default": false,
-                        "description": "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click (REQ-WMS-7)",
+                        "description": "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click",
                         "title": "Queryable"
                     },
                     "format": {
@@ -5108,7 +4772,7 @@
                         "type": "number",
                         "default": 50,
                         "minimum": 1,
-                        "description": "Maximum visible extent in km before WFS requests are suppressed and 'Zoom in voor details' is shown (REQ-WMS-8)",
+                        "description": "Maximum visible extent in km before WFS requests are suppressed and 'Zoom in voor details' is shown",
                         "title": "Extent Cutoff (km)"
                     },
                     "isDefault": {
@@ -5125,13 +4789,13 @@
                     }
                 }
             },
-            "location": {
-                "slug": "location",
+            "case-location": {
+                "slug": "case-location",
                 "icon": "MapMarker",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Place",
                 "title": "Case Location",
-                "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address) — 0..N locations per case via back-reference on `case`.",
+                "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address): 0..N locations per case via back-reference on `case`.",
                 "type": "object",
                 "required": [
                     "case",
@@ -5175,7 +4839,7 @@
                     "addressDesignationId": {
                         "type": "string",
                         "maxLength": 32,
-                        "description": "BAG nummeraanduiding identifier (16-digit) — MUST be present when source = bag",
+                        "description": "BAG nummeraanduiding identifier (16-digit): MUST be present when source = bag",
                         "title": "Address Designation ID"
                     },
                     "parcelId": {
@@ -5207,11 +4871,11 @@
             },
             "consultation": {
                 "slug": "consultation",
-                "icon": "MessageAlertOutline",
+                "icon": "CommentQuestionOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:AskAction",
                 "title": "Consultation",
-                "description": "Inter-departmental consultation (adviesaanvraag) — a first-class entity linked to a parent case with its own lifecycle, structured response, and deadline enforcement per Awb 3:5-3:9",
+                "description": "Inter-departmental consultation (adviesaanvraag): a first-class entity linked to a parent case with its own lifecycle, structured response, and deadline enforcement per Awb 3:5-3:9",
                 "type": "object",
                 "required": [
                     "parentCase",
@@ -6010,7 +5674,7 @@
                         "enum": [
                             "burger",
                             "bedrijf",
-                            "government",
+                            "overheid",
                             "recidivist"
                         ],
                         "description": "Actor type of the violator (LHS actorType axis)",
@@ -6344,7 +6008,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:HowTo",
                 "title": "Inspection Checklist Template",
-                "description": "Long-lived configuration template for an inspection checklist (REQ-IC-1). Owns sections, items, response-type rules, and follow-up action defaults. Versioned per REQ-IC-8 — published edits create a new version and retire the prior one.",
+                "description": "Long-lived configuration template for an inspection checklist. Owns sections, items, response-type rules and follow-up action defaults. Publishing an edit creates a new version and retires the previous one.",
                 "type": "object",
                 "required": [
                     "name",
@@ -6356,7 +6020,7 @@
                     "name": {
                         "type": "string",
                         "maxLength": 255,
-                        "description": "Template label, e.g. 'Bouwtoezicht — Fundering'",
+                        "description": "Template label, e.g. 'Bouwtoezicht: Fundering'",
                         "title": "Name"
                     },
                     "caseType": {
@@ -6449,7 +6113,7 @@
                                                     "photo",
                                                     "meting"
                                                 ],
-                                                "description": "Input type — drives validation in REQ-IC-3",
+                                                "description": "Input type, which decides how the answer is validated.",
                                                 "title": "Response Type"
                                             },
                                             "required": {
@@ -6466,7 +6130,7 @@
                                                     "altijd"
                                                 ],
                                                 "default": "nooit",
-                                                "description": "Photo requirement gate (REQ-IC-3)",
+                                                "description": "Photo requirement gate",
                                                 "title": "Photo Required"
                                             },
                                             "numericRange": {
@@ -6501,7 +6165,7 @@
                                             },
                                             "failureAction": {
                                                 "type": "object",
-                                                "description": "Conditional follow-up dispatched on failure (REQ-IC-7)",
+                                                "description": "Conditional follow-up dispatched on failure",
                                                 "properties": {
                                                     "type": {
                                                         "type": "string",
@@ -6550,7 +6214,7 @@
                 "version": "1.1.0",
                 "x-schema-org": "schema:Action",
                 "title": "Inspection Checklist Run",
-                "description": "Per-inspection runtime instance of an inspectionChecklistTemplate (REQ-IC-2). Once submitted (status=ingediend) the run is append-only: edits are rejected by REQ-IC-8 enforcement.",
+                "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
                 "type": "object",
                 "configuration": {
                     "linkedTypes": [
@@ -6587,18 +6251,18 @@
                     "templateVersion": {
                         "type": "integer",
                         "minimum": 1,
-                        "description": "Template version captured at run start (REQ-IC-8)",
+                        "description": "Template version captured at run start",
                         "title": "Template Version"
                     },
                     "templateSnapshot": {
                         "type": "object",
-                        "description": "Frozen JSON copy of the template sections+items at run start — hidden from default API output",
+                        "description": "Frozen JSON copy of the template sections+items at run start: hidden from default API output",
                         "additionalProperties": true,
                         "title": "Template Snapshot"
                     },
                     "inspector": {
                         "type": "string",
-                        "description": "NC user UID — server-derived from IUserSession, never accepted from body",
+                        "description": "NC user UID: server-derived from IUserSession, never accepted from body",
                         "title": "Inspector"
                     },
                     "assignedInspectorRef": {
@@ -6749,7 +6413,7 @@
                             "non_conform",
                             "partly_conform"
                         ],
-                        "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult (REQ-IC-6); user-supplied values are ignored",
+                        "description": "Aggregate result: derived on submit by ChecklistService::aggregateResult; user-supplied values are ignored",
                         "title": "Overall Result"
                     },
                     "syncState": {
@@ -6760,7 +6424,7 @@
                             "synced"
                         ],
                         "default": "local",
-                        "description": "Offline-sync state for the whole run (REQ-IC-5)",
+                        "description": "Offline-sync state for the whole run",
                         "title": "Sync State"
                     },
                     "followUpType": {
@@ -6772,7 +6436,7 @@
                             "none"
                         ],
                         "default": "none",
-                        "description": "Highest-priority follow-up type dispatched on submit (REQ-IC-7)",
+                        "description": "Highest-priority follow-up type dispatched on submit",
                         "title": "Follow Up Type"
                     }
                 }
@@ -6826,7 +6490,7 @@
                             "suspended",
                             "terminated"
                         ],
-                        "description": "Lifecycle status — drives access enforcement in TenantMiddleware",
+                        "description": "Lifecycle status: drives access enforcement in TenantMiddleware",
                         "title": "Status"
                     },
                     "tier": {
@@ -6836,7 +6500,7 @@
                             "standard",
                             "enterprise"
                         ],
-                        "description": "Service tier — drives quota defaults and feature flags",
+                        "description": "Service tier: drives quota defaults and feature flags",
                         "title": "Tier"
                     },
                     "createdAt": {
@@ -7664,7 +7328,7 @@
                     "deadline": {
                         "type": "string",
                         "format": "date",
-                        "description": "Target advice date — defaults to assignedAt + 12 weeks (Awb Art. 7:24(1))",
+                        "description": "Target advice date: defaults to assignedAt + 12 weeks (Awb Art. 7:24(1))",
                         "title": "Deadline"
                     },
                     "advice": {
@@ -7779,7 +7443,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
-                "description": "Klacht (complaint) entity — tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
+                "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
                 "type": "object",
                 "required": [
                     "subject",
@@ -7961,44 +7625,64 @@
                         "title": "Hearing Waiver"
                     }
                 },
-                "x-openregister-lifecycle": {
-                    "transitions": [
-                        {
-                            "from": "ontvangen",
-                            "to": "ontvangst_bevestigd",
-                            "label": "Ontvangstbevestiging verzonden"
-                        },
-                        {
-                            "from": "ontvangst_bevestigd",
-                            "to": "in_behandeling",
-                            "label": "In behandeling genomen"
-                        },
-                        {
-                            "from": "in_behandeling",
-                            "to": "hoorgesprek_gepland",
-                            "label": "Hoorgesprek gepland"
-                        },
-                        {
-                            "from": "hoorgesprek_gepland",
-                            "to": "hoorgesprek_afgerond",
-                            "label": "Hoorgesprek afgerond"
-                        },
-                        {
-                            "from": "hoorgesprek_afgerond",
-                            "to": "afgehandeld",
-                            "label": "Klacht afgehandeld"
-                        },
-                        {
-                            "from": "in_behandeling",
-                            "to": "afgehandeld",
-                            "label": "Afgehandeld (zonder hoorgesprek)"
-                        },
-                        {
-                            "from": "*",
-                            "to": "withdrawn",
-                            "label": "Klacht ingetrokken"
+                "configuration": {
+                    "x-openregister-lifecycle": {
+                        "field": "status",
+                        "initial": "received",
+                        "final": [
+                            "handled",
+                            "withdrawn"
+                        ],
+                        "transitions": {
+                            "confirmReceipt": {
+                                "from": [
+                                    "received"
+                                ],
+                                "to": "receipt_confirmed",
+                                "description": "Send the receipt confirmation (Awb 9:6)."
+                            },
+                            "startHandling": {
+                                "from": [
+                                    "receipt_confirmed"
+                                ],
+                                "to": "in_handling",
+                                "description": "Take the complaint into handling."
+                            },
+                            "planHoorgesprek": {
+                                "from": [
+                                    "in_handling"
+                                ],
+                                "to": "hoorgesprek_planned",
+                                "description": "Plan the hoorgesprek (Awb 9:10)."
+                            },
+                            "completeHoorgesprek": {
+                                "from": [
+                                    "hoorgesprek_planned"
+                                ],
+                                "to": "hoorgesprek_completed",
+                                "description": "Record the completed hoorgesprek."
+                            },
+                            "handle": {
+                                "from": [
+                                    "in_handling",
+                                    "hoorgesprek_completed"
+                                ],
+                                "to": "handled",
+                                "description": "Close the complaint with a disposition, with or without a hoorgesprek."
+                            },
+                            "withdraw": {
+                                "from": [
+                                    "received",
+                                    "receipt_confirmed",
+                                    "in_handling",
+                                    "hoorgesprek_planned",
+                                    "hoorgesprek_completed"
+                                ],
+                                "to": "withdrawn",
+                                "description": "The complainant withdraws the complaint."
+                            }
                         }
-                    ]
+                    }
                 }
             },
             "hearing": {
@@ -8006,7 +7690,7 @@
                 "icon": "AccountVoice",
                 "version": "1.0.0",
                 "title": "Hearing",
-                "description": "Hoorgesprek (hearing) linked to a complaint — captures scheduling, participants, outcome, and video/calendar integration.",
+                "description": "Hoorgesprek (hearing) linked to a complaint: captures scheduling, participants, outcome, and video/calendar integration.",
                 "type": "object",
                 "required": [
                     "complaint",
@@ -8178,7 +7862,7 @@
                 "icon": "TagOutline",
                 "version": "1.0.0",
                 "title": "Complaint Category",
-                "description": "Configurable complaint category per tenant — defines default handler, SLA override, and routing for complaints.",
+                "description": "Configurable complaint category per tenant: defines default handler, SLA override, and routing for complaints.",
                 "type": "object",
                 "required": [
                     "name"
@@ -8220,7 +7904,7 @@
                 "icon": "Cog",
                 "version": "1.0.0",
                 "title": "Tenant Configuration",
-                "description": "Per-tenant configuration — branding, locale, and feature flags. 1:1 with Tenant.",
+                "description": "Per-tenant configuration: branding, locale, and feature flags. 1:1 with Tenant.",
                 "type": "object",
                 "required": [
                     "tenantRef"
@@ -8235,7 +7919,7 @@
                     },
                     "branding": {
                         "type": "object",
-                        "description": "Branding payload — logo URL, primaryColor, secondaryColor, fontFamily, customCSS",
+                        "description": "Branding payload: logo URL, primaryColor, secondaryColor, fontFamily, customCSS",
                         "properties": {
                             "logo": {
                                 "type": "string",
@@ -8309,7 +7993,7 @@
                 "icon": "GaugeFull",
                 "version": "1.0.0",
                 "title": "Tenant Quota",
-                "description": "Per-tenant quota — one row per quota type. Tracks limit, current usage, and enforcement policy.",
+                "description": "Per-tenant quota: one row per quota type. Tracks limit, current usage, and enforcement policy.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -8375,7 +8059,7 @@
                 "icon": "AccountOutline",
                 "version": "1.0.0",
                 "title": "Tenant User",
-                "description": "Per-tenant user membership — maps a Nextcloud user to a tenant with role + eHerkenning level.",
+                "description": "Per-tenant user membership: maps a Nextcloud user to a tenant with role + eHerkenning level.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -8434,7 +8118,7 @@
                 "icon": "FileSign",
                 "version": "1.0.0",
                 "title": "Tenant Mandate",
-                "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority — backs ketenmachtiging (chain-mandate) flows.",
+                "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority: backs ketenmachtiging (chain-mandate) flows.",
                 "type": "object",
                 "required": [
                     "tenantRef"
@@ -8482,7 +8166,7 @@
                 "version": "1.0.0",
                 "x-insert-only": true,
                 "title": "Tenant Billing Event",
-                "description": "Insert-only billing event — every billable action emits one row. Consumed by shillinq for invoicing.",
+                "description": "Insert-only billing event: every billable action emits one row. Consumed by shillinq for invoicing.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -8599,7 +8283,7 @@
                     "threshold": 0.7
                 },
                 "title": "Supplier",
-                "description": "Leverancier / vendor — represents a single supplier organisation that interacts with the municipality through the supplier portal.",
+                "description": "Leverancier / vendor: represents a single supplier organisation that interacts with the municipality through the supplier portal.",
                 "type": "object",
                 "required": [
                     "kvkNumber",
@@ -8610,7 +8294,7 @@
                     "kvkNumber": {
                         "type": "string",
                         "maxLength": 20,
-                        "description": "Dutch Chamber of Commerce (KvK) number — natural key",
+                        "description": "Dutch Chamber of Commerce (KvK) number: natural key",
                         "title": "KvK Number"
                     },
                     "legalName": {
@@ -8641,7 +8325,7 @@
                     },
                     "iban": {
                         "type": "string",
-                        "description": "IBAN — masked at the API layer",
+                        "description": "IBAN: masked at the API layer",
                         "title": "IBAN"
                     },
                     "sbiCodes": {
@@ -8692,7 +8376,7 @@
                 "icon": "AccountOutline",
                 "version": "1.0.0",
                 "title": "Supplier User",
-                "description": "Supplier-side portal user — eHerkenning-authenticated person acting on behalf of a supplier.",
+                "description": "Supplier-side portal user: eHerkenning-authenticated person acting on behalf of a supplier.",
                 "type": "object",
                 "required": [
                     "supplierRef",
@@ -8926,8 +8610,8 @@
                     }
                 }
             },
-            "supplierInvoice": {
-                "slug": "supplierInvoice",
+            "caseSupplierInvoice": {
+                "slug": "caseSupplierInvoice",
                 "icon": "Receipt",
                 "version": "1.0.0",
                 "title": "Supplier Invoice",
@@ -9017,7 +8701,7 @@
                 "version": "1.0.0",
                 "x-insert-only": true,
                 "title": "Supplier Message",
-                "description": "Write-once message between municipality and supplier — immutable audit trail.",
+                "description": "Write-once message between municipality and supplier: immutable audit trail.",
                 "type": "object",
                 "required": [
                     "supplierRef",
@@ -9140,7 +8824,7 @@
                 "icon": "CheckboxMarkedCircleOutline",
                 "version": "1.0.0",
                 "title": "Tenant Onboarding Task",
-                "description": "One step of the tenant onboarding workflow — drives the onboarding checklist UI.",
+                "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -9535,8 +9219,8 @@
             "dossiq": {
                 "slug": "dossiq",
                 "title": "Dossiq",
-                "version": "1.0.0",
-                "description": "Case management (zaakgericht werken) register for Dossiq — manages case types, status types, cases, tasks, roles, results, and decisions.",
+                "version": "1.1.0",
+                "description": "Case management (zaakgericht werken) register for Dossiq: manages case types, status types, cases, tasks, roles, results, and decisions.",
                 "schemas": [
                     "caseType",
                     "statusType",
@@ -9546,14 +9230,13 @@
                     "documentType",
                     "decisionType",
                     "case",
-                    "task",
+                    "caseTask",
                     "role",
                     "result",
                     "statusRecord",
                     "decision",
                     "document",
                     "documentLink",
-                    "catalog",
                     "zaaktypeInformatieobjecttype",
                     "caseProperty",
                     "caseDocument",
@@ -9569,12 +9252,8 @@
                     "hearingSession",
                     "advisoryReport",
                     "appealDecision",
-                    "proposal",
-                    "parafeerroute",
-                    "parafeeractie",
-                    "paraferingAuditEntry",
                     "mapLayer",
-                    "location",
+                    "case-location",
                     "inspectieRapport",
                     "handhavingsactie",
                     "lhsMatrix",
@@ -9598,10 +9277,31 @@
                     "supplierUser",
                     "supplierTender",
                     "supplierContract",
-                    "supplierInvoice",
+                    "caseSupplierInvoice",
                     "supplierMessage",
                     "supplierKpi",
-                    "emailTemplate"
+                    "emailTemplate",
+                    "adviceRequest",
+                    "adviceResponse",
+                    "advisoryBody",
+                    "aiAuditEntry",
+                    "automaticAction",
+                    "bacAdviceRequest",
+                    "beroep",
+                    "bezwaarDecision",
+                    "bezwaaradviescommissie",
+                    "caseFederatedActivity",
+                    "caseFederatedShare",
+                    "caseShare",
+                    "casetransfer",
+                    "checklistItem",
+                    "consultation",
+                    "inspectionChecklist",
+                    "inspectionResult",
+                    "lhsMatrixCell",
+                    "objectionProceeding",
+                    "partnerOrganization",
+                    "wmsLayer"
                 ],
                 "tablePrefix": "",
                 "folder": "Open Registers/Procest"
@@ -9609,72 +9309,13 @@
         },
         "x-pages": [
             {
-                "slug": "parafering-audit-trail",
-                "type": "index",
-                "title": "Parafering audit trail",
-                "schema": "paraferingAuditEntry",
-                "register": "dossiq",
-                "path": "/voorstellen/:voorstelId/audit-trail",
-                "description": "Append-only audit trail of every parafeerroute transition on a voorstel. Visible to auditors, secretariaat, and beheerders.",
-                "listing": {
-                    "defaultSort": {
-                        "field": "timestamp",
-                        "direction": "desc"
-                    },
-                    "filters": [
-                        {
-                            "field": "action",
-                            "type": "enum"
-                        },
-                        {
-                            "field": "actor",
-                            "type": "string"
-                        },
-                        {
-                            "field": "proposal",
-                            "type": "string"
-                        },
-                        {
-                            "field": "timestamp",
-                            "type": "dateRange"
-                        }
-                    ],
-                    "columns": [
-                        {
-                            "field": "timestamp",
-                            "label": "Timestamp"
-                        },
-                        {
-                            "field": "action",
-                            "label": "Transition"
-                        },
-                        {
-                            "field": "actor",
-                            "label": "Actor"
-                        },
-                        {
-                            "field": "actorRole",
-                            "label": "Actor role"
-                        },
-                        {
-                            "field": "proposal",
-                            "label": "Voorstel"
-                        },
-                        {
-                            "field": "reason",
-                            "label": "Reason"
-                        }
-                    ]
-                }
-            },
-            {
                 "slug": "leverancier-dashboard",
                 "type": "custom",
                 "title": "Leveranciersportaal",
                 "register": "dossiq",
                 "path": "/leverancier",
                 "component": "LeverancierDashboard",
-                "description": "Supplier portal operator-side dashboard shell — 4 cards (tenders, invoices, contracts, KPI) bound to SupplierDashboardService::buildSummary(). Each card is a router-link into its feature view. Chain member 15."
+                "description": "Supplier portal operator-side dashboard shell: 4 cards (tenders, invoices, contracts, KPI) bound to SupplierDashboardService::buildSummary(). Each card is a router-link into its feature view. Chain member 15."
             },
             {
                 "slug": "leverancier-tenders",
@@ -9683,7 +9324,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/tenders",
                 "component": "TenderList",
-                "description": "Supplier tender list — sortable/filterable, status badge from TenderViewModelService. Chain member 06 frontend."
+                "description": "Supplier tender list: sortable/filterable, status badge from TenderViewModelService. Chain member 06 frontend."
             },
             {
                 "slug": "leverancier-tender-detail",
@@ -9692,7 +9333,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/tenders/:id",
                 "component": "TenderDetail",
-                "description": "Supplier tender detail — conditional award/rejection/withdrawal sections from visibilityFlags(). Chain member 06 frontend."
+                "description": "Supplier tender detail: conditional award/rejection/withdrawal sections from visibilityFlags(). Chain member 06 frontend."
             },
             {
                 "slug": "leverancier-invoices",
@@ -9701,7 +9342,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/facturen",
                 "component": "InvoiceList",
-                "description": "Supplier invoice list — overdue90Plus flag + status badge from LeverancierViewModelService. Chain member 08 frontend."
+                "description": "Supplier invoice list: overdue90Plus flag + status badge from LeverancierViewModelService. Chain member 08 frontend."
             },
             {
                 "slug": "leverancier-contracts",
@@ -9710,7 +9351,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/contracten",
                 "component": "ContractList",
-                "description": "Supplier contract list — expiring-soon highlighting from ContractRenewalService. Chain member 10 frontend."
+                "description": "Supplier contract list: expiring-soon highlighting from ContractRenewalService. Chain member 10 frontend."
             },
             {
                 "slug": "leverancier-kpi",
@@ -9719,7 +9360,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/kpi",
                 "component": "KpiView",
-                "description": "Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score. Chain member 14 frontend."
+                "description": "Supplier KPI summary: payment days, on-time pct, dispute rate, compliance score. Chain member 14 frontend."
             },
             {
                 "slug": "leverancier-profile",
@@ -9728,7 +9369,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/profiel",
                 "component": "ProfileForm",
-                "description": "Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Dossiq case). Chain member 12."
+                "description": "Supplier profile form: address + contact (immediate) + IBAN-change (4-eyes via Dossiq case). Chain member 12."
             },
             {
                 "slug": "leverancier-messages",
@@ -9741,177 +9382,6 @@
             }
         ],
         "objects": [
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "parafeerroute",
-                    "slug": "route-collegeadvies-omgevingsvergunning"
-                },
-                "name": "Collegeadvies - Omgevingsvergunning",
-                "proposalType": "collegeadvies",
-                "isDefault": true,
-                "description": "Standaard accorderingslijn voor collegeadviezen over omgevingsvergunningen",
-                "steps": [
-                    {
-                        "order": 1,
-                        "type": "advice",
-                        "actor": "juridische-dienst",
-                        "actorType": "group",
-                        "mandatory": false
-                    },
-                    {
-                        "order": 2,
-                        "type": "parafering",
-                        "actor": "teamleider-vth",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 3,
-                        "type": "parafering",
-                        "actor": "afdelingshoofd-vth",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 4,
-                        "type": "accordering",
-                        "actor": "portefeuillehouder",
-                        "actorType": "role",
-                        "mandatory": true
-                    }
-                ]
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "parafeerroute",
-                    "slug": "route-collegeadvies-bestemmingsplan"
-                },
-                "name": "Collegeadvies - Bestemmingsplan",
-                "proposalType": "collegeadvies",
-                "isDefault": false,
-                "description": "Uitgebreide route voor bestemmingsplanwijzigingen met planologisch en juridisch advies",
-                "steps": [
-                    {
-                        "order": 1,
-                        "type": "advice",
-                        "actor": "planologisch-adviseur",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 2,
-                        "type": "advice",
-                        "actor": "juridische-dienst",
-                        "actorType": "group",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 3,
-                        "type": "parafering",
-                        "actor": "teamleider-ro",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 4,
-                        "type": "parafering",
-                        "actor": "afdelingshoofd-ro",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 5,
-                        "type": "accordering",
-                        "actor": "wethouder-ruimtelijke-ordening",
-                        "actorType": "role",
-                        "mandatory": true
-                    }
-                ]
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "parafeerroute",
-                    "slug": "route-dt-advies-standaard"
-                },
-                "name": "DT-advies - Standaard",
-                "proposalType": "dt_advice",
-                "isDefault": true,
-                "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
-                "steps": [
-                    {
-                        "order": 1,
-                        "type": "parafering",
-                        "actor": "handler",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 2,
-                        "type": "accordering",
-                        "actor": "afdelingshoofd",
-                        "actorType": "role",
-                        "mandatory": true
-                    }
-                ]
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "parafeerroute",
-                    "slug": "route-raadsvoorstel-groot-project"
-                },
-                "name": "Raadsvoorstel - Groot project",
-                "proposalType": "raadsvoorstel",
-                "isDefault": true,
-                "description": "Volledige route voor raadsvoorstellen: financieel, juridisch, management, gemeentesecretaris en burgemeester",
-                "steps": [
-                    {
-                        "order": 1,
-                        "type": "advice",
-                        "actor": "financieel-adviseur",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 2,
-                        "type": "advice",
-                        "actor": "juridische-dienst",
-                        "actorType": "group",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 3,
-                        "type": "parafering",
-                        "actor": "teamleider",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 4,
-                        "type": "parafering",
-                        "actor": "afdelingshoofd",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 5,
-                        "type": "accordering",
-                        "actor": "gemeentesecretaris",
-                        "actorType": "role",
-                        "mandatory": true
-                    },
-                    {
-                        "order": 6,
-                        "type": "accordering",
-                        "actor": "burgemeester",
-                        "actorType": "role",
-                        "mandatory": true
-                    }
-                ]
-            },
             {
                 "@self": {
                     "register": "dossiq",
@@ -10009,7 +9479,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag is ontvangen en geregistreerd",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -10021,7 +9492,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag wordt inhoudelijk getoetst",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -10033,7 +9505,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Besluit wordt voorbereid en genomen",
                 "order": 3,
-                "isFinal": false
+                "isFinal": false,
+                "role": "review"
             },
             {
                 "@self": {
@@ -10045,7 +9518,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Zaak is afgehandeld en gearchiveerd",
                 "order": 4,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
@@ -10057,7 +9531,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidieaanvraag is ontvangen",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -10069,7 +9544,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Aanvraag wordt getoetst aan subsidiekader",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -10081,7 +9557,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidiebesluit wordt voorbereid en genomen",
                 "order": 3,
-                "isFinal": false
+                "isFinal": false,
+                "role": "review"
             },
             {
                 "@self": {
@@ -10093,7 +9570,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidie is verleend, geweigerd of ingetrokken",
                 "order": 4,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
@@ -10105,7 +9583,8 @@
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is ontvangen en geregistreerd",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -10117,7 +9596,8 @@
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht wordt onderzocht (hoor en wederhoor)",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -10129,7 +9609,8 @@
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is afgehandeld met formeel antwoord",
                 "order": 3,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
@@ -10141,7 +9622,8 @@
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding is ontvangen en doorgezet",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -10153,7 +9635,8 @@
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding wordt afgehandeld door beheerdienst",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -10165,7 +9648,8 @@
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding is opgelost en afgesloten",
                 "order": 3,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
@@ -10921,7 +10405,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-acme-001"
                 },
                 "supplierRef": "@ref:supplier-acme-bouw-bv",
@@ -10935,7 +10419,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-acme-002"
                 },
                 "supplierRef": "@ref:supplier-acme-bouw-bv",
@@ -10949,7 +10433,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-orange-001"
                 },
                 "supplierRef": "@ref:supplier-orange-it-bv",
@@ -10964,7 +10448,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-orange-disputed"
                 },
                 "supplierRef": "@ref:supplier-orange-it-bv",
@@ -10979,7 +10463,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-blokker-overdue"
                 },
                 "supplierRef": "@ref:supplier-blokker-schoonmaak",

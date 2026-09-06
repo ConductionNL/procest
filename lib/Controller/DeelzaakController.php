@@ -38,6 +38,8 @@ use OCP\IUserSession;
 
 /**
  * REST controller for sub-case operations.
+ *
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class DeelzaakController extends Controller {
 	/**

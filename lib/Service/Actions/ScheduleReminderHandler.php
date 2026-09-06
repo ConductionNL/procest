@@ -38,6 +38,8 @@ use Throwable;
 
 /**
  * Handler for `scheduleReminder` automatic actions.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ScheduleReminderHandler implements ActionHandlerInterface {
 	use HandlesTemplates;

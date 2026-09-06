@@ -26,6 +26,8 @@ namespace OCA\Dossiq\Middleware;
 
 /**
  * Exception for ZGW authentication and authorization failures.
+ *
+ * @spec openspec/specs/zgw-autorisaties-api/spec.md
  */
 class ZgwAuthException extends \Exception {
 
@@ -51,6 +53,8 @@ class ZgwAuthException extends \Exception {
 	 * Get the HTTP status code.
 	 *
 	 * @return int
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 */
 	public function getStatusCode(): int {
 		return $this->statusCode;

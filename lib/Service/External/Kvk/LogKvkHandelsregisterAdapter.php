@@ -94,6 +94,8 @@ class LogKvkHandelsregisterAdapter implements KvkHandelsregisterAdapterInterface
 	 * @inheritDoc
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/kvk-register/spec.md#requirement-kvk-company-register-schema-exists-in-openregister
 	 */
 	public function isDormant(): bool {
 		return true;

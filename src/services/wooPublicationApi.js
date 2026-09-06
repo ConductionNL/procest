@@ -13,8 +13,8 @@ import { generateUrl } from '@nextcloud/router'
 
 /**
  *
- * @param caseId
- * @param path
+ * @param {string} caseId Identifier of the case id.
+ * @param {string} path The path.
  */
 function base(caseId, path) {
 	return generateUrl('/apps/dossiq/api/cases/' + caseId + '/woo' + path)

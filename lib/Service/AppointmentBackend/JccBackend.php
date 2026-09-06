@@ -32,6 +32,8 @@ use Psr\Log\LoggerInterface;
  *
  * Integrates with the JCC Afspraken REST API used by many Dutch municipalities
  * for balie appointment management.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class JccBackend implements AppointmentBackendInterface {
 	/**

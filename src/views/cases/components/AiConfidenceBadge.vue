@@ -19,6 +19,10 @@ export default {
 			validator: (v) => v >= 0 && v <= 1,
 		},
 
+		// AiClassifyDialog passes `size="medium"`. The badge sizes itself in CSS,
+		// so the value is not read in script; the declaration keeps it a prop
+		// rather than a stray HTML attribute on the root element.
+		// eslint-disable-next-line vue/no-unused-properties
 		size: {
 			type: String,
 			default: 'small',

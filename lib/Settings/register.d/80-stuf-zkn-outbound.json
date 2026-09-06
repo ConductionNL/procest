@@ -1,509 +1,569 @@
 {
-    "registers": {
-        "dossiq": {
-            "schemas": [
-                "stufEndpoint",
-                "stufMessage",
-                "zaaksysteemMapping"
-            ]
-        }
-    },
-    "schemas": {
-        "stufEndpoint": {
-            "slug": "stufEndpoint",
-            "title": "StUF Endpoint",
-            "icon": "Connection",
-            "version": "1.0.0",
-            "summary": "Configuration profile for a single zaaksysteem StUF connection.",
-            "description": "Stores the connection details (URL, sectormodel, authentication, TLS cert reference) for one legacy zaaksysteem reachable over StUF 0310. Multiple endpoints per gemeente are supported (transition scenarios).",
-            "@type": "StufEndpoint",
-            "required": [
-                "id",
-                "name",
-                "municipalityCode",
-                "recipientApplication",
-                "recipientOrganisation",
-                "recipientUser",
-                "senderApplication",
-                "senderOrganisation",
-                "endpointUrl",
-                "soapVersion",
-                "stufVersion",
-                "sectorModel",
-                "authentication"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "description": "Stable identifier of this endpoint (e.g. stuf-ep-amersfoort-key2zaken).",
-                    "maxLength": 128
-                },
-                "name": {
-                    "type": "string",
-                    "description": "Human-readable endpoint name shown in the admin UI.",
-                    "maxLength": 255
-                },
-                "municipalityCode": {
-                    "type": "string",
-                    "description": "4-digit gemeente CBS code (e.g. 0307 for Amersfoort).",
-                    "maxLength": 16
-                },
-                "recipientApplication": {
-                    "type": "string",
-                    "description": "Receiving zaaksysteem application name (StUF stuurgegevens.ontvanger.applicatie).",
-                    "maxLength": 255
-                },
-                "recipientOrganisation": {
-                    "type": "string",
-                    "description": "Receiving organisation (gemeente).",
-                    "maxLength": 255
-                },
-                "recipientUser": {
-                    "type": "string",
-                    "description": "Receiving system user identifier.",
-                    "maxLength": 255
-                },
-                "senderApplication": {
-                    "type": "string",
-                    "description": "Sender (Dossiq) application identifier.",
-                    "maxLength": 255
-                },
-                "senderOrganisation": {
-                    "type": "string",
-                    "description": "Sender organisation (gemeente).",
-                    "maxLength": 255
-                },
-                "endpointUrl": {
-                    "type": "string",
-                    "description": "SOAP endpoint URL (HTTPS only, validated).",
-                    "format": "uri",
-                    "maxLength": 1024
-                },
-                "soapVersion": {
-                    "type": "string",
-                    "description": "SOAP envelope version.",
-                    "enum": [
-                        "1.1",
-                        "1.2"
-                    ]
-                },
-                "stufVersion": {
-                    "type": "string",
-                    "description": "StUF protocol version.",
-                    "enum": [
-                        "0310"
-                    ]
-                },
-                "sectorModel": {
-                    "type": "string",
-                    "description": "StUF sectormodel; ZKN for cases.",
-                    "enum": [
-                        "ZKN"
-                    ]
-                },
-                "authentication": {
-                    "type": "object",
-                    "description": "Authentication block (WSSE UsernameToken). The password itself is never stored in the schema; only the vault reference is persisted.",
-                    "required": [
-                        "type",
-                        "username",
-                        "passwordVaultRef"
-                    ],
-                    "properties": {
-                        "type": {
-                            "type": "string",
-                            "enum": [
-                                "wsse-usernametoken"
-                            ]
-                        },
-                        "username": {
-                            "type": "string",
-                            "maxLength": 255
-                        },
-                        "passwordVaultRef": {
-                            "type": "string",
-                            "description": "Vault reference (e.g. vault://stuf/amersfoort/key2zaken).",
-                            "maxLength": 512
-                        }
-                    }
-                },
-                "tlsClientCertRef": {
-                    "type": "string",
-                    "description": "Vault reference for the mutual-TLS client certificate (PEM).",
-                    "maxLength": 512
-                },
-                "caseIdentificationStrategy": {
-                    "type": "string",
-                    "description": "Zaak ID allocation strategy (vooraf = pre-allocate via Du01; achteraf = server allocates on Lk01).",
-                    "enum": [
-                        "vooraf",
-                        "achteraf"
-                    ]
-                },
-                "zaaktypeMappings": {
-                    "type": "object",
-                    "description": "Map from dossiq case.type (slug) to the zaaksysteem's zkn:zaaktype.omschrijving used in Lk01 builds.",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "freeMessagesTemplates": {
-                    "type": "array",
-                    "description": "Registered free-message templates per endpoint.",
-                    "items": {
+    "_note": "SHAPE FIX. This fragment declared `registers` and `schemas` at the TOP level, while RegisterFragmentMerger merges onto `components` and OpenRegister's importer reads `components.registers` / `components.schemas`. The whole fragment was therefore invisible: stufEndpoint, stufMessage and zaaksysteemMapping were never created and never carried, and StufRegisterAccess failed 46 times on one measured fresh install with `Schema slug \"stufEndpoint\"/\"stufMessage\" is not carried by register \"dossiq\"`. Nothing said a word at install time. The single demo endpoint stays parked under `components._objects_disabled` rather than being un-parked alongside the schemas: it is one municipality's connection profile with placeholder credentials, and shipping it on every install is a product decision nobody made. Rename it back to `objects` to seed it.",
+    "components": {
+        "registers": {
+            "dossiq": {
+                "schemas": [
+                    "stufEndpoint",
+                    "stufMessage",
+                    "zaaksysteemMapping"
+                ]
+            }
+        },
+        "schemas": {
+            "stufEndpoint": {
+                "slug": "stufEndpoint",
+                "title": "StUF Endpoint",
+                "icon": "Connection",
+                "version": "1.0.0",
+                "summary": "Configuration profile for a single zaaksysteem StUF connection.",
+                "description": "Stores the connection details (URL, sectormodel, authentication, TLS cert reference) for one legacy zaaksysteem reachable over StUF 0310. Multiple endpoints per gemeente are supported (transition scenarios).",
+                "@type": "StufEndpoint",
+                "required": [
+                    "id",
+                    "name",
+                    "municipalityCode",
+                    "recipientApplication",
+                    "recipientOrganisation",
+                    "recipientUser",
+                    "senderApplication",
+                    "senderOrganisation",
+                    "endpointUrl",
+                    "soapVersion",
+                    "stufVersion",
+                    "sectorModel",
+                    "authentication"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Endpoint ID",
+                        "description": "Stable identifier of this endpoint (e.g. stuf-ep-amersfoort-key2zaken).",
+                        "maxLength": 128
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Endpoint name",
+                        "description": "Human-readable endpoint name shown in the admin UI.",
+                        "maxLength": 255
+                    },
+                    "municipalityCode": {
+                        "type": "string",
+                        "title": "Municipality code",
+                        "description": "4-digit gemeente CBS code (e.g. 0307 for Amersfoort).",
+                        "maxLength": 16
+                    },
+                    "recipientApplication": {
+                        "type": "string",
+                        "title": "Recipient application",
+                        "description": "Receiving zaaksysteem application name (StUF stuurgegevens.ontvanger.applicatie).",
+                        "maxLength": 255
+                    },
+                    "recipientOrganisation": {
+                        "type": "string",
+                        "title": "Recipient organisation",
+                        "description": "Receiving organisation (gemeente).",
+                        "maxLength": 255
+                    },
+                    "recipientUser": {
+                        "type": "string",
+                        "title": "Recipient user",
+                        "description": "Receiving system user identifier.",
+                        "maxLength": 255
+                    },
+                    "senderApplication": {
+                        "type": "string",
+                        "title": "Sender application",
+                        "description": "Sender (Dossiq) application identifier.",
+                        "maxLength": 255
+                    },
+                    "senderOrganisation": {
+                        "type": "string",
+                        "title": "Sender organisation",
+                        "description": "Sender organisation (gemeente).",
+                        "maxLength": 255
+                    },
+                    "endpointUrl": {
+                        "type": "string",
+                        "title": "Endpoint URL",
+                        "description": "SOAP endpoint URL (HTTPS only, validated).",
+                        "format": "uri",
+                        "maxLength": 1024
+                    },
+                    "soapVersion": {
+                        "type": "string",
+                        "title": "SOAP version",
+                        "description": "SOAP envelope version.",
+                        "enum": [
+                            "1.1",
+                            "1.2"
+                        ]
+                    },
+                    "stufVersion": {
+                        "type": "string",
+                        "title": "StUF version",
+                        "description": "StUF protocol version.",
+                        "enum": [
+                            "0310"
+                        ]
+                    },
+                    "sectorModel": {
+                        "type": "string",
+                        "title": "Sector model",
+                        "description": "StUF sectormodel; ZKN for cases.",
+                        "enum": [
+                            "ZKN"
+                        ]
+                    },
+                    "authentication": {
                         "type": "object",
+                        "title": "Authentication",
+                        "description": "Authentication block (WSSE UsernameToken). The password itself is never stored in the schema; only the vault reference is persisted.",
                         "required": [
-                            "name",
-                            "verplichteVelden"
+                            "type",
+                            "username",
+                            "passwordVaultRef"
                         ],
                         "properties": {
-                            "name": {
-                                "type": "string"
+                            "type": {
+                                "type": "string",
+                                "title": "Authentication type",
+                                "description": "How this endpoint authenticates. WSSE UsernameToken is the StUF default.",
+                                "enum": [
+                                    "wsse-usernametoken"
+                                ]
                             },
-                            "verplichteVelden": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
+                            "username": {
+                                "type": "string",
+                                "title": "Username",
+                                "description": "The user name sent in the WSSE token. The password lives in the vault, never here.",
+                                "maxLength": 255
+                            },
+                            "passwordVaultRef": {
+                                "type": "string",
+                                "title": "Password vault reference",
+                                "description": "Vault reference (e.g. vault://stuf/amersfoort/key2zaken).",
+                                "maxLength": 512
+                            }
+                        }
+                    },
+                    "tlsClientCertRef": {
+                        "type": "string",
+                        "title": "Client certificate reference",
+                        "description": "Vault reference for the mutual-TLS client certificate (PEM).",
+                        "maxLength": 512
+                    },
+                    "caseIdentificationStrategy": {
+                        "type": "string",
+                        "title": "Case ID strategy",
+                        "description": "Zaak ID allocation strategy (vooraf = pre-allocate via Du01; achteraf = server allocates on Lk01).",
+                        "enum": [
+                            "vooraf",
+                            "achteraf"
+                        ]
+                    },
+                    "zaaktypeMappings": {
+                        "type": "object",
+                        "title": "Case type mappings",
+                        "description": "Map from dossiq case.type (slug) to the zaaksysteem's zkn:zaaktype.omschrijving used in Lk01 builds.",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "freeMessagesTemplates": {
+                        "type": "array",
+                        "title": "Free message templates",
+                        "description": "Registered free-message templates per endpoint.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name",
+                                "verplichteVelden"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "title": "Template name",
+                                    "description": "The name this free-message template is chosen by."
+                                },
+                                "verplichteVelden": {
+                                    "type": "array",
+                                    "title": "Required fields",
+                                    "description": "Fields a sender fills before this template can go out.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actief": {
+                        "type": "boolean",
+                        "title": "Active",
+                        "description": "Whether this endpoint is active. Soft-delete sets actief=false.",
+                        "default": true
+                    },
+                    "aangemaakt": {
+                        "type": "string",
+                        "title": "Created",
+                        "format": "date-time",
+                        "description": "Timestamp when the endpoint was created."
+                    }
+                }
+            },
+            "stufMessage": {
+                "slug": "stufMessage",
+                "title": "StUF Message",
+                "icon": "Forum",
+                "version": "1.0.0",
+                "summary": "Append-only audit log entry for one StUF SOAP envelope (outbound or inbound).",
+                "description": "Persists the full XML envelope sent or received, plus HTTP status, timing, retry history, and a generic source-reference back to the dossiq entity that triggered the message.",
+                "@type": "StufMessage",
+                "required": [
+                    "id",
+                    "endpointId",
+                    "direction",
+                    "messageKind",
+                    "envelopeXml",
+                    "sentOn"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Message ID",
+                        "description": "Stable identifier (e.g. stuf-msg-2026-05-21-08-44-12-a7c3).",
+                        "maxLength": 128
+                    },
+                    "endpointId": {
+                        "type": "string",
+                        "title": "Endpoint",
+                        "description": "Reference to the StufEndpoint used.",
+                        "maxLength": 128
+                    },
+                    "direction": {
+                        "type": "string",
+                        "title": "Direction",
+                        "description": "Message direction.",
+                        "enum": [
+                            "outbound",
+                            "inbound"
+                        ]
+                    },
+                    "messageKind": {
+                        "type": "string",
+                        "title": "Message kind",
+                        "description": "StUF message type code (Lk01, Lk02, Lk03, Bv01, Lv01, La01, Du01, Fo02).",
+                        "enum": [
+                            "Lk01",
+                            "Lk02",
+                            "Lk03",
+                            "Bv01",
+                            "Lv01",
+                            "La01",
+                            "Du01",
+                            "Fo02"
+                        ]
+                    },
+                    "entiteittype": {
+                        "type": "string",
+                        "title": "Entity type",
+                        "description": "Entity type (ZAK, NPS, NNP).",
+                        "maxLength": 32
+                    },
+                    "role": {
+                        "type": "string",
+                        "title": "StUF function",
+                        "description": "StUF functie (e.g. creeerZaak, actualiseerZaak, geefZaakDetails, zetStatus, genereerZaakIdentificatie).",
+                        "maxLength": 128
+                    },
+                    "referenceNumber": {
+                        "type": "string",
+                        "title": "Reference number",
+                        "description": "Outbound referentienummer (ULID, unique per envelope).",
+                        "maxLength": 64
+                    },
+                    "crossRefnummer": {
+                        "type": "string",
+                        "title": "Cross reference number",
+                        "description": "crossRefnummer set by inbound responses to refer back to a referentienummer.",
+                        "maxLength": 64
+                    },
+                    "caseIdentification": {
+                        "type": "string",
+                        "title": "Case identification",
+                        "description": "Zaak ID this message refers to (if known).",
+                        "maxLength": 64
+                    },
+                    "envelopeXml": {
+                        "type": "string",
+                        "title": "Request envelope",
+                        "description": "Full SOAP envelope XML (request).",
+                        "maxLength": 33554432
+                    },
+                    "responseEnvelopeXml": {
+                        "type": "string",
+                        "title": "Response envelope",
+                        "description": "Full SOAP envelope XML (response).",
+                        "maxLength": 33554432
+                    },
+                    "httpStatus": {
+                        "type": "integer",
+                        "title": "HTTP status",
+                        "description": "HTTP response status code."
+                    },
+                    "durationMs": {
+                        "type": "integer",
+                        "title": "Duration in ms",
+                        "description": "Wall-clock duration in milliseconds."
+                    },
+                    "fout": {
+                        "type": "object",
+                        "title": "Error",
+                        "description": "Error details if the call failed.",
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "title": "Error code",
+                                "description": "The code the zaaksysteem returned."
+                            },
+                            "omschrijving": {
+                                "type": "string",
+                                "title": "Error description",
+                                "description": "What the zaaksysteem said went wrong."
+                            },
+                            "details": {
+                                "type": "string",
+                                "title": "Error details",
+                                "description": "Extra detail the zaaksysteem supplied, if any."
+                            },
+                            "kind": {
+                                "type": "string",
+                                "title": "Error kind",
+                                "description": "Which layer the error came from.",
+                                "enum": [
+                                    "transient",
+                                    "permanent"
+                                ]
+                            }
+                        }
+                    },
+                    "sentOn": {
+                        "type": "string",
+                        "title": "Sent on",
+                        "format": "date-time",
+                        "description": "When the message was sent (or registered, for inbound messages)."
+                    },
+                    "receivedOn": {
+                        "type": "string",
+                        "title": "Received on",
+                        "format": "date-time",
+                        "description": "When the response was received."
+                    },
+                    "relatedCaseId": {
+                        "type": "string",
+                        "title": "Related case",
+                        "description": "Zaak identificatie this message is related to, if applicable.",
+                        "maxLength": 128
+                    },
+                    "sourceEntity": {
+                        "type": "string",
+                        "title": "Source entity",
+                        "description": "Type of the dossiq source entity that triggered this message.",
+                        "enum": [
+                            "case",
+                            "contact"
+                        ]
+                    },
+                    "sourceId": {
+                        "type": "string",
+                        "title": "Source ID",
+                        "description": "Identifier of the dossiq source entity that triggered this message.",
+                        "maxLength": 128
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Message lifecycle status.",
+                        "enum": [
+                            "verzonden",
+                            "bevestigd",
+                            "fout",
+                            "wacht_op_retry"
+                        ]
+                    },
+                    "retries": {
+                        "type": "array",
+                        "title": "Retries",
+                        "description": "Retry history.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "attempt",
+                                "timestamp"
+                            ],
+                            "properties": {
+                                "attempt": {
+                                    "type": "integer",
+                                    "title": "Attempt",
+                                    "description": "Which retry this was, counting from one."
+                                },
+                                "timestamp": {
+                                    "type": "string",
+                                    "title": "Attempted on",
+                                    "description": "When this retry ran.",
+                                    "format": "date-time"
+                                },
+                                "httpStatus": {
+                                    "type": "integer",
+                                    "title": "HTTP status",
+                                    "description": "The status this retry received."
+                                },
+                                "durationMs": {
+                                    "type": "integer",
+                                    "title": "Duration in ms",
+                                    "description": "How long this retry took."
+                                },
+                                "fout": {
+                                    "type": "object",
+                                    "title": "Error",
+                                    "description": "What this retry failed with, if it failed."
                                 }
                             }
                         }
                     }
-                },
-                "actief": {
-                    "type": "boolean",
-                    "description": "Whether this endpoint is active. Soft-delete sets actief=false.",
-                    "default": true
-                },
-                "aangemaakt": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "Timestamp when the endpoint was created."
                 }
-            }
-        },
-        "stufMessage": {
-            "slug": "stufMessage",
-            "title": "StUF Message",
-            "icon": "Forum",
-            "version": "1.0.0",
-            "summary": "Append-only audit log entry for one StUF SOAP envelope (outbound or inbound).",
-            "description": "Persists the full XML envelope sent or received, plus HTTP status, timing, retry history, and a generic source-reference back to the dossiq entity that triggered the message.",
-            "@type": "StufMessage",
-            "required": [
-                "id",
-                "endpointId",
-                "direction",
-                "messageKind",
-                "envelopeXml",
-                "sentOn"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "description": "Stable identifier (e.g. stuf-msg-2026-05-21-08-44-12-a7c3).",
-                    "maxLength": 128
-                },
-                "endpointId": {
-                    "type": "string",
-                    "description": "Reference to the StufEndpoint used.",
-                    "maxLength": 128
-                },
-                "direction": {
-                    "type": "string",
-                    "description": "Message direction.",
-                    "enum": [
-                        "outbound",
-                        "inbound"
-                    ]
-                },
-                "messageKind": {
-                    "type": "string",
-                    "description": "StUF message type code (Lk01, Lk02, Lk03, Bv01, Lv01, La01, Du01, Fo02).",
-                    "enum": [
-                        "Lk01",
-                        "Lk02",
-                        "Lk03",
-                        "Bv01",
-                        "Lv01",
-                        "La01",
-                        "Du01",
-                        "Fo02"
-                    ]
-                },
-                "entiteittype": {
-                    "type": "string",
-                    "description": "Entity type (ZAK, NPS, NNP).",
-                    "maxLength": 32
-                },
-                "role": {
-                    "type": "string",
-                    "description": "StUF functie (e.g. creeerZaak, actualiseerZaak, geefZaakDetails, zetStatus, genereerZaakIdentificatie).",
-                    "maxLength": 128
-                },
-                "referenceNumber": {
-                    "type": "string",
-                    "description": "Outbound referentienummer (ULID, unique per envelope).",
-                    "maxLength": 64
-                },
-                "crossRefnummer": {
-                    "type": "string",
-                    "description": "crossRefnummer set by inbound responses to refer back to a referentienummer.",
-                    "maxLength": 64
-                },
-                "caseIdentification": {
-                    "type": "string",
-                    "description": "Zaak ID this message refers to (if known).",
-                    "maxLength": 64
-                },
-                "envelopeXml": {
-                    "type": "string",
-                    "description": "Full SOAP envelope XML (request).",
-                    "maxLength": 33554432
-                },
-                "responseEnvelopeXml": {
-                    "type": "string",
-                    "description": "Full SOAP envelope XML (response).",
-                    "maxLength": 33554432
-                },
-                "httpStatus": {
-                    "type": "integer",
-                    "description": "HTTP response status code."
-                },
-                "durationMs": {
-                    "type": "integer",
-                    "description": "Wall-clock duration in milliseconds."
-                },
-                "fout": {
-                    "type": "object",
-                    "description": "Error details if the call failed.",
-                    "properties": {
-                        "code": {
-                            "type": "string"
-                        },
-                        "omschrijving": {
-                            "type": "string"
-                        },
-                        "details": {
-                            "type": "string"
-                        },
-                        "kind": {
-                            "type": "string",
-                            "enum": [
-                                "transient",
-                                "permanent"
-                            ]
-                        }
-                    }
-                },
-                "sentOn": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "When the message was sent (or registered, for inbound messages)."
-                },
-                "receivedOn": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "When the response was received."
-                },
-                "relatedCaseId": {
-                    "type": "string",
-                    "description": "Zaak identificatie this message is related to, if applicable.",
-                    "maxLength": 128
-                },
-                "sourceEntity": {
-                    "type": "string",
-                    "description": "Type of the dossiq source entity that triggered this message.",
-                    "enum": [
-                        "case",
-                        "contact"
-                    ]
-                },
-                "sourceId": {
-                    "type": "string",
-                    "description": "Identifier of the dossiq source entity that triggered this message.",
-                    "maxLength": 128
-                },
-                "status": {
-                    "type": "string",
-                    "description": "Message lifecycle status.",
-                    "enum": [
-                        "verzonden",
-                        "bevestigd",
-                        "fout",
-                        "wacht_op_retry"
-                    ]
-                },
-                "retries": {
-                    "type": "array",
-                    "description": "Retry history.",
-                    "items": {
-                        "type": "object",
-                        "required": [
-                            "attempt",
-                            "timestamp"
-                        ],
-                        "properties": {
-                            "attempt": {
-                                "type": "integer"
-                            },
-                            "timestamp": {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            "httpStatus": {
-                                "type": "integer"
-                            },
-                            "durationMs": {
-                                "type": "integer"
-                            },
-                            "fout": {
-                                "type": "object"
-                            }
-                        }
+            },
+            "zaaksysteemMapping": {
+                "slug": "zaaksysteemMapping",
+                "title": "Zaaksysteem Mapping",
+                "icon": "LinkVariant",
+                "version": "1.0.0",
+                "summary": "Bidirectional mapping between a dossiq entity (case/contact) and its zaaksysteem identifier.",
+                "description": "Survives across updates and is the authoritative source for the external ID (zaak identificatie or betrokkene identificatie).",
+                "@type": "ZaaksysteemMapping",
+                "required": [
+                    "id",
+                    "sourceEntity",
+                    "sourceId",
+                    "externalEntity",
+                    "externalIdentification",
+                    "endpointId"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Mapping ID",
+                        "description": "Stable identifier (e.g. map-evenement-tour-amersfoort).",
+                        "maxLength": 128
+                    },
+                    "sourceEntity": {
+                        "type": "string",
+                        "title": "Source entity",
+                        "description": "Type of dossiq entity bound to the external one.",
+                        "enum": [
+                            "case",
+                            "contact"
+                        ]
+                    },
+                    "sourceId": {
+                        "type": "string",
+                        "title": "Source ID",
+                        "description": "Identifier of the dossiq entity (case id or contact id).",
+                        "maxLength": 128
+                    },
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "Dossiq case id this mapping relates to (set for case mappings; mirrors sourceId for sourceEntity=case).",
+                        "maxLength": 128
+                    },
+                    "externalEntity": {
+                        "type": "string",
+                        "title": "External entity",
+                        "description": "External entity type (ZAK, NPS, NNP).",
+                        "enum": [
+                            "ZAK",
+                            "NPS",
+                            "NNP"
+                        ]
+                    },
+                    "externalIdentification": {
+                        "type": "string",
+                        "title": "External identifier",
+                        "description": "External identifier (zaak ID or betrokkene ID).",
+                        "maxLength": 128
+                    },
+                    "endpointId": {
+                        "type": "string",
+                        "title": "Endpoint",
+                        "description": "Reference to the StufEndpoint used.",
+                        "maxLength": 128
+                    },
+                    "lastSynchronisation": {
+                        "type": "string",
+                        "title": "Last synchronised",
+                        "format": "date-time",
+                        "description": "Timestamp of last successful sync."
+                    },
+                    "synchronisationStatus": {
+                        "type": "string",
+                        "title": "Synchronisation status",
+                        "description": "Sync status.",
+                        "enum": [
+                            "in_sync",
+                            "fout",
+                            "geannuleerd",
+                            "wacht"
+                        ]
                     }
                 }
             }
         },
-        "zaaksysteemMapping": {
-            "slug": "zaaksysteemMapping",
-            "title": "Zaaksysteem Mapping",
-            "icon": "LinkVariant",
-            "version": "1.0.0",
-            "summary": "Bidirectional mapping between a dossiq entity (case/contact) and its zaaksysteem identifier.",
-            "description": "Survives across updates and is the authoritative source for the external ID (zaak identificatie or betrokkene identificatie).",
-            "@type": "ZaaksysteemMapping",
-            "required": [
-                "id",
-                "sourceEntity",
-                "sourceId",
-                "externalEntity",
-                "externalIdentification",
-                "endpointId"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "description": "Stable identifier (e.g. map-evenement-tour-amersfoort).",
-                    "maxLength": 128
+        "_objects_disabled": [
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "stufEndpoint",
+                    "slug": "amersfoort-key2zaken"
                 },
-                "sourceEntity": {
-                    "type": "string",
-                    "description": "Type of dossiq entity bound to the external one.",
-                    "enum": [
-                        "case",
-                        "contact"
-                    ]
+                "id": "stuf-ep-amersfoort-key2zaken",
+                "name": "Gemeente Amersfoort - Centric Key2Zaken",
+                "municipalityCode": "0307",
+                "recipientApplication": "Key2Zaken",
+                "recipientOrganisation": "Gemeente Amersfoort",
+                "_comment_stuf_identity": "recipientUser / senderApplication / authentication.username / tlsClientCertRef below are DELIBERATELY still `procest`-branded after the procest -> dossiq app-id rename. They are this sender's identity as the RECEIVING zaaksysteem (Centric Key2Zaken) knows it: senderApplication is the StUF zender.applicatie the receiver matches on, the WSSE username is a credential provisioned at the municipality, and the TLS client cert is a vault path to an issued certificate. Renaming any of them here does not rename them there — the messages would simply be rejected, or silently ignored, until the municipality re-provisions. These move only in a coordinated pass with the receiving party.",
+                "recipientUser": "procest",
+                "senderApplication": "Procest",
+                "senderOrganisation": "Gemeente Amersfoort",
+                "endpointUrl": "https://stuf.amersfoort.nl/CGS/StUFZKN/2.04/OntvangAsynchroon",
+                "soapVersion": "1.1",
+                "stufVersion": "0310",
+                "sectorModel": "ZKN",
+                "authentication": {
+                    "type": "wsse-usernametoken",
+                    "username": "procest_amersfoort",
+                    "passwordVaultRef": "vault://stuf/amersfoort/key2zaken"
                 },
-                "sourceId": {
-                    "type": "string",
-                    "description": "Identifier of the dossiq entity (case id or contact id).",
-                    "maxLength": 128
+                "tlsClientCertRef": "vault://pki/procest-amersfoort.pem",
+                "caseIdentificationStrategy": "achteraf",
+                "zaaktypeMappings": {
+                    "evenementenvergunning": "Evenementenvergunning",
+                    "klacht-openbare-ruimte": "Klacht openbare ruimte",
+                    "vraag-algemeen": "Algemene vraag KCC"
                 },
-                "caseId": {
-                    "type": "string",
-                    "description": "Dossiq case id this mapping relates to (set for case mappings; mirrors bronId for bronEntiteit=case).",
-                    "maxLength": 128
-                },
-                "externalEntity": {
-                    "type": "string",
-                    "description": "External entity type (ZAK, NPS, NNP).",
-                    "enum": [
-                        "ZAK",
-                        "NPS",
-                        "NNP"
-                    ]
-                },
-                "externalIdentification": {
-                    "type": "string",
-                    "description": "External identifier (zaak ID or betrokkene ID).",
-                    "maxLength": 128
-                },
-                "endpointId": {
-                    "type": "string",
-                    "description": "Reference to the StufEndpoint used.",
-                    "maxLength": 128
-                },
-                "lastSynchronisation": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "Timestamp of last successful sync."
-                },
-                "synchronisationStatus": {
-                    "type": "string",
-                    "description": "Sync status.",
-                    "enum": [
-                        "in_sync",
-                        "fout",
-                        "geannuleerd",
-                        "wacht"
-                    ]
-                },
-                "openstaandeWijzigingen": {
-                    "type": "array",
-                    "description": "Pending changes not yet sent to the zaaksysteem.",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "veld": {
-                                "type": "string"
-                            },
-                            "value": {
-                                "type": "string"
-                            },
-                            "geplandOp": {
-                                "type": "string",
-                                "format": "date-time"
-                            }
-                        }
+                "freeMessagesTemplates": [
+                    {
+                        "name": "zetStatus",
+                        "verplichteVelden": [
+                            "zaakIdentificatie",
+                            "statusType",
+                            "datumStatusGezet"
+                        ]
                     }
-                }
+                ],
+                "actief": true,
+                "aangemaakt": "2026-06-23T09:14:00+02:00"
             }
-        }
-    },
-    "objects": [
-        {
-            "@self": {
-                "register": "dossiq",
-                "schema": "stufEndpoint",
-                "slug": "amersfoort-key2zaken"
-            },
-            "id": "stuf-ep-amersfoort-key2zaken",
-            "name": "Gemeente Amersfoort - Centric Key2Zaken",
-            "municipalityCode": "0307",
-            "recipientApplication": "Key2Zaken",
-            "recipientOrganisation": "Gemeente Amersfoort",
-            "_comment_stuf_identity": "recipientUser / senderApplication / authentication.username / tlsClientCertRef below are DELIBERATELY still `procest`-branded after the procest -> dossiq app-id rename. They are this sender's identity as the RECEIVING zaaksysteem (Centric Key2Zaken) knows it: senderApplication is the StUF zender.applicatie the receiver matches on, the WSSE username is a credential provisioned at the municipality, and the TLS client cert is a vault path to an issued certificate. Renaming any of them here does not rename them there — the messages would simply be rejected, or silently ignored, until the municipality re-provisions. These move only in a coordinated pass with the receiving party.",
-            "recipientUser": "procest",
-            "senderApplication": "Procest",
-            "senderOrganisation": "Gemeente Amersfoort",
-            "endpointUrl": "https://stuf.amersfoort.nl/CGS/StUFZKN/2.04/OntvangAsynchroon",
-            "soapVersion": "1.1",
-            "stufVersion": "0310",
-            "sectorModel": "ZKN",
-            "authentication": {
-                "type": "wsse-usernametoken",
-                "username": "procest_amersfoort",
-                "passwordVaultRef": "vault://stuf/amersfoort/key2zaken"
-            },
-            "tlsClientCertRef": "vault://pki/procest-amersfoort.pem",
-            "caseIdentificationStrategy": "achteraf",
-            "zaaktypeMappings": {
-                "evenementenvergunning": "Evenementenvergunning",
-                "klacht-openbare-ruimte": "Klacht openbare ruimte",
-                "vraag-algemeen": "Algemene vraag KCC"
-            },
-            "freeMessagesTemplates": [
-                {
-                    "name": "zetStatus",
-                    "verplichteVelden": [
-                        "zaakIdentificatie",
-                        "statusType",
-                        "datumStatusGezet"
-                    ]
-                }
-            ],
-            "actief": true,
-            "aangemaakt": "2026-06-23T09:14:00+02:00"
-        }
-    ]
+        ]
+    }
 }

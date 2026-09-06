@@ -37,6 +37,8 @@ use DateTimeZone;
  * Deterministic SLA / working-day calculator for the KCC integration.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
  */
 class SlaCalculator {
 	/**
@@ -74,6 +76,8 @@ class SlaCalculator {
 	 * @param DateTimeInterface $date The date to inspect.
 	 *
 	 * @return bool True for Saturday or Sunday.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function isWeekend(DateTimeInterface $date): bool {
 		$dow = (int)$date->format('N');
@@ -90,6 +94,8 @@ class SlaCalculator {
 	 * @param DateTimeInterface $date The date to inspect.
 	 *
 	 * @return bool True when the date is a recognised public holiday.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function isDutchHoliday(DateTimeInterface $date): bool {
 		$year = (int)$date->format('Y');
@@ -104,6 +110,8 @@ class SlaCalculator {
 	 * @param DateTimeInterface $date The date to inspect.
 	 *
 	 * @return bool True for a working day.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function isWorkingDay(DateTimeInterface $date): bool {
 		return ($this->isWeekend(date: $date) === false && $this->isDutchHoliday(date: $date) === false);
@@ -118,6 +126,8 @@ class SlaCalculator {
 	 * @param int $days Number of working days to add (>= 0).
 	 *
 	 * @return DateTimeImmutable The resulting date-time.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function addWorkingDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
 		$result = $start;
@@ -140,6 +150,8 @@ class SlaCalculator {
 	 * @param DateTimeImmutable $end Range end (inclusive).
 	 *
 	 * @return int Number of working days in the range (0 when end < start).
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function countWorkingDays(DateTimeImmutable $start, DateTimeImmutable $end): int {
 		$startDay = $start->setTime(0, 0);
@@ -172,6 +184,8 @@ class SlaCalculator {
 	 * @param DateTimeImmutable $start The contact start time.
 	 *
 	 * @return DateTimeImmutable The SLA deadline.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function deadlineFor(string $channel, DateTimeImmutable $start): DateTimeImmutable {
 		if (isset(self::CHANNEL_SLA_WORKING_DAYS[$channel]) === true) {
@@ -190,6 +204,8 @@ class SlaCalculator {
 	 * @param DateTimeImmutable $now The reference (current) time.
 	 *
 	 * @return bool True when the deadline has passed.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function isBreached(string $channel, DateTimeImmutable $start, DateTimeImmutable $now): bool {
 		return ($now > $this->deadlineFor(channel: $channel, start: $start));
@@ -204,6 +220,8 @@ class SlaCalculator {
 	 * @param int $attemptCount The number of attempts already made (>= 0).
 	 *
 	 * @return DateTimeImmutable The next attempt time.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function nextRetryAt(DateTimeImmutable $from, int $attemptCount): DateTimeImmutable {
 		$baseMinutes = 15;

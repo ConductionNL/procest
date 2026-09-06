@@ -82,6 +82,18 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('dossiq', 'Store registry')"
+			:description="
+				t(
+					'dossiq',
+					'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
+				)
+			"
+			:loading="!storesReady">
+			<StoreSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'Consultation Management')"
 			:description="
 				t(
@@ -194,6 +206,7 @@ import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
@@ -214,6 +227,7 @@ export default {
 		MandaatMatrixTab,
 		MandaatMatrixSettingsTab,
 		ConsultationSettingsTab,
+		StoreSettingsTab,
 		FinancialIntegrationTab,
 		EmailSettings,
 		KccIntegrationSettings,

@@ -19,7 +19,7 @@
         "version": "1.0.0",
         "x-schema-org": "schema:DigitalDocument",
         "title": "Mandate Decision",
-        "description": "A mandate decision taken by the governing body — a collection of Mandate rows valid from effectiveFrom until expiryDate.",
+        "description": "A mandate decision taken by the governing body: a collection of Mandate rows valid from effectiveFrom until expiryDate.",
         "type": "object",
         "required": ["decisionNumber", "decisionName", "status"],
         "properties": {
@@ -78,7 +78,7 @@
           "parentRoleId":     {"type": "string", "title": "Parent Role ID", "description": "Hierarchical parent OrganisatieRol id"},
           "department":        {"type": "string", "title": "Department", "description": "Department to which this role belongs.", "facetable": true, "maxLength": 255},
           "team":            {"type": "string", "title": "Team", "description": "Team to which this role belongs.", "maxLength": 255},
-          "mandateLevel":    {"type": "integer", "title": "Mandate Level", "description": "Numeric tier — used for next-higher resolution"}
+          "mandateLevel":    {"type": "integer", "title": "Mandate Level", "description": "Numeric tier: used for next-higher resolution"}
         }
       },
       "medewerkerRolToewijzing": {

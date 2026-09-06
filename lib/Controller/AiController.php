@@ -48,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * health endpoints live on {@see AiSettingsController}.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class AiController extends Controller {
 	/**

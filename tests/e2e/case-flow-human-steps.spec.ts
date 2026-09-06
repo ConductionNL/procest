@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test'
+
 /**
  * The case flow, end to end: a case that pauses for a person and moves when
  * they answer.
@@ -20,7 +22,7 @@
  *
  * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
  */
-import { test, expect, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 /** The case type the flow ships against. */
 const CASE_TYPE = 'Omgevingsvergunning kleine bouwactiviteit'
@@ -57,14 +59,33 @@ async function shippedFlow(page: Page): Promise<Record<string, unknown> | null> 
 
 test.describe('Case flow — human steps', () => {
 	test('the shipped flow imports, and imports INERT', async ({ page }) => {
-		const flow = await shippedFlow(page)
+		const response = await page.request.get(
+			'/index.php/apps/openregister/api/flows?limit=200',
+		)
+		expect(response.ok(), 'The flow store must answer.').toBeTruthy()
+
+		const body = await response.json()
+		const flows = (body?.results ?? body ?? []) as Array<Record<string, unknown>>
+		const copies = flows.filter(
+			(f) => String(f.name ?? '') === 'Case behandeling',
+		)
 
 		expect(
-			flow,
+			copies.length,
 			'The case flow was not found in the flow store. It is declared as '
 				+ 'x-openregister-flows on the case schema, so its absence means the register '
 				+ 'import did not run or the declaration was rejected.',
-		).not.toBeNull()
+		).toBeGreaterThan(0)
+
+		// This instance has imported the register on every app upgrade, so a
+		// re-import that CREATED instead of UPDATED would show here as a
+		// second copy. Exactly one is the proof of idempotence.
+		expect(
+			copies.length,
+			'Re-importing the register must update the shipped flow, not create another copy.',
+		).toBe(1)
+
+		const flow = copies[0]
 
 		// Shipping a flow is not an operator volunteering to run it as
 		// themselves. It must arrive disabled and unowned.
@@ -101,17 +122,37 @@ test.describe('Case flow — human steps', () => {
 			types.filter((t) => t === 'dossiq.setStatus').length,
 		).toBeGreaterThanOrEqual(5)
 
-		// Exactly one unconditional exit from the completeness check: the
+		// Exactly one unconditional EXIT on the completeness check: the
 		// declared way out. Without it an unanswered case runs until the
 		// engine's ceiling and is reported as a broken flow.
-		const fromCheck = edges.filter(
-			(e) => String(e.from ?? '') === 'check-complete',
-		)
-		const unconditional = fromCheck.filter(
+		//
+		// Asserted on the node's exits[], because that is the ONLY place the
+		// engine reads conditions (FlowTokenRouter matches edges by fromExit).
+		// This spec used to assert conditions on the edges themselves —
+		// encoding the exact wrong shape that routed a COMPLETE case to
+		// "Wacht op aanvulling", since an edge-level condition is silently
+		// invisible to the router.
+		const check = nodes.find((n) => String(n.id ?? '') === 'check-complete')
+		expect(check, 'The completeness check node must exist.').toBeTruthy()
+		const exits = (check?.exits ?? []) as Array<Record<string, unknown>>
+		const unconditional = exits.filter(
 			(e) => e.condition === undefined || e.condition === null,
 		)
 		expect(unconditional).toHaveLength(1)
-		expect(String(unconditional[0].to)).toBe('status-gestrand')
+
+		// And the edge leaving through that exit is the stalled route.
+		const elseEdge = edges.find(
+			(e) =>
+				String(e.from ?? '') === 'check-complete'
+				&& String(e.fromExit ?? '') === String(unconditional[0].id ?? ''),
+		)
+		expect(String(elseEdge?.to ?? '')).toBe('status-gestrand')
+
+		// No edge anywhere in the flow may carry a condition of its own: the
+		// engine never reads it, so it would be a branch that does not exist.
+		expect(
+			edges.filter((e) => e.condition !== undefined && e.condition !== null),
+		).toHaveLength(0)
 	})
 
 	test('the case type ships every status the flow moves to', async ({ page }) => {
@@ -150,6 +191,51 @@ test.describe('Case flow — human steps', () => {
 			/Ontvangen|Wacht op aanvulling/,
 			{ timeout: 15000 },
 		)
+	})
+
+	test('a deep link to a case survives a hard reload, under both URL forms', async ({
+		page,
+	}) => {
+		// The RELOAD of a deep link is the test. Sidebar navigation stays
+		// inside the loaded SPA and never re-derives the router base, so it
+		// worked even while every hard load of `/apps/dossiq/cases/<id>`
+		// answered 200 from the server and was rewritten client-side to
+		// `/apps/dossiq/` — the catch-all redirect, fired because the base
+		// came from generateUrl() while the page was served under the other
+		// URL form. Reach a case the supported way first, then hard-load the
+		// URL the browser ended up on.
+		await page.goto('/index.php/apps/dossiq/cases')
+		await expect(
+			page.locator('body'),
+			`The seeded case "${INCOMPLETE_CASE}" is missing.`,
+		).toContainText(INCOMPLETE_CASE, { timeout: 15000 })
+		await page.getByText(INCOMPLETE_CASE).first().click()
+		await expect(page).toHaveURL(/\/cases\/[^/?#]+$/, { timeout: 15000 })
+
+		const deepLink = new URL(page.url())
+
+		// Form 1: exactly the URL the browser shows. A hard load must land on
+		// the case, not the dashboard.
+		await page.goto(deepLink.pathname)
+		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
+			timeout: 15000,
+		})
+		expect(
+			new URL(page.url()).pathname,
+			'The deep link must survive: a rewrite to the app root is the catch-all eating it.',
+		).toMatch(/\/cases\/[^/?#]+$/)
+
+		// Form 2: the SAME resource under the other server-accepted spelling
+		// (with the front-controller prefix stripped or added). The server
+		// answers 200 for both; the SPA must render the case for both.
+		const altPath = deepLink.pathname.includes('/index.php/')
+			? deepLink.pathname.replace('/index.php', '')
+			: deepLink.pathname.replace('/apps/dossiq', '/index.php/apps/dossiq')
+		await page.goto(altPath)
+		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
+			timeout: 15000,
+		})
+		expect(new URL(page.url()).pathname).toMatch(/\/cases\/[^/?#]+$/)
 	})
 
 	test('a complete case is not asked for anything', async ({ page }) => {

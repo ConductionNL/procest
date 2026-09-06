@@ -12,10 +12,10 @@
  * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	validateWorkflowGraph,
 	RULES,
+	validateWorkflowGraph,
 } from '../../src/utils/workflowGraphValidation.js'
 
 const codesOf = (issues) => issues.map((i) => i.code)

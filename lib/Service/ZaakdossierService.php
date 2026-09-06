@@ -45,6 +45,8 @@ use RuntimeException;
  * The per-document status state machine is owned by
  * {@see InformatieobjectStatusLifecycle}; this service orchestrates the
  * dossier around it.
+ *
+ * @spec openspec/changes/document-zaakdossier/tasks.md#T02
  */
 class ZaakdossierService {
 	use SearchesObjects;

@@ -11,8 +11,6 @@
 // Recognised kinds: page, modal, widget, form-field, cell-renderer
 //
 // Migration notes:
-// - `voorstelReminder` is a function (row-action handler), not a component.
-//   It cannot be a registry entry and stays in customComponents.js.
 // - The visual workflow editor (`WorkflowEditor.vue`) is not a registry entry
 //   — it is a plain child component mounted by `WorkflowTab.vue` inside the
 //   case-type detail page's "Workflow" tab, not a manifest `type:"custom"`
@@ -25,12 +23,14 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
-import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
+// The task half of the flow waiting relationship (case-flow-human-steps 6.1).
+// @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+import TaskWaitingCaseSection from './components/flow/TaskWaitingCaseSection.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
@@ -39,7 +39,6 @@ import InitiatorSection from './components/initiator/InitiatorSection.vue'
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
-import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
@@ -50,7 +49,6 @@ import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
-import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
 // Case-email integration — leaf-first per ADR-022. The sidebar tab
 // wraps the EmailThread component (display only), reuses NC Mail as
 // the email engine, and triggers prefillDraft via the case-email API.
@@ -63,13 +61,8 @@ import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
-import CmmnCasePlanPanel from './views/cases/components/CmmnCasePlanPanel.vue'
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
-// Related-case linking — typed peer relations (relevanteAndereZaken) sidebar tab.
-// Modal isolation per ADR-004: AddCaseRelationModal lives in src/modals/.
-// @spec openspec/specs/related-case-linking/spec.md
-import RelatedCasesSection from './views/cases/components/RelatedCasesSection.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // Deelzaak (sub-case) full-page views — wired via manifest routes
 // /cases/:id/deelzaken (list) and /cases/:parentId/deelzaken/:id (detail).
@@ -88,7 +81,6 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 
@@ -143,14 +135,6 @@ import { leafTab } from './integrations/leafTabs.js'
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-	// --- Bezwaar & Beroep cards-collapse landing page (bezwaar-beroep-cards-collapse). ---
-	// @spec openspec/changes/bezwaar-beroep-cards-collapse/specs/navigation/spec.md
-	BezwaarBeroepOverview: {
-		kind: 'page',
-		component: BezwaarBeroepOverview,
-		_note: 'Card-grid landing page replacing the BezwaarBeroepGroup four-leaf nav (ADR-044 cards-collapse). Four former leaves stay routable as deep links.',
-	},
-
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
 	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 	CaseListExportAction: {
@@ -219,28 +203,20 @@ const registry = {
 		_note: 'CaseDetail overview widget: initiator name + type + source id deep-linking to the seeded brpPerson/kvkCompany record in OpenRegister. Renders nothing when the case has no initiator.',
 	},
 
+	// --- The task half of the flow waiting relationship (case-flow-human-steps 6.1). ---
+	// @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	TaskWaitingCaseSection: {
+		// @custom-widget-ratchet exclude a conditional cross-object link: it renders only when task.flowRun is set and links to the CASE, and no built-in fits (banner visibleWhen fetches by endpoint/source and its route is a page id without the case param; data/object-list cannot hide on a field)
+		kind: 'widget',
+		component: TaskWaitingCaseSection,
+		_note: 'TaskDetail section: names the case a suspended flow run is holding on this task and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. The case half (run + stage on CaseDetail) is deliberately absent: it waits on the fleet-generic subject-scoped runs widget (openregister flow-runs-subject-scope).',
+	},
+
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---
 	// @spec openspec/specs/case-assistant-via-hermiq/spec.md
-	CaseAssistantPanel: {
-		kind: 'widget',
-		component: CaseAssistantPanel,
-		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; dossiq only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
-	},
 
 	// --- CMMN adaptive case plan (cmmn-adaptive-case). ---
 	// @spec openspec/specs/cmmn-adaptive-case/spec.md
-	CmmnCasePlanPanel: {
-		kind: 'widget',
-		component: CmmnCasePlanPanel,
-		_note: 'CaseDetail adaptive case-plan panel — the CMMN counterpart to the BPMN status-transition header actions. Renders items grouped by stage with state badges and enable/complete/terminate actions. Renders NOTHING when the case\'s caseType is not CMMN-managed (handlingModel !== "cmmn").',
-	},
-
-	// --- Migration cost: deferred to a follow-up. ---
-	VoorstelDetailView: {
-		kind: 'page',
-		component: VoorstelDetailView,
-		_note: 'Parafeerroute multi-step approver flow; complex enough to defer.',
-	},
 
 	// --- Besluitvorming workflow views. ---
 	// The agenda compiler and the vergadering detail view were retired: decidiq
@@ -283,11 +259,10 @@ const registry = {
 		component: CaseTasksTab,
 		_note: 'Tasks where task.case === parent.id',
 	},
-	CaseDecisionsTab: {
-		kind: 'page',
-		component: CaseDecisionsTab,
-		_note: 'Decisions where decision.case === parent.id',
-	},
+	// CaseDecisionsTab was retired by dossiq-decisions-to-decidiq: it offered
+	// create/edit/delete of local decision records while mounted on no page.
+	// Decisions are authored in decidiq (besluitvorming leaf); the read-only
+	// case-decisions widget displays the outcomes stored on the case.
 	CaseDocumentsTab: {
 		kind: 'page',
 		component: CaseDocumentsTab,
@@ -380,20 +355,12 @@ const registry = {
 	// subjectId back-reference. The wrapper resolves the registered provider's
 	// tab at render time and forwards the case `{ register, schema, objectId }`
 	// context that CnObjectSidebar injects. Retires dossiq's former standalone
-	// Voorstellen/Advies/Agenda nav (those pages stay routable for deep links).
+	// Voorstellen/Advies/Agenda nav.
 	// @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 	BesluitvormingLeafTab: {
 		kind: 'page',
 		component: BesluitvormingLeafTab,
 		_note: 'decidesk decisions integration leaf (decidesk-decisions) surfaced on the case detail; replaces the standalone Besluitvorming nav (ADR-019/ADR-022).',
-	},
-
-	// --- Related-case linking sidebar tab. ---
-	// @spec openspec/specs/related-case-linking/spec.md
-	RelatedCasesSection: {
-		kind: 'page',
-		component: RelatedCasesSection,
-		_note: 'Typed peer relations (relevanteAndereZaken) on the case detail; add/view/remove typed links with RBAC-safe masking.',
 	},
 
 	// --- VTH module: case detail sidebar tabs. ---

@@ -22,8 +22,10 @@
  * SetupControllerStatusTest here).
  */
 
-import { test, expect, type Page } from '@playwright/test'
-import { dismissSupportDialog } from './helpers/nav'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
+import { dismissSupportDialog } from './helpers/nav.ts'
 
 /**
  * Open the case-types index by ROUTE, not by sidebar label.
@@ -239,7 +241,7 @@ test.describe('Case type detail — the record can be edited there', () => {
 	})
 })
 
-test.describe('Setup — the sample-data step is reachable', () => {
+test.describe('Setup — every step it offers is one it can finish', () => {
 	test.setTimeout(120_000)
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
@@ -283,7 +285,7 @@ test.describe('Setup — the sample-data step is reachable', () => {
 						`cn-setup-wizard-dismissed:dossiq:${v}`,
 					)
 				}
-			} catch (e) {
+			} catch {
 				/* blocked storage */
 			}
 		})
@@ -318,19 +320,25 @@ test.describe('Setup — the sample-data step is reachable', () => {
 	})
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('a seed run that creates nothing does not record the step as done', async ({
+	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {
 		// The seeder returns success with every counter at zero when its payload
-		// is absent, which is the state it is in. Recording that as done made
-		// the affordance one-shot and silently useless: one click, "Seeded 0
-		// case types", step complete, never offered again.
+		// is absent, which is the state it is in: the case types live under
+		// `_caseTypes_disabled` in bezwaar_seed_data.json. Reporting that as
+		// done made the affordance one-shot and silently useless, and reporting
+		// it honestly still left a step whose every click was a 422. So the
+		// step went. The action stays, for an operator who un-parks the data.
 		await page.goto('/index.php/apps/dossiq')
 		const before = await readSetupStatus(page)
-		test.skip(
-			before?.steps?.seed?.done === true,
-			'sample data already loaded on this instance',
-		)
+		expect(
+			Object.keys(before?.steps ?? {}),
+			'a step the wizard cannot render is one it can never prompt for',
+		).not.toContain('seed')
+		expect(
+			Object.keys(before?.steps ?? {}),
+			'the payload must still carry the steps the wizard does declare',
+		).toContain('register-check')
 
 		const token = await requestToken(page)
 		// `/api/setup/action/{id}` — NOT `/run/{id}`, which answers 405 and whose
@@ -354,17 +362,21 @@ test.describe('Setup — the sample-data step is reachable', () => {
 			`POST /api/setup/action/seed returned ${run.status} with no JSON body`,
 		).not.toBeNull()
 
-		if (run.body?.detail && (run.body.detail.caseTypes ?? 0) === 0) {
-			// Nothing was created, so the step must still be outstanding.
+		if ((run.body?.detail?.caseTypes ?? 0) === 0) {
+			// Nothing was created, so the call must refuse rather than report a
+			// success-shaped zero. 422 is the answer the retired step would have
+			// shown a person on every single click.
+			expect(run.status).toBe(422)
 			expect(run.body.success).toBe(false)
-			const after = await readSetupStatus(page)
-			expect(after.steps.seed.done).toBe(false)
 		} else {
-			// A seeder with real payload: it created something, so it is done.
+			// Somebody un-parked the dataset on this instance. The action still
+			// works, and the manifest step may come back with it.
 			expect(run.body.success).toBe(true)
-			const after = await readSetupStatus(page)
-			expect(after.steps.seed.done).toBe(true)
 		}
+
+		// Either way the payload must not have grown a step back.
+		const after = await readSetupStatus(page)
+		expect(Object.keys(after.steps)).not.toContain('seed')
 	})
 })
 
@@ -409,7 +421,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		await page.evaluate(() => {
 			try {
 				window.localStorage.removeItem('cn-walkthrough-seen:dossiq')
-			} catch (e) {
+			} catch {
 				/* blocked storage */
 			}
 		})

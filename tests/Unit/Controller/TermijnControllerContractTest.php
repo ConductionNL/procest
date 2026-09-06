@@ -48,6 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\TermijnController;
+use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\TermijnService;
@@ -130,12 +131,19 @@ class TermijnControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		// A real resolver would need OpenRegister; the contract this file
+		// pins is the controller's, so the reference passes straight through
+		// exactly as a slug does in production.
+		$caseTypeSlugs = $this->createMock(CaseTypeSlugResolver::class);
+		$caseTypeSlugs->method('toSlug')->willReturnArgument(0);
+
 		$this->controller = new TermijnController(
 			appName: 'dossiq',
 			request: $this->request,
 			term: $this->term,
 			pause: $this->pause,
 			extension: $this->extension,
+			caseTypeSlugs: $caseTypeSlugs,
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);

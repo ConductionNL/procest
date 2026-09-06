@@ -10,13 +10,13 @@
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
+	FIELD_TYPES,
+	HIT_POLICIES,
+	parseDefinitionJson,
 	summariseTable,
 	validateTableStructure,
-	parseDefinitionJson,
-	HIT_POLICIES,
-	FIELD_TYPES,
 } from '../../src/utils/decisionTableHelpers.js'
 
 const validDefinition = {

@@ -7,9 +7,6 @@
  *
  * @param {object} decision Decision object with effectiveDate and expiryDate
  * @return {{ status: string, label: string, style: string, remaining: string|null }}
- */
-/**
- * @param decision
  * @spec openspec/specs/roles-decisions/spec.md
  */
 export function getDecisionValidity(decision) {
@@ -93,9 +90,6 @@ export function getDecisionValidity(decision) {
  *
  * @param {string} dateString ISO date string
  * @return {string}
- */
-/**
- * @param dateString
  * @spec openspec/specs/roles-decisions/spec.md
  */
 export function formatDecisionDate(dateString) {
@@ -113,9 +107,6 @@ export function formatDecisionDate(dateString) {
  *
  * @param {object} form Decision form data
  * @return {{ valid: boolean, errors: object }}
- */
-/**
- * @param form
  * @spec openspec/specs/roles-decisions/spec.md
  */
 export function validateDecision(form) {

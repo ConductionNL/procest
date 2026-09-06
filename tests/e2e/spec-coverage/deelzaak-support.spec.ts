@@ -20,15 +20,17 @@
  * navigate there and skip cleanly when the surface is not present.
  */
 
-import { test, expect, request, type APIRequestContext } from '@playwright/test'
-import { navTo, dismissSupportDialog } from '../helpers/nav'
-import { STORAGE_STATE } from '../helpers/auth'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	getRequestToken,
 	ensureCaseType,
-	seedCase,
+	getRequestToken,
 	objectId,
-} from '../helpers/fixtures'
+	seedCase,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
 
 /** OpenRegister's object API for this app's own register. */
 const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
@@ -86,7 +88,11 @@ async function ensureCaseId(page): Promise<string | null> {
 
 /** Open the Cases list, or skip when it does not render. */
 async function openCasesListOrSkip(page) {
-	await navTo(page, 'Cases').catch(() => {})
+	// NOT wrapped in `.catch(() => {})`. A missing sidebar label is a rename
+	// this suite has to notice, and swallowing it here would run every test
+	// below against whatever the Dashboard happens to render — green, and
+	// asserting nothing. The skip below is for absent DATA, not a broken menu.
+	await navTo(page, /^(All cases|Alle zaken)$/)
 	await dismissSupportDialog(page).catch(() => {})
 	const caseId = await ensureCaseId(page)
 	if (!caseId) return false
@@ -130,15 +136,57 @@ async function openSubCasesSectionOrSkip(page) {
 	// Retrying assertion rather than a fixed pause: the detail page mounts its
 	// widgets asynchronously, and a `waitForTimeout` either wastes time or
 	// races, depending on the runner's load.
-	const section = page
-		.locator('.cn-widget-wrapper, section, [class*="widget"]')
-		.filter({ hasText: /Sub-cases/i })
+	// The sub-cases section now lives in the case-detail tabs widget rather than
+	// as its own card on the grid. The requirement is unchanged — the detail view
+	// still displays the section — but reaching it takes a click, and the panel is
+	// LAZY, so its table does not exist in the DOM until the tab is opened.
+	// Asserting the container alone would pass while the list below never renders.
+	const tab = page
+		.locator('.cn-tabs-widget')
+		.getByRole('tab', { name: /Sub-cases|Deelzaken/i })
 		.first()
-	await expect(
-		section,
-		'CaseDetail must render the "Sub-cases" section (deelzaak-support: '
-			+ '"Sub-cases section on parent case detail")',
-	).toBeVisible({ timeout: 15_000 })
+	if ((await tab.count()) > 0) {
+		await expect(
+			tab,
+			'CaseDetail must offer the "Sub-cases" section (deelzaak-support: '
+				+ '"Sub-cases section on parent case detail")',
+		).toBeVisible({ timeout: 15_000 })
+		await tab.click()
+
+		// WAIT for the panel to fill. The panel is lazy, so the click starts a
+		// mount AND a fetch, and the caller's `count()` takes one snapshot that
+		// cannot retry — it fired against an empty panel and reported the
+		// section missing. Same trap the comment above guards for the tab
+		// itself; making the panel lazy moved it one step later.
+		const panel = page.locator('.cn-tabs-widget [role="tabpanel"]:not([hidden])')
+		await expect
+			.poll(
+				async () =>
+					(await panel.locator('.viewTable, table').count())
+					+ (await panel
+						.getByText(
+							/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i,
+						)
+						.count()),
+				{
+					timeout: 20_000,
+					message:
+						'the Sub-cases panel rendered neither a table nor an empty state within 20s',
+				},
+			)
+			.toBeGreaterThan(0)
+	} else {
+		// Pre-tabs layout: the section is a card on the grid.
+		const section = page
+			.locator('.cn-widget-wrapper, section, [class*="widget"]')
+			.filter({ hasText: /Sub-cases/i })
+			.first()
+		await expect(
+			section,
+			'CaseDetail must render the "Sub-cases" section (deelzaak-support: '
+				+ '"Sub-cases section on parent case detail")',
+		).toBeVisible({ timeout: 15_000 })
+	}
 
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	return true

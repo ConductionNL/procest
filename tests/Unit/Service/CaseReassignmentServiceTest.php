@@ -31,27 +31,6 @@ use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
-	/**
-	 * Mockable ObjectService surface used by the substitution services.
-	 */
-	interface SubstitutionObjectServiceStub {
-		/** @param int|string $id @param mixed ...$args @return mixed */
-		public function find(int|string $id, ...$args): mixed;
-
-		/** @param array<string,mixed> $query @return array<int,mixed>|int */
-		public function searchObjects(array $query = []): array|int;
-
-		/** @param string $r @param string $s @param array<string,mixed> $f @return array<int,mixed>|int */
-		public function searchObjectsBySlug(string $r, string $s, array $f = []): array|int;
-
-		/** @param mixed ...$args @return mixed */
-		public function saveObject(...$args): mixed;
-
-		/** @param mixed ...$args @return mixed */
-		public function updateObject(...$args): mixed;
-	}//end interface
-}//end if
 
 /**
  * Unit tests for CaseReassignmentService.
@@ -102,7 +81,7 @@ class CaseReassignmentServiceTest extends TestCase {
 				$map = [
 					'register' => 'dossiq',
 					'case_schema' => 'case',
-					'task_schema' => 'task',
+					'task_schema' => 'caseTask',
 					'status_type_schema' => 'statusType',
 				];
 				return ($map[$key] ?? $default);
@@ -111,6 +90,7 @@ class CaseReassignmentServiceTest extends TestCase {
 
 		return new CaseReassignmentService($this->settingsService, $this->notificationManager, $this->logger);
 	}//end makeService()
+
 
 	/**
 	 * Build a slug-aware ObjectService mock.
@@ -140,7 +120,7 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'title' => 'Closed', 'assignee' => 'jan', 'status' => 'st-final', 'caseType' => 'vth'],
 					];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [
 						['id' => 't1', 'title' => 'Open task', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
 						['id' => 't2', 'title' => 'Done task', 'assignee' => 'jan', 'status' => 'completed', 'case' => 'c1'],
@@ -175,7 +155,7 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'objectionProceeding'],
 					];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [
 						['id' => 't1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
 						['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c2'],
@@ -220,7 +200,7 @@ class CaseReassignmentServiceTest extends TestCase {
 				if ($schema === 'case') {
 					return [['id' => 'c1', 'title' => 'Case 1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]']];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [['id' => 't1', 'title' => 'Task 1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']];
 				}
 				return [];
@@ -277,7 +257,7 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]'],
 					];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [];
 				}
 				return [];
@@ -311,4 +291,10 @@ class CaseReassignmentServiceTest extends TestCase {
 		$this->assertTrue($byId['c1']);
 		$this->assertFalse($byId['c2']);
 	}//end testPartialFailureReported()
+
+
+
+
+
+
 }//end class

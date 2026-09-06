@@ -44,6 +44,8 @@ use ZipArchive;
  * permission rules, document types, and workflow definitions for a case type.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  */
 class CaseDefinitionExportService {
 	/**

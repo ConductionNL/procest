@@ -29,15 +29,19 @@ namespace OCA\Dossiq\Tests\Unit\Service\Subsidie;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Subsidie\TerugvorderingService;
 use OCA\Dossiq\Service\Subsidie\VaststellingService;
+use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
+use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * In-memory ObjectService fake for VaststellingServiceTest: plain
- * find(id, register, schema) / saveObject(object, register, schema, uuid)
- * over a schema-keyed store. saveObject merges the given fields onto any
- * existing row (matching finalize()'s own pre-existing partial-patch call
- * for the vaststelling object itself).
+ * In-memory ObjectService fake for VaststellingServiceTest, pinned to
+ * OpenRegister's REAL contract like the shared FakeTermijnStore: find()
+ * declares the real argument order, returns an entity-shaped object and
+ * THROWS DoesNotExistException on a miss; saveObject() declares the real
+ * signature and returns an entity-shaped object, never an array. It
+ * still merges the given fields onto any existing row (matching
+ * finalize()'s partial-patch call for the vaststelling object itself).
  */
 class VaststellingFakeObjectService {
 
@@ -49,35 +53,48 @@ class VaststellingFakeObjectService {
 	public array $store = [];
 
 	/**
-	 * Find one object by id within a schema.
+	 * Find one object by id within a schema — entity-shaped return,
+	 * DoesNotExistException on a miss, exactly like live.
 	 *
-	 * @param string $id Object id.
-	 * @param string $register Ignored (single in-memory register).
-	 * @param string $schema Schema slug.
+	 * @param int|string $id Object id.
+	 * @param array|null $_extend Relations to expand (ignored).
+	 * @param bool $files Include file metadata (ignored).
+	 * @param string|int|null $register Ignored (single in-memory register).
+	 * @param string|int|null $schema Schema slug.
 	 *
-	 * @return array<string, mixed>|null
+	 * @return FakeStoredObject
+	 *
+	 * @throws DoesNotExistException When the id is unknown.
 	 */
-	public function find(string $id, string $register, string $schema): ?array {
-		return ($this->store[$schema][$id] ?? null);
+	public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+		$row = ($this->store[(string)$schema][(string)$id] ?? null);
+		if ($row === null) {
+			throw new DoesNotExistException('Object ' . $id . ' does not exist');
+		}
+
+		return new FakeStoredObject($row);
 	}//end find()
 
 	/**
-	 * Save (merge) an object into the store.
+	 * Save (merge) an object into the store — real signature, entity-shaped
+	 * return.
 	 *
 	 * @param array<string, mixed> $object Fields to merge.
-	 * @param string $register Ignored.
-	 * @param string $schema Schema slug.
+	 * @param array|null $extend Relations to expand (ignored).
+	 * @param string|int|null $register Ignored.
+	 * @param string|int|null $schema Schema slug.
 	 * @param string|null $uuid Object id (null = generate one).
 	 *
-	 * @return array<string, mixed> The merged row.
+	 * @return FakeStoredObject The merged row.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+	public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+		$schema = (string)$schema;
 		$uuid = ($uuid ?? ('generated-' . count($this->store[$schema] ?? [])));
 		$existing = ($this->store[$schema][$uuid] ?? []);
 		$merged = array_merge($existing, $object, ['id' => $uuid]);
 		$this->store[$schema][$uuid] = $merged;
 
-		return $merged;
+		return new FakeStoredObject($merged);
 	}//end saveObject()
 }//end class
 

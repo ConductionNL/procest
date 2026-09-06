@@ -168,7 +168,7 @@ export default {
 		},
 
 		/**
-		 * @param mode
+		 * @param {string} mode The drawing mode the picker is in.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		setMode(mode) {
@@ -220,7 +220,7 @@ export default {
 		},
 
 		/**
-		 * @param latlng
+		 * @param {object} latlng The latlng.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		placeMarker(latlng) {
@@ -236,8 +236,8 @@ export default {
 		},
 
 		/**
-		 * @param root0
-		 * @param root0.coordinates
+		 * @param {object} root0 The destructured argument object.
+		 * @param {Array<number>} root0.coordinates The [lon, lat] pair the picker selected.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		onAddressSelect({ coordinates }) {
@@ -277,7 +277,7 @@ export default {
 		},
 
 		/**
-		 * @param sqm
+		 * @param {number} sqm The sqm.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		formatArea(sqm) {

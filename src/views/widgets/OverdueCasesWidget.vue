@@ -33,6 +33,12 @@ export default {
 	},
 
 	props: {
+		// Declared on purpose. The mount script passes `title: widget.title`, and
+		// the Nextcloud dashboard host renders the heading; rendering it here too
+		// is the dashboard-in-dashboard antipattern (hydra#316). Dropping the
+		// declaration would not remove the prop, it would make it a fallthrough
+		// attribute and put a title="" tooltip on the root element.
+		// eslint-disable-next-line vue/no-unused-properties
 		title: {
 			type: String,
 			default: '',

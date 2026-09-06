@@ -174,7 +174,7 @@ class StufOutboundTransport {
 			newStatus: 'fout',
 			extras: [
 				'httpStatus' => $httpStatus,
-				'duurMs' => $duration,
+				'durationMs' => $duration,
 				'responseEnvelopeXml' => $body,
 				'fout' => $fout,
 			]
@@ -217,7 +217,7 @@ class StufOutboundTransport {
 		$confirmation = $this->parser->parseBevestiging(responseXml: $body);
 		$extras = [
 			'httpStatus' => $httpStatus,
-			'duurMs' => $duration,
+			'durationMs' => $duration,
 			'responseEnvelopeXml' => $body,
 		];
 		if (($confirmation['caseIdentification'] ?? null) !== null) {

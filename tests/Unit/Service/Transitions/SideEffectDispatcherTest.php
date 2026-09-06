@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
 use OCA\Dossiq\Service\Transitions\ActionResult;
@@ -87,6 +88,26 @@ class SideEffectDispatcherTest extends TestCase {
 
 
     /**
+     * An empty node catalogue, built the way the real one must be.
+     *
+     * The registry takes a dispatcher and a logger — it collects contributed
+     * nodes through the first — and these tests register into it directly, so
+     * neither dependency does anything here. They are passed because leaving
+     * them out is a fatal against the real class, which is what a no-argument
+     * stub hid for six call sites.
+     *
+     * @return FlowNodeRegistry The catalogue.
+     */
+    private function registry(): FlowNodeRegistry {
+        return new FlowNodeRegistry(
+            $this->createMock(IEventDispatcher::class),
+            $this->createMock(LoggerInterface::class)
+        );
+
+    }//end registry()
+
+
+    /**
      * With OpenRegister present, a transition action runs the SHARED node.
      *
      * @return void
@@ -94,7 +115,7 @@ class SideEffectDispatcherTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testActionsRunThroughTheSharedNode(): void {
-        $registry = new FlowNodeRegistry();
+        $registry = $this->registry();
         $registry->register($this->node('dossiq.sendEmail'));
 
         $results = $this->dispatcher($registry)->dispatch(
@@ -120,7 +141,7 @@ class SideEffectDispatcherTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testItResolvesTheLiveIdSpace(): void {
-        $registry = new FlowNodeRegistry();
+        $registry = $this->registry();
         $registry->register($this->node('dossiq.action.sendEmail'));
 
         $results = $this->dispatcher($registry)->dispatch([['type' => 'sendEmail']], [], []);
@@ -144,7 +165,7 @@ class SideEffectDispatcherTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testAFailedActionDoesNotAbortTheRest(): void {
-        $registry = new FlowNodeRegistry();
+        $registry = $this->registry();
         $registry->register($this->node('dossiq.sendEmail', new RuntimeException('smtp down')));
         $registry->register($this->node('dossiq.createTask'));
 
@@ -170,7 +191,7 @@ class SideEffectDispatcherTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testUnknownActionTypeIsReported(): void {
-        $results = $this->dispatcher(new FlowNodeRegistry())->dispatch(
+        $results = $this->dispatcher($this->registry())->dispatch(
             [['type' => 'doesNotExist']],
             [],
             []
@@ -218,7 +239,7 @@ class SideEffectDispatcherTest extends TestCase {
     public function testTypelessActionIsSkipped(): void {
         $this->assertSame(
             [],
-            $this->dispatcher(new FlowNodeRegistry())->dispatch([['config' => 1]], [], [])
+            $this->dispatcher($this->registry())->dispatch([['config' => 1]], [], [])
         );
 
     }//end testTypelessActionIsSkipped()

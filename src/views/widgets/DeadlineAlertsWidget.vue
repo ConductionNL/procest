@@ -26,6 +26,15 @@ import { initializeStores } from '../../store/store.js'
 import { getDeadlineAlerts } from '../../utils/dashboardHelpers.js'
 import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
+/**
+ * How many rows the widget shows. Large enough that overdue cases, which are
+ * listed first, cannot crowd out every at-risk case: the spec requires this
+ * widget to show both.
+ *
+ * @type {number}
+ */
+const MAX_ALERTS = 10
+
 export default {
 	name: 'DeadlineAlertsWidget',
 	components: {
@@ -33,6 +42,12 @@ export default {
 	},
 
 	props: {
+		// Declared on purpose. The mount script passes `title: widget.title`, and
+		// the Nextcloud dashboard host renders the heading; rendering it here too
+		// is the dashboard-in-dashboard antipattern (hydra#316). Dropping the
+		// declaration would not remove the prop, it would make it a fallthrough
+		// attribute and put a title="" tooltip on the root element.
+		// eslint-disable-next-line vue/no-unused-properties
 		title: {
 			type: String,
 			default: '',
@@ -85,7 +100,12 @@ export default {
 							}),
 				targetUrl: generateUrl(`/apps/dossiq/cases/${item.id}`),
 			}))
-			return [...overdueItems, ...atRiskItems].slice(0, 5)
+			// 🔴 THE CAP MUST CLEAR BOTH GROUPS, NOT JUST THE FIRST ONE. Overdue
+			// items are concatenated ahead of at-risk ones, so a cap of 5 meant
+			// that from the fifth overdue case onward NO at-risk case could ever
+			// be shown, and this widget rendered the same rows as Overdue Cases
+			// beside it. The spec requires both groups here.
+			return [...overdueItems, ...atRiskItems].slice(0, MAX_ALERTS)
 		},
 	},
 

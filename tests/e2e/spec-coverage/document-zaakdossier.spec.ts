@@ -25,7 +25,7 @@
  * Vue history-mode router can resolve the route correctly.
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-004a-dossier-groups-documents-by-type-with-count-badge
@@ -60,7 +60,7 @@ test.describe('document-zaakdossier spec coverage', () => {
 	}) => {
 		test.fixme(
 			true,
-			'no seeded case fixture Quarantined by declaration: the upload dialog + sort controls need a case seeded with a linked informatieobject, which nothing in this repo provides for the Playwright environment. Previously an unconditional `test.skip(true, …)` at the end of the body, which reads as an environment condition but can never become true. See #764.',
+			'no seeded case fixture Quarantined by declaration: the upload dialog + sort controls need a case seeded with a linked informatieobject, which nothing in this repo provides for the Playwright environment. Previously an unconditional `test.skip(true, …)` at the end of the body, which reads as an environment condition but can never become true. See #764.',
 		)
 		const response = await page
 			.goto('/index.php/apps/dossiq/cases')

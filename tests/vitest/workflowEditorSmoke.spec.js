@@ -34,9 +34,9 @@
  * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
-import { mount, flushPromises } from '@vue/test-utils'
 
 // VUE 3 NOTE — these stubs used to be written as `render(h) { ... }` /
 // `render: (h) => h(...)`. Vue 2 passed the `createElement` factory as the

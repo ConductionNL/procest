@@ -1,5 +1,5 @@
 {
-  "_note": "Dutch demo case types (Bezwaar/Beroep/Subsidie) DISABLED for the German-federal English demo — the curated English demo is seeded from lib/Settings/register.d/46-demo-cases-english.json instead. SeedDataService reads `caseTypes`, so this data is parked under `_caseTypes_disabled`. Rename that key back to `caseTypes` to re-enable Dutch seeding (SeedBezwaarBeroepData repair step).",
+  "_note": "Dutch demo case types (Bezwaar/Beroep/Subsidie) DISABLED for the German-federal English demo. The curated English demo is seeded from lib/Settings/register.d/46-demo-cases-english.json instead. SeedDataService reads `caseTypes`, so this data is parked under `_caseTypes_disabled`. Rename that key back to `caseTypes` to re-enable Dutch seeding (SeedBezwaarBeroepData repair step). The data is NOT broken and the parking was NOT a mistake: commit 382e953d curated the demo profile on purpose, and un-parking this puts Dutch Bezwaar, Beroep and Subsidie case types next to the four English ones on every fresh install. The setup wizard no longer offers a `seed` step, because CnSetupWizard renders manifest.setup.steps[] verbatim and cannot hide one at runtime, so a step reading this file could only ever answer `422 Nothing to seed`. The `seed` action itself still works over the API and still records `setup_seed_done`, so re-enabling the Dutch profile stays a one-key change plus a manifest step. tests/Unit/Settings/SetupWizardStepsTest.php refuses the step while this key is parked.",
   "_caseTypes_disabled": [
     {
       "id": "b3c1a000-0000-4000-a000-00000000be2a",
@@ -70,19 +70,19 @@
             "fromStatusName": "Ontvangen",
             "toStatusName": "Ontvankelijkheidstoets",
             "label": "Start toets",
-            "guards": [{ "type": "roleGuard", "config": { "roleName": "Behandelaar bezwaar" } }]
+            "guards": [{ "type": "roleGuard", "allowedRoles": ["Behandelaar bezwaar"] }]
           },
           {
             "fromStatusName": "Ontvankelijkheidstoets",
             "toStatusName": "In behandeling",
             "label": "Ontvankelijk",
-            "guards": [{ "type": "requiredField", "config": { "field": "isTimely" } }]
+            "guards": [{ "type": "requiredField", "field": "isTimely" }]
           },
           {
             "fromStatusName": "Ontvankelijkheidstoets",
             "toStatusName": "Niet-ontvankelijk",
             "label": "Niet-ontvankelijk verklaren",
-            "guards": [{ "type": "requiredField", "config": { "field": "dispositionDetails" } }]
+            "guards": [{ "type": "requiredField", "field": "dispositionDetails" }]
           },
           {
             "fromStatusName": "In behandeling",
@@ -94,33 +94,33 @@
             "fromStatusName": "In behandeling",
             "toStatusName": "Advies uitgebracht",
             "label": "Hoorrecht afgezien",
-            "guards": [{ "type": "requiredField", "config": { "field": "hearingWaived" } }]
+            "guards": [{ "type": "requiredField", "field": "hearingWaived" }]
           },
           {
             "fromStatusName": "Hoorzitting gepland",
             "toStatusName": "Hoorzitting afgerond",
             "label": "Hoorzitting afronden",
-            "guards": [{ "type": "requiredField", "config": { "field": "minutesSummary" } }]
+            "guards": [{ "type": "requiredField", "field": "minutesSummary" }]
           },
           {
             "fromStatusName": "Hoorzitting afgerond",
             "toStatusName": "Advies uitgebracht",
             "label": "Advies uitbrengen",
-            "guards": [{ "type": "requiredField", "config": { "field": "advisoryReport" } }]
+            "guards": [{ "type": "requiredField", "field": "advisoryReport" }]
           },
           {
             "fromStatusName": "In behandeling",
             "toStatusName": "Beslissing op bezwaar",
             "label": "Direct beslissen",
-            "guards": [{ "type": "roleGuard", "config": { "roleName": "Voorzitter commissie" } }]
+            "guards": [{ "type": "roleGuard", "allowedRoles": ["Voorzitter commissie"] }]
           },
           {
             "fromStatusName": "Advies uitgebracht",
             "toStatusName": "Beslissing op bezwaar",
             "label": "Beslissing nemen",
             "guards": [
-              { "type": "requiredField", "config": { "field": "dispositionType" } },
-              { "type": "requiredField", "config": { "field": "dispositionDetails" } }
+              { "type": "requiredField", "field": "dispositionType" },
+              { "type": "requiredField", "field": "dispositionDetails" }
             ]
           },
           {
@@ -130,23 +130,21 @@
             "guards": [
               {
                 "type": "checklist",
-                "config": {
-                  "items": [
-                    { "label": "Besluit verzonden naar bezwaarmaker" },
-                    { "label": "Rechtsmiddelenclausule opgenomen in besluit" }
-                  ]
-                }
+                "requiredItems": [
+                  "Besluit verzonden naar bezwaarmaker",
+                  "Rechtsmiddelenclausule opgenomen in besluit"
+                ]
               }
             ],
             "automaticActions": [
-              { "type": "notify", "config": { "roleName": "Bezwaarmaker", "message": "Uw bezwaar is afgehandeld" } }
+              { "type": "notify", "roleName": "Bezwaarmaker", "message": "Uw bezwaar is afgehandeld" }
             ]
           },
           {
             "fromStatusName": "*",
             "toStatusName": "Ingetrokken",
             "label": "Intrekken",
-            "guards": [{ "type": "requiredField", "config": { "field": "withdrawalReason" } }]
+            "guards": [{ "type": "requiredField", "field": "withdrawalReason" }]
           }
         ]
       }
@@ -203,13 +201,13 @@
             "fromStatusName": "Beroep ontvangen",
             "toStatusName": "Verweerschrift in voorbereiding",
             "label": "Start verweer",
-            "guards": [{ "type": "roleGuard", "config": { "roleName": "Behandelaar beroep" } }]
+            "guards": [{ "type": "roleGuard", "allowedRoles": ["Behandelaar beroep"] }]
           },
           {
             "fromStatusName": "Verweerschrift in voorbereiding",
             "toStatusName": "Verweerschrift ingediend",
             "label": "Verweer indienen",
-            "guards": [{ "type": "requiredDocument", "config": { "documentType": "Verweerschrift" } }]
+            "guards": [{ "type": "requiredDocument", "documentType": "Verweerschrift" }]
           },
           {
             "fromStatusName": "Verweerschrift ingediend",
@@ -227,7 +225,7 @@
             "fromStatusName": "Zitting afgerond",
             "toStatusName": "Uitspraak ontvangen",
             "label": "Uitspraak registreren",
-            "guards": [{ "type": "requiredField", "config": { "field": "rulingOutcome" } }]
+            "guards": [{ "type": "requiredField", "field": "rulingOutcome" }]
           },
           {
             "fromStatusName": "Uitspraak ontvangen",
@@ -245,7 +243,7 @@
             "fromStatusName": "*",
             "toStatusName": "Schikking",
             "label": "Schikking treffen",
-            "guards": [{ "type": "requiredField", "config": { "field": "settlementDetails" } }]
+            "guards": [{ "type": "requiredField", "field": "settlementDetails" }]
           }
         ]
       }
@@ -298,13 +296,13 @@
             "fromStatusName": "Ontvangen",
             "toStatusName": "In behandeling",
             "label": "In behandeling nemen",
-            "guards": [{ "type": "roleGuard", "config": { "roleName": "Behandelaar subsidie" } }]
+            "guards": [{ "type": "roleGuard", "allowedRoles": ["Behandelaar subsidie"] }]
           },
           {
             "fromStatusName": "In behandeling",
             "toStatusName": "Beschikt",
             "label": "Subsidie beschikken",
-            "guards": [{ "type": "requiredField", "config": { "field": "beschiktBedrag" } }]
+            "guards": [{ "type": "requiredField", "field": "beschiktBedrag" }]
           },
           {
             "fromStatusName": "In behandeling",

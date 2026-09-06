@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Pulls inbound email from the shared mailbox and auto-links to cases.
+ *
+ * @spec openspec/changes/case-email-integration/tasks.md#T08
  */
 class InboundEmailJob extends TimedJob {
 

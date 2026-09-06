@@ -30,6 +30,8 @@ use Throwable;
 
 /**
  * Shillinq HTTP integration with retry + backoff.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
  */
 class ShillinqIntegrationService {
 	/**
@@ -64,6 +66,8 @@ class ShillinqIntegrationService {
 	 * @param array<int, array<string,mixed>> $events Events.
 	 *
 	 * @return array<string, array<int, array<string,mixed>>> Keyed by `<tenantId>:<month>`.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
 	 */
 	public function groupForInvoicing(array $events): array {
 		$grouped = [];
@@ -93,6 +97,8 @@ class ShillinqIntegrationService {
 	 * @param array<int, array<string,mixed>> $events Events.
 	 *
 	 * @return array<string,mixed>
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
 	 */
 	public function buildInvoicePayload(string $tenantId, string $month, array $events): array {
 		$lineItems = [];

@@ -41,6 +41,8 @@ use Throwable;
 
 /**
  * Set the per-request Postgres search_path from the bound tenant schema.
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
  */
 class TenantIsolationMiddleware extends Middleware {
 	/**
@@ -70,6 +72,8 @@ class TenantIsolationMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::beforeController(); the search_path is
 	 * derived from the bound tenant context.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		if ($this->context->isBound() === false) {
@@ -98,6 +102,8 @@ class TenantIsolationMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::afterController(); the reset is
 	 * unconditional.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function afterController($controller, $methodName, \OCP\AppFramework\Http\Response $response): \OCP\AppFramework\Http\Response {
 		$this->resetSearchPath();
@@ -118,6 +124,8 @@ class TenantIsolationMiddleware extends Middleware {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
 	 * fixed by OCP\AppFramework\Middleware::afterException(); the reset is
 	 * unconditional.
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		$this->resetSearchPath();
@@ -130,6 +138,8 @@ class TenantIsolationMiddleware extends Middleware {
 	 * @param string $schemaName Schema name (validated).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function applySearchPath(string $schemaName): void {
 		try {
@@ -158,6 +168,8 @@ class TenantIsolationMiddleware extends Middleware {
 	 * Reset the search_path to `public`.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
 	 */
 	public function resetSearchPath(): void {
 		try {

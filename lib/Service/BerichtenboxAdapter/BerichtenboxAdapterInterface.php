@@ -54,6 +54,8 @@ interface BerichtenboxAdapterInterface {
 	 * @param string $messageId The external message ID
 	 *
 	 * @return array Status with read (bool), readAt (datetime|null)
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getReadStatus(string $messageId): array;
 }//end interface

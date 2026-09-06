@@ -13,8 +13,8 @@
  * than by clicking a nav label.
  */
 
-import { test, expect } from '@playwright/test'
-import { navToRoute, trackDossiqErrors } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 // name (for the test title), the ROUTE the settings page lives at, and the
 // view-specific create control it must render.
@@ -49,11 +49,19 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// was retired from Dossiq in Wave 1 of the case-model consolidation
 	// (ADR-003). Fees are now Pipelinq products referenced from a case type's
 	// productsOrServices; Dossiq owns no fee settings entries.
-	{
-		name: 'Approval routes',
-		route: '/settings/parafeerroutes',
-		addBtn: 'Add Endorsement Route',
-	},
+	// Approval routes lost their settings ENTRY in dossiq#1632, which enabled
+	// the projected routes: an approval route is a flow now, and the route
+	// object is what a flow was generated FROM rather than what drives
+	// parafering. Editing one no longer reaches the running flow unless
+	// somebody re-runs the projection, which would overwrite whatever was
+	// authored on the canvas — so the design screen left the menu.
+	//
+	// The pages stay ROUTABLE, deliberately: a reader can still open a legacy
+	// route to see what a flow came from. What this table asserts, though, is
+	// that a settings page is REACHABLE AND OFFERS ITS CREATE CONTROL, and
+	// creating a route is exactly the thing that no longer does anything on
+	// its own. Flows are authored at /flows, covered by flows.spec.ts.
+
 	// Automatic actions was retired by page-topology-cleanup (C2). The
 	// `automaticAction` objects it administered were never executed by anything
 	// — SideEffectDispatcher runs a separate vocabulary — so the page was a
@@ -65,31 +73,40 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// same single engine. That surface has its own spec — flows.spec.ts — rather
 	// than an entry here, because its create control is a canvas action, not the
 	// "Add X" button every row in this table asserts on.
-	{
-		name: 'Enforcement strategy',
-		route: '/settings/lhs-matrices',
-		addBtn: 'Add LHS Matrix',
-	},
+	// 'Enforcement strategy' (/settings/lhs-matrices) is RETIRED. The LHS
+	// matrix is a three-axis lookup yielding one value, which is a decision
+	// table, and OpenRegister already carries one evaluator for those.
+	// LhsRecommendationService now evaluates the projected table and falls back
+	// to the matrix only where no projection exists; authoring lives in the
+	// Decision Tables (DMN) admin tab.
 	{
 		name: 'LHS recommendations',
 		route: '/settings/lhs-recommendations',
 		addBtn: 'Add LHS Recommendation',
 	},
-	{
-		name: 'Partner organisations',
-		route: '/settings/partners',
-		addBtn: 'Add Partner organization',
-	},
+	// 'Partner organisations' (/settings/partners) is RETIRED. A ketenpartner
+	// is an organisation, and OpenRegister owns Organisation, so dossiq no
+	// longer keeps a private second answer to "which organisations does this
+	// system know about". Rows moved by `occ dossiq:migrate-partners`,
+	// preserving each partner's uuid so existing case shares keep resolving.
 	{
 		name: 'Map layers',
 		route: '/settings/wms-layers',
 		addBtn: 'Add WMS/WFS Layer',
 	},
-	{
-		name: 'Workflow definitions',
-		route: '/settings/workflow-definitions',
-		addBtn: 'Add Workflow Template',
-	},
+	// 'Workflow definitions' (/settings/workflow-definitions) lost its settings
+	// ENTRY, for the same reason Approval routes did above: a workflow is a flow
+	// now, and the definition is what a flow was generated FROM. Two adjacent
+	// settings entries at orders 96 and 97, called Flows and Workflow
+	// definitions, wearing Sitemap and SitemapOutline, read as one feature
+	// listed twice — and editing the definition does not reach the running
+	// flow unless somebody re-runs the projection, which would overwrite
+	// whatever was authored on the canvas.
+	//
+	// The page stays ROUTABLE so a reader can still open a legacy link and see
+	// what a flow came from. Flows are authored at /flows, covered by
+	// flows.spec.ts, whose create control is a canvas action rather than the
+	// "Add X" button every row in this table asserts on.
 	{ name: 'Organisations', route: '/settings/tenants', addBtn: 'Add Tenant' },
 	// The standalone "Status history" (StatusRecords) settings page was retired
 	// by retire-status-history-page — change history is now the CaseDetail

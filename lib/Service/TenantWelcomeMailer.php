@@ -32,6 +32,8 @@ use Throwable;
 
 /**
  * Welcome-mail dispatch for newly provisioned tenants.
+ *
+ * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
 class TenantWelcomeMailer {
 	/**
@@ -87,6 +89,8 @@ class TenantWelcomeMailer {
 	 * @param array<string,mixed> $tenant Tenant row.
 	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function resolveAdminEmail(array $tenant): ?string {
 		$candidates = [

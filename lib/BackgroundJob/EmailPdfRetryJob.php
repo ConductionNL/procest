@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Retries failed PDF archival attempts on a 15-minute cadence.
+ *
+ * @spec openspec/changes/case-email-integration/tasks.md#T09
  */
 class EmailPdfRetryJob extends TimedJob {
 	/**

@@ -156,5 +156,6 @@ class WorkflowListenerRegistrar {
 			event: ObjectUpdatedEvent::class,
 			listener: TaskCompletionResumeListener::class
 		);
+
 	}//end registerHumanStepListeners()
 }//end class

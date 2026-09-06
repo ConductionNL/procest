@@ -1,50 +1,54 @@
-# B&W Besluitvorming Workflow
+# Besluitvorming workflow
 
-**Issue:** #87
-**Branch:** `feature/87/besluitvorming-workflow`
-**PR:** #95
+Dossiq handles formal decision-making for the college van burgemeester en wethouders (B&W) and the gemeenteraad. You work the case; the decision itself is taken in Decidiq.
 
-## Overview
+## What a proposal is here
 
-Implements the B&W (Board & Aldermen: College van Burgemeester en Wethouders) decision-making workflow for Dutch municipal case management. Provides a structured parafering (initialling/sign-off) chain for proposals (`voorstellen`) that require formal decision-making.
+A proposal is not a separate record you file. It is a case whose case type requires a decision.
 
-## Architecture
+That matters for where you look. There is no proposals list and no proposals menu entry. You find a besluitvorming case under **All cases**, filtered by its case type in the sidebar. You open it like any other case.
 
-### Backend
+Everything the decision needs sits on the case detail page. The **Besluitvorming** panel shows the decisions raised for this case, and their outcomes.
 
-- **New schemas** in `lib/Settings/dossiq_register.json`:
-  - `voorstel`: the proposal document awaiting B&W decision
-  - `parafeerroute`: a named sign-off chain with ordered steps
-  - `parafeeractie`: an individual action taken by a paraferent
+## The three case types
 
-- **New service:** `lib/Service/ParaferingNotificationService.php`
-  - Sends Nextcloud notifications for workflow events:
-    - `notifyStepActivated`: notify the actor when their step becomes active
-    - `notifyVoorstelReturned`: notify the steller when a proposal is returned
-    - `notifyParaferingReminder`: send overdue reminders
+Dossiq ships three pre-configured case types. An administrator activates them once, from the besluitvorming templates.
 
-- **Updated:** `lib/Service/SettingsService.php`
-  - New config keys: `voorstel_schema`, `parafeerroute_schema`, `parafeeractie_schema`
+| Case type | For | Deadline |
+|---|---|---|
+| College-besluit | A formal decision by the college of B&W | 30 days |
+| Raadsbesluit | A decision by the gemeenteraad, with the griffier involved | 60 days |
+| Mandaatbesluit | A decision taken under mandate, kept internal | 30 days |
 
-### Frontend
+Each one carries its own statuses, roles, document types and result types. Each one also carries a workflow, and that workflow is where the work happens.
 
-- **Pinia store:** `src/store/modules/` (parafeerEngine)
-- **Views:** VoorstelList, VoorstelDetail, VoorstelCreateDialog
-- **Components:** ParafeerActionBar, ParafeerInbox, ProgressTimeline, AuditTrail, BesluitRegistration
-- **Router:** `/voorstellen`, `/voorstellen/:id`
+## How a case moves
 
-## Notification Events
+The nine statuses run from **Voorstel opstellen** to **Gearchiveerd**. A handler moves the case along; the workflow raises what each step needs.
 
-| Method | Subject key | Recipient | Purpose |
-|--------|-------------|-----------|---------|
-| `notifyStepActivated` | `parafering_step_activated` | Actor | Inform paraferent their step is active |
-| `notifyVoorstelReturned` | `voorstel_returned` | Steller | Inform steller proposal was returned |
-| `notifyParaferingReminder` | `parafering_reminder` | Actor | Remind actor of overdue step |
+1. **Voorstel opstellen.** The steller drafts the advice document.
+2. **Ambtelijk advies.** Colleagues add their advice.
+3. **Parafering.** The officials who must sign off do so. The sign-off chain runs in Decidiq, and each approver sees their step in the work queue they already read.
+4. **Gereed voor agendering.** The case is ready for a meeting agenda.
+5. **Geagendeerd** and **Vergadering.** Decidiq owns the agenda and the meeting.
+6. **Besluit genomen.** The outcome comes back onto the case, under **Besluitvorming**.
+7. **Bekendmaking.** Dossiq publishes to DROP or LVBB.
+8. **Gearchiveerd.** The dossier closes with its documents linked.
 
-## Testing
+## Mandates
 
-Unit tests are in `tests/Unit/Service/ParaferingNotificationServiceTest.php`. They verify:
-- Notifications are sent to the correct user
-- Subject keys and parameters are set correctly
-- App ID is set to the Dossiq app constant
-- Exceptions from the notification manager are caught and logged (never thrown to callers)
+A mandaatbesluit may only be signed by someone who holds the mandate for it. Dossiq checks this against the mandaatregister before the case may advance, so an unmandated signature is refused rather than recorded.
+
+## Where the parts live
+
+| Concern | Owner |
+|---|---|
+| The case, its type, its statuses and its documents | Dossiq |
+| Which decision a case type needs | `caseType.decisionTypes` |
+| The sign-off chain and the meeting | Decidiq |
+| The outcome recorded on the case | `case.decisions` |
+| Publication to DROP or LVBB | Dossiq |
+
+## Next
+
+Activate the besluitvorming case types from **Settings, Case types**, then open **All cases** and filter on the one you need.

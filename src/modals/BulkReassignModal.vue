@@ -302,7 +302,7 @@ export default {
 		},
 
 		/**
-		 * @param open
+		 * @param {boolean} open Whether the open is set.
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 		 */
 		onDialogClose(open) {

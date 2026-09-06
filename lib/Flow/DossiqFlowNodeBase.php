@@ -121,6 +121,8 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
      * The node icon.
      *
      * @return string The icon path.
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getIcon(): string {
         return $this->urls->imagePath('dossiq', 'app-dark.svg');
@@ -195,7 +197,12 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
                 );
             }
 
-            $item['json'] = array_merge($case, [$outKey => $result->data]);
+            // The handler's own case writes travel with the item, so the NEXT
+            // step's snapshot already carries what this step just stored.
+            // Without this, the document step wrote `besluitDocument` to
+            // storage while the outgoing item still lacked it — and one hop
+            // later a stale snapshot was all the status step had.
+            $item['json'] = array_merge($case, $result->caseChanges, [$outKey => $result->data]);
             $out[]        = $item;
         }//end foreach
 
@@ -212,6 +219,8 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
      * @param integer $scope The Nextcloud workflow scope.
      *
      * @return boolean True when available in this scope.
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function isAvailableForScope(int $scope): bool {
         return in_array($scope, [IManager::SCOPE_ADMIN, IManager::SCOPE_USER], true);

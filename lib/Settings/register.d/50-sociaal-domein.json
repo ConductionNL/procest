@@ -118,7 +118,63 @@
                         "description": "Referentie naar de bijbehorende Indicatiestelling"
                     },
                     "gdprClassification": {
-                        "$ref": "#/components/schemas/gdprClassification"
+                        "title": "AVG Classificatie",
+                        "type": "object",
+                        "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorie\u00ebn bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
+                        "required": ["categories", "justification", "retentionTermYears"],
+                        "properties": {
+                            "categories": {
+                                "title": "Data Categories",
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": ["medisch", "gezinssituatie", "financieel", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
+                                },
+                                "description": "AVG art. 9 gegevenscategorie\u00ebn die in deze zaak worden verwerkt"
+                            },
+                            "specialPersonalData": {
+                                "title": "Special Personal Data",
+                                "type": "boolean",
+                                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+                            },
+                            "justification": {
+                                "title": "Legal Basis",
+                                "type": "string",
+                                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+                            },
+                            "justificationNotes": {
+                                "title": "Legal Basis Explanation",
+                                "type": "string",
+                                "description": "Plain-Dutch toelichting voor de FG-audit"
+                            },
+                            "retentionTermYears": {
+                                "title": "Retention Period Years",
+                                "type": "integer",
+                                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+                            },
+                            "destructionDate": {
+                                "title": "Destruction Date",
+                                "type": "string",
+                                "format": "date",
+                                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+                            },
+                            "accessRestriction": {
+                                "title": "Access Restriction",
+                                "type": "string",
+                                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+                            },
+                            "anonymisationAtParts": {
+                                "title": "Anonymize When Sharing",
+                                "type": "boolean",
+                                "default": true,
+                                "description": "Auto-anonimiseren bij export tenzij toestemming"
+                            },
+                            "exportRestriction": {
+                                "title": "Export Restriction",
+                                "type": "string",
+                                "description": "Exportbeperking (bijv. geen-bulk-export)"
+                            }
+                        }
                     }
                 }
             },
@@ -305,7 +361,63 @@
                         "description": "Historie van eerdere gezinsplannen (verlengingen)"
                     },
                     "gdprClassification": {
-                        "$ref": "#/components/schemas/gdprClassification"
+                        "title": "AVG Classificatie",
+                        "type": "object",
+                        "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorie\u00ebn bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
+                        "required": ["categories", "justification", "retentionTermYears"],
+                        "properties": {
+                            "categories": {
+                                "title": "Data Categories",
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": ["medisch", "gezinssituatie", "financieel", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
+                                },
+                                "description": "AVG art. 9 gegevenscategorie\u00ebn die in deze zaak worden verwerkt"
+                            },
+                            "specialPersonalData": {
+                                "title": "Special Personal Data",
+                                "type": "boolean",
+                                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+                            },
+                            "justification": {
+                                "title": "Legal Basis",
+                                "type": "string",
+                                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+                            },
+                            "justificationNotes": {
+                                "title": "Legal Basis Explanation",
+                                "type": "string",
+                                "description": "Plain-Dutch toelichting voor de FG-audit"
+                            },
+                            "retentionTermYears": {
+                                "title": "Retention Period Years",
+                                "type": "integer",
+                                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+                            },
+                            "destructionDate": {
+                                "title": "Destruction Date",
+                                "type": "string",
+                                "format": "date",
+                                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+                            },
+                            "accessRestriction": {
+                                "title": "Access Restriction",
+                                "type": "string",
+                                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+                            },
+                            "anonymisationAtParts": {
+                                "title": "Anonymize When Sharing",
+                                "type": "boolean",
+                                "default": true,
+                                "description": "Auto-anonimiseren bij export tenzij toestemming"
+                            },
+                            "exportRestriction": {
+                                "title": "Export Restriction",
+                                "type": "string",
+                                "description": "Exportbeperking (bijv. geen-bulk-export)"
+                            }
+                        }
                     }
                 }
             },
@@ -613,7 +725,63 @@
                         "description": "True bij vermogen boven vrijstelling (auto-afwijzing)"
                     },
                     "gdprClassification": {
-                        "$ref": "#/components/schemas/gdprClassification"
+                        "title": "AVG Classificatie",
+                        "type": "object",
+                        "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorie\u00ebn bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
+                        "required": ["categories", "justification", "retentionTermYears"],
+                        "properties": {
+                            "categories": {
+                                "title": "Data Categories",
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": ["medisch", "gezinssituatie", "financieel", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
+                                },
+                                "description": "AVG art. 9 gegevenscategorie\u00ebn die in deze zaak worden verwerkt"
+                            },
+                            "specialPersonalData": {
+                                "title": "Special Personal Data",
+                                "type": "boolean",
+                                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+                            },
+                            "justification": {
+                                "title": "Legal Basis",
+                                "type": "string",
+                                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+                            },
+                            "justificationNotes": {
+                                "title": "Legal Basis Explanation",
+                                "type": "string",
+                                "description": "Plain-Dutch toelichting voor de FG-audit"
+                            },
+                            "retentionTermYears": {
+                                "title": "Retention Period Years",
+                                "type": "integer",
+                                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+                            },
+                            "destructionDate": {
+                                "title": "Destruction Date",
+                                "type": "string",
+                                "format": "date",
+                                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+                            },
+                            "accessRestriction": {
+                                "title": "Access Restriction",
+                                "type": "string",
+                                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+                            },
+                            "anonymisationAtParts": {
+                                "title": "Anonymize When Sharing",
+                                "type": "boolean",
+                                "default": true,
+                                "description": "Auto-anonimiseren bij export tenzij toestemming"
+                            },
+                            "exportRestriction": {
+                                "title": "Export Restriction",
+                                "type": "string",
+                                "description": "Exportbeperking (bijv. geen-bulk-export)"
+                            }
+                        }
                     }
                 }
             },
@@ -828,7 +996,7 @@
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["medisch", "gezinssituatie", "financial", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
+                            "enum": ["medisch", "gezinssituatie", "financieel", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
                         },
                         "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
                     },

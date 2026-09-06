@@ -25,7 +25,7 @@
  * @spec openspec/changes/case-email-integration/tasks.md#T12
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 // --- DeelzaakList.sortedSubCases (verbatim from the component) ---------------
 function sortedSubCases(subCases) {
@@ -88,8 +88,9 @@ function applyCaseObject(caseObj) {
 
 // --- CaseEmailTab.draftButtonLabel / formatVariable -------------------------
 const formatVariable = (name) => `{{${name}}}`
-const draftButtonLabel = (selectedTemplate) =>
-	selectedTemplate ? 'Open draft from template' : 'Open empty draft'
+function draftButtonLabel(selectedTemplate) {
+	return selectedTemplate ? 'Open draft from template' : 'Open empty draft'
+}
 
 describe('DeelzaakList.sortedSubCases', () => {
 	it('orders open cases before closed ones', () => {

@@ -43,6 +43,8 @@ use RuntimeException;
 
 /**
  * Sends StUF SOAP envelopes over HTTPS with WSSE+mTLS auth.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-transport
  */
 class StufHttpClient {
 	public const DEFAULT_TIMEOUT_SECONDS = 30;

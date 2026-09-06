@@ -200,6 +200,68 @@ class MilestoneControllerContractTest extends TestCase {
 	}//end testProgressForwardsTheCaseAndCaseTypeInThatOrder()
 
 	/**
+	 * `caseProgress` carries the SAME two refusals as its two-segment sibling.
+	 *
+	 * It exists because requiring the caller to supply the case type made a
+	 * manifest tile send an empty path segment on its first render, before the
+	 * record it reads the type from had loaded. A convenience endpoint that
+	 * skipped the auth checks would be a much worse trade, so both are pinned
+	 * here rather than assumed to have been copied correctly.
+	 *
+	 * @return void
+	 */
+	public function testCaseProgressRefusesAnUnauthenticatedCallerWith401(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->milestoneService->expects($this->never())->method('getCaseProgressForCase');
+
+		$response = $this->controller->caseProgress(caseId: 'zaak-1');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['error' => 'Not authenticated'], $response->getData());
+	}//end testCaseProgressRefusesAnUnauthenticatedCallerWith401()
+
+	/**
+	 * `caseProgress` is guarded per case, asked about the caseId from the URL.
+	 *
+	 * @return void
+	 */
+	public function testCaseProgressDemandsCaseReadAccessAndRefusesWith403(): void {
+		$user = $this->signIn(uid: 'mallory');
+
+		$this->caseAccessGuard->expects($this->once())
+			->method('hasCaseReadAccess')
+			->with('zaak-1', $user)
+			->willReturn(false);
+		$this->milestoneService->expects($this->never())->method('getCaseProgressForCase');
+
+		$response = $this->controller->caseProgress(caseId: 'zaak-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+	}//end testCaseProgressDemandsCaseReadAccessAndRefusesWith403()
+
+	/**
+	 * An authorized read delegates to the type-resolving service method and
+	 * answers 200 with its payload unchanged.
+	 *
+	 * @return void
+	 */
+	public function testCaseProgressDelegatesToTheTypeResolvingRead(): void {
+		$this->signIn();
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+
+		$this->milestoneService->expects($this->once())
+			->method('getCaseProgressForCase')
+			->with('zaak-1')
+			->willReturn(['reached' => 1, 'total' => 4, 'percentage' => 25]);
+
+		$response = $this->controller->caseProgress(caseId: 'zaak-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['reached' => 1, 'total' => 4, 'percentage' => 25], $response->getData());
+	}//end testCaseProgressDelegatesToTheTypeResolvingRead()
+
+	/**
 	 * A failure computing progress answers 500 with the service's message.
 	 *
 	 * @return void

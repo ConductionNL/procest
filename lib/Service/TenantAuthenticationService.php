@@ -36,6 +36,8 @@ use Throwable;
 
 /**
  * Mandate-matrix authorisation guard for tenant actions.
+ *
+ * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
  */
 class TenantAuthenticationService {
 	/**
@@ -119,6 +121,8 @@ class TenantAuthenticationService {
 	 * @param string $action Requested action.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function isAllowed(array $matrix, string $role, string $action): bool {
 		$roleEntry = ($matrix[$role] ?? null);
@@ -152,6 +156,8 @@ class TenantAuthenticationService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array<string, array<string, bool>>|null Active matrix or null.
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function loadActiveMatrix(string $tenantId): ?array {
 		$objectService = $this->getObjectService();

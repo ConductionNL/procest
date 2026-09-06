@@ -41,6 +41,8 @@ use Throwable;
  * Controller exposing besluitvorming publication endpoints.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
  */
 class PublicationController extends Controller {
 	/**

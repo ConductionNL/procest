@@ -60,9 +60,7 @@ class TermijnServiceTest extends TestCase {
 		$this->service = new TermijnService($settings, $this->createMock(LoggerInterface::class));
 
 		// Seed two definitions: omgevingsvergunning 56d (active) + Wmo 42d (active).
-		$this->objects->saveObject(
-			'dossiq',
-			'deadlineDefinition',
+		$this->objects->seed('deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier',
 				'caseType' => 'omgevingsvergunning-regulier',
@@ -72,9 +70,7 @@ class TermijnServiceTest extends TestCase {
 				'validFrom' => '2026-01-01',
 			]
 		);
-		$this->objects->saveObject(
-			'dossiq',
-			'deadlineDefinition',
+		$this->objects->seed('deadlineDefinition',
 			[
 				'id' => 'td-wmo-aanvraag',
 				'caseType' => 'wmo-melding',
@@ -133,9 +129,7 @@ class TermijnServiceTest extends TestCase {
 	 */
 	public function testGetTermijnDefinitieReturnsLatestActiveVersion(): void {
 		// Add a newer version of the omgevingsvergunning definition.
-		$this->objects->saveObject(
-			'dossiq',
-			'deadlineDefinition',
+		$this->objects->seed('deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
 				'caseType' => 'omgevingsvergunning-regulier',
@@ -228,9 +222,7 @@ class TermijnServiceTest extends TestCase {
 		self::assertSame('2026-03-12', $existing['endDateCalculated']);
 
 		// Phase 2 — publish a new v2 (70 days) for the same zaaktype.
-		$this->objects->saveObject(
-			'dossiq',
-			'deadlineDefinition',
+		$this->objects->seed('deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
 				'caseType' => 'omgevingsvergunning-regulier',

@@ -46,6 +46,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Turns the schema id an OpenRegister object payload carries into its slug.
+ *
+ * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 class ObjectSchemaSlugResolver {
 

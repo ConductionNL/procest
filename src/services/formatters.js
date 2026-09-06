@@ -13,7 +13,6 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
@@ -98,120 +97,7 @@ function lookupRelatedName(type, uuid) {
 	return hit ? hit.title || hit.name || uuid : uuid
 }
 
-const VOORSTEL_STATUS_LABELS = {
-	concept: 'Draft',
-	in_parafering: 'Awaiting initials',
-	ter_accordering: 'Awaiting approval',
-	geaccordeerd: 'Approved',
-	aangeboden: 'Presented',
-	besloten: 'Decided',
-	gearchiveerd: 'Archived',
-	teruggestuurd: 'Returned',
-}
-
-const VOORSTEL_TYPE_LABELS = {
-	dt_advies: 'Management team advice',
-	collegeadvies: 'Executive board advice',
-	raadsvoorstel: 'Council proposal',
-}
-
-/**
- * Parse a voorstel's parafeerroute snapshot into a step array.
- *
- * @param {object} row The voorstel object.
- * @return {Array<object>} The steps (possibly empty).
- */
-function voorstelSteps(row) {
-	const snap = row && row.routeSnapshot
-	if (!snap) return []
-	try {
-		return typeof snap === 'string' ? JSON.parse(snap) : snap
-	} catch {
-		return []
-	}
-}
-
-/**
- * Metadata `updated` timestamp for a row, tolerating both `@self.updated`
- * (OpenRegister metadata envelope) and the older `_self.updated` /
- * `updatedAt` shapes.
- *
- * @param {object} row The object.
- * @return {string|undefined} ISO timestamp, or undefined.
- */
-function rowUpdated(row) {
-	if (!row) return undefined
-	return (
-		(row['@self'] && row['@self'].updated)
-		|| (row._self && row._self.updated)
-		|| row.updatedAt
-		|| undefined
-	)
-}
-
 export default {
-	/**
-	 * Human label for a voorstel `type` enum value.
-	 *
-	 * @param {string} value The raw `type`.
-	 * @return {string}
-	 */
-	proposalType: (value) =>
-		t('dossiq', VOORSTEL_TYPE_LABELS[value] || value || '-'),
-
-	/**
-	 * Human label for a voorstel `status` enum value (also rendered as a
-	 * `widget: "badge"` pill).
-	 *
-	 * @param {string} value The raw `status`.
-	 * @return {string}
-	 */
-	voorstelStatus: (value) =>
-		t('dossiq', VOORSTEL_STATUS_LABELS[value] || value || '-'),
-
-	/**
-	 * `currentStep / totalSteps` progress for a voorstel's parafeerroute.
-	 *
-	 * @param {*} value Unused (the column key is `currentStep`).
-	 * @param {object} row The voorstel object.
-	 * @return {string}
-	 */
-	voorstelStepProgress: (value, row) => {
-		const steps = voorstelSteps(row)
-		if (!steps.length || !row || !row.currentStep) return '-'
-		return `${row.currentStep}/${steps.length}`
-	},
-
-	/**
-	 * Label / actor of the step the voorstel is currently waiting on.
-	 *
-	 * @param {*} value Unused.
-	 * @param {object} row The voorstel object.
-	 * @return {string}
-	 */
-	voorstelWaitingActor: (value, row) => {
-		const steps = voorstelSteps(row)
-		if (!steps.length || !row || !row.currentStep) return '-'
-		const current = steps.find((s) => s.order === row.currentStep)
-		return current ? current.label || current.actor || '-' : '-'
-	},
-
-	/**
-	 * Number of days the voorstel has been in its current step.
-	 *
-	 * @param {*} value Unused (the column key is `@self.updated`).
-	 * @param {object} row The voorstel object.
-	 * @return {string}
-	 */
-	voorstelDaysInStep: (value, row) => {
-		const updated = rowUpdated(row)
-		if (!updated) return '-'
-		const days = Math.floor(
-			(Date.now() - new Date(updated).getTime()) / 86400000,
-		)
-		return `${days}d`
-	},
-
 	/**
 	 * Human label for a case's `caseType` UUID reference.
 	 *
@@ -235,7 +121,7 @@ export default {
 	 * store; on the first render for an uncounted case it queues a batched
 	 * /api/deelzaken/counts fetch and re-renders once the count lands.
 	 *
-	 * @param {*} value Unused (the column key is the case UUID via `row`).
+	 * @param {unknown} value Unused (the column key is the case UUID via `row`).
 	 * @param {object} row The case object.
 	 * @return {string} Badge label, or '' when the case has no sub-cases.
 	 * @spec openspec/changes/deelzaak-support/tasks.md#T10

@@ -3,16 +3,34 @@
   "title": "VTH Omgevingsvergunning",
   "version": "1.0.0",
   "description": "Template voor omgevingsvergunning aanvragen (VTH module)",
-  "statusTypes": ["Ontvangen", "Ontvankelijkheidstoets", "In behandeling", "Advies", "Besluitvorming", "Afgehandeld"],
-  "documentTypes": ["Bouwtekening", "Constructieberekening", "Situatietekening", "Welstandsadvies", "Fotos bestaande situatie"],
-  "propertyDefinitions": [
-    {"name": "bouwkosten", "type": "number"},
-    {"name": "oppervlakte", "type": "number"},
-    {"name": "aantalBouwlagen", "type": "integer"},
-    {"name": "bagObject", "type": "string"},
-    {"name": "procedureType", "type": "string", "enum": ["regulier", "uitgebreid"]},
-    {"name": "activiteiten", "type": "string"}
+  "statusTypes": [
+    {"name": "Ontvangen", "order": 1, "isFinal": false},
+    {"name": "Ontvankelijkheidstoets", "order": 2, "isFinal": false},
+    {"name": "In behandeling", "order": 3, "isFinal": false},
+    {"name": "Advies", "order": 4, "isFinal": false},
+    {"name": "Besluitvorming", "order": 5, "isFinal": false},
+    {"name": "Afgehandeld", "order": 6, "isFinal": true}
   ],
-  "roleTypes": ["handler", "applicant", "gemachtigde", "adviseur"],
+  "documentTypes": [
+    {"name": "Bouwtekening"},
+    {"name": "Constructieberekening"},
+    {"name": "Situatietekening"},
+    {"name": "Welstandsadvies"},
+    {"name": "Fotos bestaande situatie"}
+  ],
+  "propertyDefinitions": [
+    {"name": "bouwkosten", "propertyType": "number"},
+    {"name": "oppervlakte", "propertyType": "number"},
+    {"name": "aantalBouwlagen", "propertyType": "number"},
+    {"name": "bagObject", "propertyType": "string"},
+    {"name": "procedureType", "propertyType": "enum", "enumValues": ["regulier", "uitgebreid"]},
+    {"name": "activiteiten", "propertyType": "string"}
+  ],
+  "roleTypes": [
+    {"name": "handler"},
+    {"name": "applicant"},
+    {"name": "gemachtigde"},
+    {"name": "adviseur"}
+  ],
   "processingDeadline": {"regulier": "P56D", "uitgebreid": "P182D"}
 }

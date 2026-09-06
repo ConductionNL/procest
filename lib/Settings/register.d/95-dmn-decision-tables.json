@@ -6,7 +6,7 @@
                 "icon": "TableSettings",
                 "version": "1.0.0",
                 "title": "Decision Table",
-                "description": "A DMN-style decision table: inputs, outputs, rules and a hit policy. OpenRegister evaluates it.",
+                "description": "DEPRECATED (dossiq-decisions-to-decidiq): decision tables move to OpenRegister's flow-decision-tables. Existing tables keep working until that change lands; do not add new ones here. Originally: a DMN-style decision table with inputs, outputs, rules and a hit policy. OpenRegister evaluates it.",
                 "type": "object",
                 "required": ["name", "key"],
                 "properties": {

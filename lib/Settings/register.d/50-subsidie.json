@@ -7,7 +7,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:GovernmentService",
                 "title": "Subsidieregeling",
-                "description": "DEPRECATED — superseded by caseType plus its propertyDefinition records (openspec/changes/subsidieregeling-is-a-casetype). Retained for ONE release so MigrateSubsidieRegelingToCaseType can still resolve and read these objects: a schema the register no longer carries returns zero rows, and a migration that reads nothing reports the same success as one that had nothing to do. Remove once the migration has run everywhere. Policy-level definition of a grant program (AWB titel 4.2 / VNG ASV).",
+                "description": "DEPRECATED: superseded by caseType plus its propertyDefinition records (openspec/changes/subsidieregeling-is-a-casetype). Retained for ONE release so MigrateSubsidieRegelingToCaseType can still resolve and read these objects: a schema the register no longer carries returns zero rows, and a migration that reads nothing reports the same success as one that had nothing to do. Remove once the migration has run everywhere. Policy-level definition of a grant program (AWB titel 4.2 / VNG ASV).",
                 "type": "object",
                 "required": ["schemeName", "legalBasis"],
                 "properties": {
@@ -37,7 +37,7 @@
                 "properties": {
                     "case": { "title": "Case", "type": "string", "format": "uuid", "$ref": "case", "onDelete": "SET_NULL", "description": "Linked dossiq case" },
                     "aanvraagnummer": { "title": "Application Number", "type": "string", "description": "Auto-generated identifier", "facetable": true },
-                    "subsidyScheme": { "title": "Grant Regulation", "type": "string", "format": "uuid", "$ref": "caseType", "description": "The grant scheme applied under — a caseType, since a scheme IS the blueprint its applications are governed by (see openspec/changes/subsidieregeling-is-a-casetype)" },
+                    "subsidyScheme": { "title": "Grant Regulation", "type": "string", "format": "uuid", "$ref": "caseType", "description": "The grant scheme applied under: a caseType, since a scheme IS the blueprint its applications are governed by (see openspec/changes/subsidieregeling-is-a-casetype)" },
                     "requestedAmount": { "title": "Requested Amount", "type": "number", "description": "Requested grant amount in EUR" },
                     "projectStartDate": { "title": "Project Start Date", "type": "string", "format": "date", "description": "Project start (may be years in the future)" },
                     "projectEndDate": { "title": "Project End Date", "type": "string", "format": "date", "description": "Project end" },
@@ -85,7 +85,7 @@
                     "grantedAmount": { "title": "Granted Amount", "type": "number", "description": "EUR granted (may differ from requested)" },
                     "termStart": { "title": "Duration Start", "type": "string", "format": "date", "description": "Grant period start" },
                     "termEnd": { "title": "Duration End", "type": "string", "format": "date", "description": "Grant period end" },
-                    "advanceSchema": { "title": "Advance Payment Schedule", "type": "string", "description": "JSON array: [{datum, bedrag, voorwaarde, status}] — must sum to verleendBedrag" },
+                    "advanceSchema": { "title": "Advance Payment Schedule", "type": "string", "description": "JSON array: [{datum, bedrag, voorwaarde, status}]. Must sum to verleendBedrag" },
                     "verplichtingen": { "title": "Obligations", "type": "string", "description": "JSON array: [{id, beschrijving, status, bewijsstukkenVereist, deadline}]" },
                     "legalBasis": { "title": "Legal Basis", "type": "string", "description": "Exact AWB/kaderwet article" },
                     "stateAidCategory": { "title": "State Aid Category", "type": "string", "enum": ["none", "de_minimis", "agvv", "daeb", "notificatieplicht"], "default": "none", "description": "EU state-aid classification" },

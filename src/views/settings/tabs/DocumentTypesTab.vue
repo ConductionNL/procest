@@ -187,7 +187,7 @@ export default {
 			this.loading = true
 			const objectStore = useObjectStore()
 			const results = await objectStore.fetchCollection('documentType', {
-				'_filters[caseType]': this.caseTypeId,
+				caseType: this.caseTypeId,
 				_limit: 100,
 			})
 			this.items = results || []
@@ -209,7 +209,7 @@ export default {
 		},
 
 		/**
-		 * @param item
+		 * @param {object} item The item.
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		startEdit(item) {
@@ -254,7 +254,7 @@ export default {
 		},
 
 		/**
-		 * @param item
+		 * @param {object} item The item.
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async deleteItem(item) {

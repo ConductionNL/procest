@@ -28,7 +28,7 @@
  *  l10n contract the migration depends on.
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 /**
  * English source string => the Dutch term a Dutch reader must still see.

@@ -37,6 +37,8 @@ use OCP\Settings\IDelegatedSettings;
  * Implements IDelegatedSettings so the form can be guarded by
  * #[AuthorizedAdminSetting(settings: AdminSettings::class)] on the
  * controllers that mutate Dossiq configuration.
+ *
+ * @spec openspec/specs/admin-settings/spec.md
  */
 class AdminSettings implements IDelegatedSettings {
 	/**
@@ -64,6 +66,8 @@ class AdminSettings implements IDelegatedSettings {
 	 * the same silent failure as procest#794's dead write routes.
 	 *
 	 * @return TemplateResponse
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getForm(): TemplateResponse {
 		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
@@ -142,6 +146,8 @@ class AdminSettings implements IDelegatedSettings {
 	 * Get the section ID this settings page belongs to.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getSection(): string {
 		return 'dossiq';
@@ -151,6 +157,8 @@ class AdminSettings implements IDelegatedSettings {
 	 * Get the priority for ordering within the section.
 	 *
 	 * @return int
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getPriority(): int {
 		return 10;
@@ -160,6 +168,8 @@ class AdminSettings implements IDelegatedSettings {
 	 * Human-readable name of the delegated settings section.
 	 *
 	 * @return string|null The section name, or null to use the section default.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getName(): ?string {
 		return null;
@@ -173,6 +183,8 @@ class AdminSettings implements IDelegatedSettings {
 	 * the attribute still scopes the endpoint to full admins.
 	 *
 	 * @return array<string,string[]> Map of appId to allowed config keys.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getAuthorizedAppConfig(): array {
 		return [];

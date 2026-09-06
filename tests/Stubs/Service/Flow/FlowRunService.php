@@ -30,6 +30,14 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunService', false) ==
         public const SIGNAL_CONTEXT_KEY = 'signal';
 
         /**
+         * The context key the run's acting identity travels under
+         * (openregister#3332; value frozen at `runAs`).
+         *
+         * @var string
+         */
+        public const RUN_AS_CONTEXT_KEY = 'runAs';
+
+        /**
          * Deliver a resume signal.
          *
          * @param FlowRun $run     The run.

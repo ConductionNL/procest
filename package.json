@@ -70,7 +70,7 @@
     "@nextcloud/axios": "$@nextcloud/axios"
   },
   "devDependencies": {
-    "@babel/core": "^7.22.9",
+    "@babel/core": "^8.0.1",
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
     "@nextcloud/browserslist-config": "^3.0.1",
     "@nextcloud/eslint-config": "^9.0.1",

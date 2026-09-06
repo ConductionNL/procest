@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 
@@ -40,9 +41,14 @@ use Psr\Log\LoggerInterface;
 class WOORedactionService {
 
 	/**
-	 * Docudesk app identifier.
+	 * The canonical fleet name of the document app.
+	 *
+	 * Resolved through {@see FleetAppId} rather than pinned: filinq renamed
+	 * from `docudesk` in August 2026, and this probe — which gates the whole Woo
+	 * redaction pipeline — answered false on every instance running the renamed
+	 * app, so redaction silently degraded to "manual redaction required".
 	 */
-	private const DOCUDESK_APP_ID = 'docudesk';
+	private const DOCUMENT_APP = 'filinq';
 
 	/**
 	 * Constructor.
@@ -64,8 +70,7 @@ class WOORedactionService {
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
 	 */
 	public function isDocuDeskInstalled(): bool {
-		return $this->appManager->isInstalled(self::DOCUDESK_APP_ID)
-			&& $this->appManager->isEnabledForUser(self::DOCUDESK_APP_ID);
+		return FleetAppId::isEnabledForUser($this->appManager, self::DOCUMENT_APP);
 	}//end isDocuDeskInstalled()
 
 	/**

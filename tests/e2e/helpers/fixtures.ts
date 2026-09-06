@@ -29,7 +29,7 @@
 
 import type { APIRequestContext } from '@playwright/test'
 
-import { expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { occPurge, OccUnavailableError } from './occ.ts'
 
 /** OpenRegister register slug that owns every dossiq object. */
@@ -625,6 +625,21 @@ export async function cleanupRunObjects(
 	token: string,
 	schemas: string[] = [...FIXTURE_SCHEMAS],
 ): Promise<void> {
+	// This sweep is a NETWORK walk over every fixture schema plus the trash, so
+	// its cost scales with `FIXTURE_SCHEMAS`, not with what the spec created. At
+	// ten schemas on a loaded instance it does not fit the 30s the config gives
+	// a hook, and the run then fails with `"afterAll" hook timeout` — pointing at
+	// the spec that happened to finish last rather than at the sweep.
+	//
+	// Raised here rather than in playwright.config.ts on purpose: the config
+	// timeout also governs every TEST, and loosening that would hide a genuinely
+	// slow test. This widens only the teardown that is genuinely slow.
+	try {
+		test.setTimeout(120_000)
+	} catch {
+		// Called outside a running test/hook. Nothing to extend; carry on.
+	}
+
 	const survivors = [
 		...(await sweepPrefix(api, token, RUN_PREFIX, schemas)),
 		...(await sweepTrash(api, token, RUN_PREFIX)),
